@@ -1,0 +1,82 @@
+
+TODO: evaluate
+ * Different route types:
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part2-url-conventions.html
+ * https://learn.microsoft.com/en-us/odata/webapi-8/fundamentals/entityset-routing?tabs=net60%2Cvisual-studio
+ * http://docs.oasis-open.org/odata/odata/v4.01/cs01/abnf/odata-abnf-construction-rules.txt
+ * http://docs.oasis-open.org/odata/odata/v4.0/odata-v4.0-part2-url-conventions.html
+ * http://docs.oasis-open.org/odata/odata/v4.0/odata-v4.0-part3-csdl.html
+ * http://docs.oasis-open.org/odata/odata-data-aggregation-ext/v4.0/odata-data-aggregation-ext-v4.0.html
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_EntityIdsandEntityReferences
+     * Services are strongly encouraged to use the canonical URL for an entity as defined in OData-URL as its entity-id, but clients cannot assume the entity-id can be used to locate the entity unless the Core.DereferenceableIDs term is applied to the entity container, nor can the client assume any semantics from the structure of the entity-id. The canonical resource $entity provides a general mechanism for resolving an entity-id into an entity representation.
+
+Evaluated: v0
+
+ * Casting v0
+     * https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-routing-conventions
+     * casting root done. Need to cast somewhere in path
+ * Composite keys v0
+ * Currently all types are given a client. This is not correct v0
+ * Define a complex type (like value type from ddd ). Make sure it does not have an endpoint. Can it be $selected? v0
+ * Dynamic properties (and open types) v0
+ * Enums v0
+ * Multiple entity sets on single entity type v0
+ * What is a singleton? + http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Singleton v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_HeaderFields v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_CommonResponseStatusCodes read v0
+ * Errors http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ErrorResponseBody read v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingIndividualProperties v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingaPropertysRawValueusingval v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter v0
+     * read all sections thoroughly . Not just function names in tables
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount v0
+    * Count on inner props
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionsearch v0
+ * List of qs http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptions . Do, or add to roadmap with later v v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingIndividualEntities what is readLink, editLink, Core.Permissions v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingRelatedEntities v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingtheNumberofItemsinaCollect v0
+    * read carefully
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html point 11.5.2 -> v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_AdvertisingAvailableOperationswithin v0
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Functions v0
+
+Evaluated: v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncompute v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Formats +
+     * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionformat v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ServerDrivenPaging v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestinganIndividualMemberofanOrde v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingEntityReferences v1
+ * Etags v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ResolvinganEntityId v1
+     * not sure this needs doing
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_allResponse v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_crossjoinResponse v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BindinganOperationtoaResource v1
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BatchRequests v1
+
+Evaluated: vNext
+ 
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingtheMediaStreamofaMediaEnti v2
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionschemaversion v2
+     * not sure this needs doing
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingChanges v2
+     * + http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_DeltaPayloadResponse
+     * + http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_IteminaDeltaPayloadResponse
+     * http://docs.oasis-open.org/odata/odata/v4.0/odata-v4.0-part2-url-conventions.html point 4.12
+     * http://docs.oasis-open.org/odata/odata/v4.0/odata-v4.0-part2-url-conventions.html point 4.11
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ModelVersioning v2
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Extensibility v2
+ * Errors http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ErrorResponseBody write v2
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ManagingMediaEntities v2
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ManagingStreamProperties v2
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_DataModification v2
+     * + https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-v4/odata-actions-and-functions
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Actions v2
+     * https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-v4/odata-actions-and-functions
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_AsynchronousRequests v2
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_CommonResponseStatusCodes write v2

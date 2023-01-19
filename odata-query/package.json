@@ -1,0 +1,19 @@
+{
+  "name": "odata-query",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "fix-links": "npm link ../odata-query-shared"
+  },
+  "author": "odata-query",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^4.9.4",
+    "@types/node": "^18.11.18"
+  }
+}
