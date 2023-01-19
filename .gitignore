@@ -1,0 +1,10 @@
+
+# Node
+
+dist/
+node_modules/
+
+# Dotnet
+
+bin/
+obj/
