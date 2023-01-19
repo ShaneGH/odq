@@ -104,7 +104,7 @@ function checkVersion(warningConfig: SupressWarnings, config: Document) {
             }
 
             const v = (vs[0] as Attr)?.value || "";
-            if (!/^\s*4(\.|$)/.test(v)) {
+            if (!/^\s*4(\.|(\s*$))/.test(v)) {
                 console.warn(`Unsupported odata version: ${v}. Only version 4 is suppoerted` + supressUnableToVerifyOdataVersionMessage)
             }
         }
