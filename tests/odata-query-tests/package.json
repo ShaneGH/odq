@@ -11,7 +11,7 @@
     "stop-test-server": "node stopTestServer.js",
     "generate-code": "node node_modules/odata-query-compile-time/dist/index.js --config ./code-gen-config.json",
     "test-only": "node --experimental-vm-modules node_modules/jest/bin/jest.js dist",
-    "test": "(npm run start-test-server && npm run generate-code && tsc && npm run test-only)",
+    "test": "(npm run start-test-server && npm run generate-code && tsc && npm run test-only) & npm run stop-test-server",
     "mini-test": "buildFromRoot.cmd && npm run generate-code && tsc",
     "build-and-test": "buildFromRoot.cmd && npm run test"
   },

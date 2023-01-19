@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
+using Microsoft.AspNetCore.OData.Results;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
 using TestServer.Model;
 
@@ -17,15 +19,21 @@ public abstract class ODataControllerBase<T> : ODataController
     }
 
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public ActionResult Get()
+    public IQueryable<T> Get()
     {
-        IEnumerable<T> es = AllEntities(_inMemoryDb);
+        var es = AllEntities(_inMemoryDb);
         if (Request.Headers.ContainsKey("ToList"))
         {
-            es = es.ToList();
+            es = es.ToList().AsQueryable();
         }
 
-        return Ok(es);
+        return es;
+    }
+
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<T> Get([FromODataUri] string key)
+    {
+        return SingleResult.Create(Get().Where(p => p.Id == key));
     }
 
     protected abstract IQueryable<T> AllEntities(EntityDbContext db);
@@ -49,13 +57,6 @@ public class HasIdsController : ODataControllerBase<HasId>
         : base(inMemoryDb)
     {
         this._inMemoryDb = inMemoryDb;
-    }
-
-    [HttpGet("HasIds({key})")]
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public ActionResult GetByKey([FromRoute] string key)
-    {
-        return Ok(AllEntities(_inMemoryDb).Where(x => x.Id == key));
     }
 
     [HttpGet("HasIds({key})/My.Odata.Entities.User")]
@@ -105,13 +106,6 @@ public class UsersController : ODataControllerBase<User>
         this._inMemoryDb = inMemoryDb;
     }
 
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    [HttpGet("Users({key})")]
-    public ActionResult GetByKey([FromRoute] string key)
-    {
-        return Ok(_inMemoryDb.Users.Where(x => x.Id == key));
-    }
-
     protected override void AddEntity(EntityDbContext db, User entity) => db.Users.Add(entity);
 
     protected override IQueryable<User> AllEntities(EntityDbContext db) => db.Users;
@@ -125,13 +119,6 @@ public class BlogsController : ODataControllerBase<Blog>
         : base(inMemoryDb)
     {
         this._inMemoryDb = inMemoryDb;
-    }
-
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    [HttpGet("Blogs({key})")]
-    public ActionResult GetByKey([FromRoute] string key)
-    {
-        return Ok(_inMemoryDb.Blogs.Where(x => x.Id == key));
     }
 
     protected override void AddEntity(EntityDbContext db, Blog entity) => db.Blogs.Add(entity);
@@ -149,33 +136,10 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
         this._inMemoryDb = inMemoryDb;
     }
 
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    [HttpGet("BlogPosts({key})")]
-    public ActionResult GetByKey([FromRoute] string key)
-    {
-        return Ok(_inMemoryDb.BlogPosts.Where(x => x.Id == key));
-    }
-
     protected override void AddEntity(EntityDbContext db, BlogPost entity) => db.BlogPosts.Add(entity);
 
     protected override IQueryable<BlogPost> AllEntities(EntityDbContext db) => db.BlogPosts;
 }
-
-// public class BlogPostNamesController : ODataController
-// {
-//     private readonly EntityDbContext _inMemoryDb;
-
-//     public BlogPostNamesController(EntityDbContext inMemoryDb)
-//     {
-//         this._inMemoryDb = inMemoryDb;
-//     }
-
-//     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-//     public ActionResult Get()
-//     {
-//         return Ok(_inMemoryDb.BlogPosts.Select(x => x.Name));
-//     }
-// }
 
 public class CommentsController : ODataControllerBase<Comment>
 {
@@ -185,13 +149,6 @@ public class CommentsController : ODataControllerBase<Comment>
         : base(inMemoryDb)
     {
         this._inMemoryDb = inMemoryDb;
-    }
-
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    [HttpGet("Comments({key})")]
-    public ActionResult GetByKey([FromRoute] string key)
-    {
-        return Ok(_inMemoryDb.Comments.Where(x => x.Id == key));
     }
 
     protected override void AddEntity(EntityDbContext db, Comment entity) => db.Comments.Add(entity);
@@ -207,13 +164,6 @@ public class CommentTagsController : ODataControllerBase<CommentTag>
         : base(inMemoryDb)
     {
         this._inMemoryDb = inMemoryDb;
-    }
-
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    [HttpGet("CommentTags({key})")]
-    public ActionResult GetByKey([FromRoute] string key)
-    {
-        return Ok(_inMemoryDb.Tags.Where(x => x.Tag == key));
     }
 
     protected override void AddEntity(EntityDbContext db, CommentTag entity) => db.Tags.Add(entity);
