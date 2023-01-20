@@ -55,12 +55,16 @@ public class Program
         builder.Namespace = "My.Odata.Entities";
         builder.ContainerName = "My/Odata.Container";
 
+        builder.EntitySet<HasId>("HasIds");
         builder.EntitySet<User>("Users");
         builder.EntitySet<Blog>("Blogs");
         builder.EntitySet<BlogPost>("BlogPosts");
         builder.EntitySet<Comment>("Comments");
         builder.EntitySet<CommentTag>("CommentTags");
-        builder.EntitySet<HasId>("HasIds");
+
+        // builder.EntitySet<Shape>("Shapes");
+        // builder.ComplexType<Square>().DerivesFrom<Shape>();
+        // builder.ComplexType<Circle>().DerivesFrom<Shape>();
 
         return builder.GetEdmModel();
     }

@@ -7,6 +7,28 @@ using TestServer.Model;
 
 namespace TestServer.Controllers;
 
+// [Route(Program.OdataRoot)]
+// public abstract class ShapesController : ODataController
+// {
+//     private static IQueryable<Shape> Shapes = new Shape[]
+//     {
+//         new Square { Key = "Square", Length = 100 },
+//         new Circle { Key = "Circle", Radius = 100 }
+//     }.AsQueryable();
+
+//     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+//     public IQueryable<Shape> Get()
+//     {
+//         return Shapes;
+//     }
+
+//     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+//     public SingleResult<Shape> Get([FromODataUri] string key)
+//     {
+//         return SingleResult.Create(Get().Where(p => p.Key == key));
+//     }
+// }
+
 [Route(Program.OdataRoot)]
 public abstract class ODataControllerBase<T> : ODataController
     where T : IHasMutableId
@@ -61,30 +83,39 @@ public class HasIdsController : ODataControllerBase<HasId>
 
     [HttpGet("HasIds({key})/My.Odata.Entities.User")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public ActionResult GetUsersFromHasIds([FromRoute] string key)
+    public SingleResult<User> GetUsersFromHasIds([FromRoute] string key)
     {
-        return Ok(_inMemoryDb.Users.Where(x => x.Id == key));
+        return SingleResult.Create(_inMemoryDb.Users.Where(x => x.Id == key));
     }
 
     [HttpGet("HasIds/My.Odata.Entities.User")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public ActionResult GetUsersFromHasIds()
+    public IQueryable<User> GetUsersFromHasIds()
     {
-        return Ok(_inMemoryDb.Users);
+        return _inMemoryDb.Users;
+    }
+
+    [HttpGet("HasIds({key})/My.Odata.Entities.User/Blogs")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<Blog> GetUsersBlogsFromHasIds([FromRoute] string key)
+    {
+        return _inMemoryDb.Users
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Blogs);
     }
 
     [HttpGet("HasIds({key})/My.Odata.Entities.Blog")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public ActionResult GetBlogsFromHasIds([FromRoute] string key)
+    public SingleResult<Blog> GetBlogsFromHasIds([FromRoute] string key)
     {
-        return Ok(_inMemoryDb.Blogs.Where(x => x.Id == key));
+        return SingleResult.Create(_inMemoryDb.Blogs.Where(x => x.Id == key));
     }
 
     [HttpGet("HasIds/My.Odata.Entities.Blog")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public ActionResult GetBlogsFromHasIds()
+    public IQueryable<Blog> GetBlogsFromHasIds()
     {
-        return Ok(_inMemoryDb.Blogs);
+        return _inMemoryDb.Blogs;
     }
 
     protected override void AddEntity(EntityDbContext db, HasId entity) => throw new InvalidOperationException();

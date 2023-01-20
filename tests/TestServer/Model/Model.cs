@@ -5,6 +5,21 @@ namespace TestServer.Model;
 
 # nullable disable
 
+// public class Shape
+// {
+//     public string Key { get; set; }
+// }
+
+// public class Circle : Shape
+// {
+//     public int Radius { get; set; }
+// }
+
+// public class Square : Shape
+// {
+//     public int Length { get; set; }
+// }
+
 public interface IHasMutableId
 {
     string Id { get; set; }
@@ -12,6 +27,7 @@ public interface IHasMutableId
 
 public class HasId : IHasMutableId
 {
+    [Key]
     public string Id { get; set; }
 }
 
