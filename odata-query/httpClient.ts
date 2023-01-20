@@ -93,7 +93,7 @@ export interface IEntityQueryWithoutId<TEntity, TQuery, TCaster> {
 }
 
 // TODO: do not return instances from any methods. Return interfaces instead
-export class EntityQuery<TEntity, TKey, TQuery, TCaster, TReturnType> implements IEntityQueryWithoutId<TEntity, TQuery, TCaster> {
+export class EntityQuery<TEntity, TKey, TQuery, TCaster> implements IEntityQueryWithoutId<TEntity, TQuery, TCaster> {
 
     state: EntityQueryState<TQuery>
     caster: TCaster | undefined
