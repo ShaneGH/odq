@@ -23,12 +23,12 @@ export type ODataUriParts = {
 
 // TODO: document: 1. Add code comments, 2. Add article
 // TODO: test all of these
-export type RequestTools<T> = {
+export type RequestTools = {
     fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
     uriRoot: string
     uriBuilder?: (uri: ODataUriParts) => string
     requestInterceptor?: (uri: string, reqValues: RequestInit) => RequestInit
-    responseParser?: (input: Response, uri: string, reqValues: RequestInit, defaultParser: (input: Response) => Promise<ODataResult<T>>) => Promise<ODataResult<T>>
+    responseParser?: (input: Response, uri: string, reqValues: RequestInit, defaultParser: (input: Response) => Promise<ODataResult<any>>) => Promise<ODataResult<any>>
 }
 
 function addLeadingSlash(path: string) {
@@ -40,6 +40,7 @@ function removeTrailingSlash(path: string) {
 }
 
 function uriBuilder(uri: ODataUriParts) {
+
     let queryPart = Object
         .keys(uri.query)
         .map(x => `${x}=${uri.query[x]}`)
@@ -62,9 +63,8 @@ function processResponse<TEntity>(response: Response, uri: any, reqValues: any, 
     return response.json();
 }
 
-type EntityQueryState<TKey, TQuery> = Partial<{
-    key: TKey
-    cast: string
+type EntityQueryState<TQuery> = Partial<{
+    path: string[]
     queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>
 }>
 
@@ -76,30 +76,38 @@ function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
     return defaultVal;
 }
 
-// TODO: test something that does not have a key
-export interface IEntityQueryWithoutId<TEntity, TQuery> {
-
-    cast<TChild extends TEntity, TQueryChild extends TQuery>(fullyQualifiedName: string): IEntityQueryWithoutId<TChild, TQueryChild>;
-
-    withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>): IEntityQueryWithoutId<TEntity, TQuery>;
-
-    get(overrideRequestTools?: Partial<RequestTools<TEntity>>): Promise<ODataResult<TEntity>>;
-
-    count(overrideRequestTools?: Partial<RequestTools<TEntity>>): Promise<ODataResult<TEntity>>;
+export type CastPlaceholder<TEntity, TQuery, TKey, TCaster> = {
+    type: ODataComplexType
 }
 
-export class EntityQuery<TEntity, TKey, TQuery> implements IEntityQueryWithoutId<TEntity, TQuery> {
+// TODO: test something that does not have a key
+export interface IEntityQueryWithoutId<TEntity, TQuery, TCaster> {
 
-    state: EntityQueryState<TKey, TQuery>
+    cast<TChild extends TEntity, TChildKey, TQueryChild extends TQuery, TNewCaster>(cast: (caster: TCaster) => CastPlaceholder<TChild, TChildKey, TQueryChild, TNewCaster>): IEntityQueryWithoutId<TChild, TQueryChild, TNewCaster>;
+
+    withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>): IEntityQueryWithoutId<TEntity, TQuery, TCaster>;
+
+    get(overrideRequestTools?: Partial<RequestTools>): Promise<ODataResult<TEntity>>;
+
+    count(overrideRequestTools?: Partial<RequestTools>): Promise<ODataResult<TEntity>>;
+}
+
+// TODO: do not return instances from any methods. Return interfaces instead
+export class EntityQuery<TEntity, TKey, TQuery, TCaster, TReturnType> implements IEntityQueryWithoutId<TEntity, TQuery, TCaster> {
+
+    state: EntityQueryState<TQuery>
+    caster: TCaster | undefined
 
     constructor(
-        private requestTools: RequestTools<TEntity>,
+        private requestTools: RequestTools,
         private type: ODataComplexType,
         private entitySet: ODataEntitySet,
         private root: ODataServiceConfig,
-        state: EntityQueryState<TKey, TQuery> | undefined = undefined) {
+        state: EntityQueryState<TQuery> | undefined = undefined) {
 
-        this.state = state || {};
+        this.state = state || {
+            path: [entitySet.name]
+        };
     }
 
     withKey(key: TKey) {
@@ -107,38 +115,80 @@ export class EntityQuery<TEntity, TKey, TQuery> implements IEntityQueryWithoutId
             throw new Error("Cannot set key to undefined. Try setting to null instead");
         }
 
-        return new EntityQuery<TEntity, TKey, TQuery>(
+        if (!this.state.path?.length) {
+            throw new Error("Invalid path");
+        }
+
+        // TODO: composite_keys (search whole proj for composite_keys)
+        const keyType = this.type.keyProp && this.type.properties[this.type.keyProp]?.type
+        if (!keyType) {
+            const ns = this.type.namespace && `${this.type.namespace}.`
+            throw new Error(`Type ${ns}${this.type.name} does not have a key property`);
+        }
+
+        const k = key === null ? "null" : serialize(key, keyType);
+        const path = [
+            `${this.state.path[0]}(${k})`,
+            ...this.state.path.slice(1)
+        ]
+
+        return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
             this.root,
-            { ...this.state, key });
+            { ...this.state, path });
     }
 
-    cast<TChild extends TEntity, TQueryChild extends TQuery>(fullyQualifiedName: string): EntityQuery<TChild, TKey, TQueryChild> {
-        const dot = fullyQualifiedName.lastIndexOf(".")
-        const namespace = dot === -1 ? "" : fullyQualifiedName.substring(0, dot);
-        const name = dot === -1 ? fullyQualifiedName : fullyQualifiedName.substring(dot + 1);
+    cast<TChild extends TEntity, TChildKey, TQueryChild extends TQuery, TNewCaster>(
+        cast: (caster: TCaster) => CastPlaceholder<TChild, TChildKey, TQueryChild, TNewCaster>): EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster> {
 
-        // TODO: tests for child entites with no namespace
-        const type = this.root.types[namespace] && this.root.types[namespace][name];
-        if (!type) {
-            throw new Error(`Unknown Entity type ${fullyQualifiedName}`);
+        if (this.state.queryBuilder) {
+            throw new Error("You cannot add query components before casting");
         }
 
-        return new EntityQuery<TChild, TKey, TQueryChild>(
-            // TODO: cast as any
-            this.requestTools as any,
-            this.type,
+        const newT = cast(this.getCaster());
+        const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
+        const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
+        const newState: EntityQueryState<TQueryChild> = {
+            ...this.state,
+            queryBuilder: undefined,
+            path
+        };
+
+        return new EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster>(
+            this.requestTools,
+            newT.type,
             this.entitySet,
             this.root,
             // TODO: cast as any
-            { ...this.state, cast: fullyQualifiedName } as any);
+            newState);
     }
+
+    // cast1<TChild extends TEntity, TQueryChild extends TQuery>(fullyQualifiedName: string): EntityQuery<TChild, TKey, TQueryChild, TCaster> {
+    //     const dot = fullyQualifiedName.lastIndexOf(".")
+    //     const namespace = dot === -1 ? "" : fullyQualifiedName.substring(0, dot);
+    //     const name = dot === -1 ? fullyQualifiedName : fullyQualifiedName.substring(dot + 1);
+
+    //     // TODO: tests for child entites with no namespace
+    //     const type = this.root.types[namespace] && this.root.types[namespace][name];
+    //     if (!type) {
+    //         throw new Error(`Unknown Entity type ${fullyQualifiedName}`);
+    //     }
+
+    //     return new EntityQuery<TChild, TKey, TQueryChild>(
+    //         // TODO: cast as any
+    //         this.requestTools as any,
+    //         this.type,
+    //         this.entitySet,
+    //         this.root,
+    //         // TODO: cast as any
+    //         { ...this.state, cast: fullyQualifiedName } as any);
+    // }
 
     withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) {
 
-        return new EntityQuery<TEntity, TKey, TQuery>(
+        return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -146,36 +196,19 @@ export class EntityQuery<TEntity, TKey, TQuery> implements IEntityQueryWithoutId
             { ...this.state, queryBuilder });
     }
 
-    get(overrideRequestTools?: Partial<RequestTools<TEntity>>) {
+    get(overrideRequestTools?: Partial<RequestTools>) {
         const query = this._getQueryParts(this.state.queryBuilder)
         return this.fetch(this._entitySetName(), query, overrideRequestTools)
     }
 
-    count(overrideRequestTools?: Partial<RequestTools<TEntity>>): Promise<ODataResult<TEntity>> {
+    count(overrideRequestTools?: Partial<RequestTools>): Promise<ODataResult<TEntity>> {
         const query = this._getQueryParts(this.state.queryBuilder)
         return this.fetch(`${this._entitySetName()}/$count`, query, overrideRequestTools);
     }
 
     _entitySetName() {
-        let uri = this.entitySet.name;
-        if (this.state.key !== undefined) {
 
-            // TODO: composite_keys (search whole proj for composite_keys)
-            const keyType = this.type.keyProp && this.type.properties[this.type.keyProp]?.type
-            if (!keyType) {
-                const ns = this.type.namespace && `${this.type.namespace}.`
-                throw new Error(`Type ${ns}${this.type.name} does not have a key property`);
-            }
-
-            const k = this.state.key === null ? "null" : this.state.key;
-            uri = `${uri}(${serialize(k, keyType)})`
-        }
-
-        if (this.state.cast) {
-            return `${uri}/${this.state.cast}`
-        }
-
-        return uri;
+        return (this.state.path || []).join("/");
     }
 
     private _getQueryParts(query: ((q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) | null | undefined) {
@@ -184,7 +217,7 @@ export class EntityQuery<TEntity, TKey, TQuery> implements IEntityQueryWithoutId
             : {};
     }
 
-    private fetch(relativePath: string, query: Dictionary<string>, overrideRequestTools: Partial<RequestTools<TEntity>> | undefined) {
+    private fetch(relativePath: string, query: Dictionary<string>, overrideRequestTools: Partial<RequestTools> | undefined) {
         const uriB = firstNonNull(uriBuilder, overrideRequestTools?.uriBuilder, this.requestTools.uriBuilder);
         const uri = uriB({
             uriRoot: firstNonNull(this.requestTools.uriRoot, overrideRequestTools?.uriRoot),
@@ -214,5 +247,41 @@ export class EntityQuery<TEntity, TKey, TQuery> implements IEntityQueryWithoutId
         return this.requestTools
             .fetch(uri, init)
             .then(x => responseParser(x, uri, init, x => processResponse(x, null, null, null)));
+    }
+
+    private getCaster(): TCaster {
+        return this.caster ??= this.buildCaster();
+    }
+
+    // TODO: duplicate_logic_key: caster
+    private buildCaster(): TCaster {
+        const inherits = Object
+            .keys(this.root.types)
+            .map(ns => Object
+                .keys(this.root.types[ns])
+                .map(t => this.root.types[ns][t]))
+            .reduce((s, x) => [...s, ...x], [])
+            .filter(x => x.baseType
+                && x.baseType.namespace === this.type.namespace
+                && x.baseType.name === this.type.name);
+
+        const distinctNames = Object.keys(inherits
+            .reduce((s, x) => ({ ...s, [x.name]: true }), {} as { [key: string]: boolean }))
+
+        const name = inherits.length === distinctNames.length
+            ? (x: ODataComplexType) => x.name
+            // TODO: test
+            // TODO: this logic will be duplicated in the code gen project. Possible to merge?
+            : (x: ODataComplexType) => `${x.namespace}.${x.name}`.replace(/[^\w]/g, "_")
+
+        return inherits
+            .reduce((s, type) => ({
+                ...s,
+                [name(type)]: function (): CastPlaceholder<any, any, any, any> {
+                    return {
+                        type
+                    }
+                }
+            }), {} as any);
     }
 }

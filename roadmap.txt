@@ -20,6 +20,7 @@ Evaluated: v0
      * https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-routing-conventions
      * casting root done. Need to cast somewhere in path
      * need to cast and then get single prop
+     * need to cast twice (e.g. ~/Cast.To.Child/Cast.To.GrandChild)
  * Composite keys v0
  * Currently all types are given a client. This is not correct v0
  * Define a complex type (like value type from ddd ). Make sure it does not have an endpoint. Can it be $selected? v0

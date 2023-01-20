@@ -1,5 +1,5 @@
 
-import { ODataEntitySet, ODataServiceConfig, ODataComplexType, ODataPropertyType, ODataTypeRef } from "odata-query-shared";
+import { ODataEntitySet, ODataServiceConfig, ODataComplexType, ODataPropertyType, ODataTypeRef, ODataServiceTypes } from "odata-query-shared";
 import { CodeGenConfig, SupressWarnings } from "./config.js";
 
 const defaultTabs = 2;
@@ -16,6 +16,7 @@ type Keywords = {
     IEntityQueryWithoutId: string
     rootConfig: string
     ODataUriParts: string,
+    CastPlaceholder: string,
     _httpClientArgs: string
 };
 
@@ -28,7 +29,6 @@ function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Ke
     if (rootLevelTypes.indexOf("Edm") !== -1) {
         throw new Error('You cannot have a root level type named "Edm". "Edm" is a namespace reserved by OData for primitive types');
     }
-
     const lookup = allNamespaces
         .map(x => x.split("."))
         .map(x => x[0])
@@ -43,6 +43,7 @@ function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Ke
         QueryArray: getKeyword("QueryArray"),
         QueryComplexObject: getKeyword("QueryComplexObject"),
         PrimitiveQueryBuilder: getKeyword("PrimitiveQueryBuilder"),
+        CastPlaceholder: getKeyword("CastPlaceholder"),
         ODataResult: getKeyword("ODataResult"),
         EntityQuery: getKeyword("EntityQuery"),
         IEntityQueryWithoutId: getKeyword("IEntityQueryWithoutId"),
@@ -148,9 +149,11 @@ ${tab(methods)}
 
         const resultType = fullyQualifiedTsType(entitySet.forType);
         const queryableType = fullyQualifiedTsType(entitySet.forType, getQueryableName);
+        const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
         const idType = getKeyType(type);
-        const instanceType = `${keywords.EntityQuery}<${resultType}, ${idType || "any"}, ${queryableType}>`;
-        const returnType = idType ? instanceType : `${keywords.IEntityQueryWithoutId}<${resultType}, ${queryableType}>`;
+        const instanceType = `${keywords.EntityQuery}<${resultType}, ${idType || "any"}, ${queryableType}, ${casterType}>`;
+        // TODO: do not return instance type. Return an interface instead
+        const returnType = idType ? instanceType : `${keywords.IEntityQueryWithoutId}<${resultType}, ${queryableType}, ${casterType}>`;
 
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
@@ -231,7 +234,7 @@ ${methods}
             .map(namespace => {
                 const types = Object
                     .keys(namespace.types)
-                    .map(t => mapComplexType(namespace.types[t], namespace.types))
+                    .map(t => mapComplexType(namespace.types[t], allTypes))
                     .join("\n\n");
 
                 // TODO: test this case (type without module)
@@ -263,6 +266,7 @@ ${tab(`QueryBuilder as ${keywords.QueryBuilder}, // TODO: not used anymore?`)}
 ${tab(`PrimitiveQueryBuilder as ${keywords.PrimitiveQueryBuilder}, // TODO: not used anymore?`)}
 ${tab(`ODataServiceConfig as ${keywords.ODataServiceConfig},`)}
 ${tab(`ODataResult as ${keywords.ODataResult},`)}
+${tab(`CastPlaceholder as ${keywords.CastPlaceholder},`)}
 ${tab(`ODataUriParts as ${keywords.ODataUriParts},`)}
 ${tab(`QueryPrimitive as ${keywords.QueryPrimitive},`)}
 ${tab(`QueryArray as ${keywords.QueryArray},`)}
@@ -391,6 +395,11 @@ ${tab(mapSimpleType("Single", "Number"))}
         return qTemplate.replace(/\{0\}/g, forType);
     }
 
+    function getCasterName(forType: string) {
+        const qTemplate = settings?.casterTypeNameTemplate || "{0}Caster";
+        return qTemplate.replace(/\{0\}/g, forType);
+    }
+
     function sanitizeNamespace(namespace: string) {
         return namespace.replace(/[^a-zA-Z0-9$._]/, settings?.namespaceSpecialCharacter || ".");
     }
@@ -401,13 +410,56 @@ ${tab(mapSimpleType("Single", "Number"))}
         return `${ns}${transformTypeName(type.name)}`;
     }
 
-    function mapComplexType(type: ODataComplexType, allTypesInNamespace: Dict<ODataComplexType>) {
+    // TODO: duplicate_logic_key: caster
+    // TODO: this is a fairly heavy method to be called quite a bit. Optisation?
+    function getCasterProps(type: ODataComplexType, allTypes: ODataServiceTypes) {
+        const inherits = Object
+            .keys(allTypes)
+            .map(ns => Object
+                .keys(allTypes[ns])
+                .map(t => allTypes[ns][t]))
+            .reduce((s, x) => [...s, ...x], [])
+            .filter(x => x.baseType
+                && x.baseType.namespace === type.namespace
+                && x.baseType.name === type.name);
+
+        const distinctNames = Object.keys(inherits
+            .reduce((s, x) => ({ ...s, [x.name]: true }), {} as { [key: string]: boolean }))
+
+        const name = inherits.length === distinctNames.length
+            ? (x: ODataComplexType) => x.name
+            // TODO: test
+            // TODO: this logic will be duplicated in the code gen project. Possible to merge?
+            : (x: ODataComplexType) => `${x.namespace}.${x.name}`.replace(/[^\w]/g, "_")
+
+        return inherits
+            .map(t => {
+                const typeRef: ODataTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
+                const generics = [
+                    fullyQualifiedTsType(typeRef),
+                    getKeyType(t) || "any",
+                    fullyQualifiedTsType(typeRef, getQueryableName),
+                    fullyQualifiedTsType(typeRef, getCasterName)
+                ].join(", ");
+
+                return `${name(t)}(): ${keywords.CastPlaceholder}<${generics}>`
+            })
+
+
+        // User<TEntity, TQuery, TKey, TCaster>(): CastPlaceholder<TEntity, TKey, TQuery, TCaster>
+    }
+
+    function mapComplexType(type: ODataComplexType, allTypes: ODataServiceTypes) {
+
+        const allTypesInNamespace = allTypes[type.namespace] || {}
 
         const queryableProps = Object
             .keys(type.properties)
             .map(key => ({ key, type: getQueryableTypeString(type.properties[key].type, true) }))
             .map(prop => `${prop.key}: ${prop.type}`)
             .join("\n");
+
+        const casterProps = getCasterProps(type, allTypes)
 
         const q = settings?.makeAllPropsOptional === false ? "" : "?";
         const props = Object
@@ -418,6 +470,7 @@ ${tab(mapSimpleType("Single", "Number"))}
 
         const qbName = getQueryBuilderName(type.name)
         const qtName = getQueryableName(type.name)
+        const casterName = getCasterName(type.name)
         if (allTypesInNamespace[qbName]) {
             const clashingType = type.namespace ? `${type.namespace}.${qbName}` : qbName;
             throw new Error(
@@ -435,6 +488,10 @@ ${tab(props)}
 
 export type ${qtName} = ${baseQType}{
 ${tab(queryableProps)}
+}
+
+export type ${casterName} = {
+${tab(casterProps.join("\n"))}
 }
 
 export class ${qbName} extends ${keywords.QueryBuilder}<${qtName}> {

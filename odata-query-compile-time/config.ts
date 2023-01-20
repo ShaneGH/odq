@@ -89,6 +89,13 @@ export type CodeGenConfig = Partial<{
     queryableTypeNameTemplate: string,
 
     /* 
+     * Specifies how to name caster types. Use "{0}" to inject the name of the type
+     * that this caster is for
+     * Default "{0}Caster"
+     */
+    casterTypeNameTemplate: string,
+
+    /* 
      * If set, dictates how many spaces constitute a tab
      * Default 2
      */
