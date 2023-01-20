@@ -55,10 +55,9 @@ describe("Cast", function () {
         const items = await client.My.Odata.Container.HasIds
             .withKey(user.Id!)
             .cast(i => i.User())
-            .get();
+            .getSingle();
 
-        console.log(items)
-        expect(items.value.length).toBe(1);
+        expect(items.Name).toBe(user.Name);
     });
 
     it("Should not retrieve items of the incorrect type", async () => {
@@ -74,12 +73,19 @@ describe("Cast", function () {
     it("Should not retrieve items of the incorrect type (with key)", async () => {
 
         const user = await addUser();
-        const items = await client.My.Odata.Container.HasIds
-            .withKey(user.Id!)
-            .cast(i => i.Blog())
-            .get();
 
-        expect(items.value.length).toBe(0);
+        let err: Error | null = null;
+        try {
+            await client.My.Odata.Container.HasIds
+                .withKey(user.Id!)
+                .cast(i => i.Blog())
+                .getSingle()
+        } catch (e: any) {
+            err = e;
+        }
+
+        expect(err).toBeTruthy()
+        expect(JSON.parse(err?.message || "{}").code).toBe(404)
     });
 
     it("Should retrieve correct values after cast", async () => {
@@ -87,9 +93,8 @@ describe("Cast", function () {
         const items = await client.My.Odata.Container.HasIds
             .withKey(user.Id!)
             .cast(c => c.User())
-            .get();
+            .getSingle();
 
-        expect(items.value.length).toBe(1);
-        expect(items.value[0].Name).toBe(user.Name);
+        expect(items.Name).toBe(user.Name);
     });
 });

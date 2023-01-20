@@ -12,7 +12,12 @@ export * as ExpandUtils from "./expandUtils.js"
 
 export * as FilterUtils from "./filterUtils.js"
 
-export { ODataResult, EntityQuery, IEntityQueryWithoutId, ODataUriParts, CastPlaceholder } from "./httpClient.js"
+export {
+    ODataMultiResult,
+    EntityQuery,
+    ODataUriParts,
+    CastSelection
+} from "./httpClient.js"
 
 export {
     QueryObjectType,

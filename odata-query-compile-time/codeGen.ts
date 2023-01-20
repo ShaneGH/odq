@@ -11,12 +11,11 @@ type Keywords = {
     QueryPrimitive: string
     QueryArray: string
     QueryComplexObject: string
-    ODataResult: string
+    ODataMultiResult: string
     EntityQuery: string
-    IEntityQueryWithoutId: string
     rootConfig: string
     ODataUriParts: string,
-    CastPlaceholder: string,
+    CastSelection: string,
     _httpClientArgs: string
 };
 
@@ -43,10 +42,9 @@ function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Ke
         QueryArray: getKeyword("QueryArray"),
         QueryComplexObject: getKeyword("QueryComplexObject"),
         PrimitiveQueryBuilder: getKeyword("PrimitiveQueryBuilder"),
-        CastPlaceholder: getKeyword("CastPlaceholder"),
-        ODataResult: getKeyword("ODataResult"),
+        CastSelection: getKeyword("CastSelection"),
+        ODataMultiResult: getKeyword("ODataMultiResult"),
         EntityQuery: getKeyword("EntityQuery"),
-        IEntityQueryWithoutId: getKeyword("IEntityQueryWithoutId"),
         rootConfig: getKeyword("rootConfig"),
         ODataUriParts: getKeyword("ODataUriParts"),
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
@@ -120,7 +118,7 @@ ${httpClient()}`
             "requestInterceptor?: (uri: string, reqValues: RequestInit,) => RequestInit",
             "",
             `// optinal. Add custom response parsing`,
-            `responseParser?: (input: Response, uri: string, reqValues: RequestInit, defaultParser: (input: Response) => Promise<${keywords.ODataResult}<any>>) => Promise<${keywords.ODataResult}<any>>`,
+            `responseParser?: (input: Response, uri: string, reqValues: RequestInit, defaultParser: (input: Response) => Promise<any>) => Promise<any>`,
         ].join("\n")
 
         const constructor = `constructor(private ${keywords._httpClientArgs}: {
@@ -152,8 +150,6 @@ ${tab(methods)}
         const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
         const idType = getKeyType(type);
         const instanceType = `${keywords.EntityQuery}<${resultType}, ${idType || "any"}, ${queryableType}, ${casterType}>`;
-        // TODO: do not return instance type. Return an interface instead
-        const returnType = idType ? instanceType : `${keywords.IEntityQueryWithoutId}<${resultType}, ${queryableType}, ${casterType}>`;
 
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
@@ -162,7 +158,7 @@ ${tab(methods)}
             keywords.rootConfig
         ]
 
-        return `get ${entitySet.name}() : ${returnType} {
+        return `get ${entitySet.name}() {
 ${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
 }`
     }
@@ -172,8 +168,20 @@ ${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
         return (allTypes[t.namespace] && allTypes[t.namespace][t.name]) || undefined
     }
 
-    function getKeyType(t: ODataComplexType) {
-        if (!t.keyProp) return undefined;
+    function getKeyType(t: ODataComplexType, lookupParent = true): string | undefined {
+        if (!t.keyProp) {
+            if (t.baseType && lookupParent) {
+                const baseType = lookupType({ isCollection: false, namespace: t.baseType.namespace, name: t.baseType.name })
+                if (!baseType) {
+                    const ns = t.baseType.namespace && `${t.baseType.namespace}.`
+                    throw new Error(`Could not find base type: ${ns}${t.baseType.name}`);
+                }
+
+                return getKeyType(baseType)
+            }
+
+            return undefined;
+        }
 
         const prop = t.properties[t.keyProp];
         if (!prop) {
@@ -261,17 +269,17 @@ const ${keywords.rootConfig}: ${keywords.ODataServiceConfig} = ${oDataServiceCon
     }
 
     function imports() {
+        // TODO: audit are all of these still used?
         return `import {
 ${tab(`QueryBuilder as ${keywords.QueryBuilder}, // TODO: not used anymore?`)}
 ${tab(`PrimitiveQueryBuilder as ${keywords.PrimitiveQueryBuilder}, // TODO: not used anymore?`)}
 ${tab(`ODataServiceConfig as ${keywords.ODataServiceConfig},`)}
-${tab(`ODataResult as ${keywords.ODataResult},`)}
-${tab(`CastPlaceholder as ${keywords.CastPlaceholder},`)}
+${tab(`ODataMultiResult as ${keywords.ODataMultiResult},`)}
+${tab(`CastSelection as ${keywords.CastSelection},`)}
 ${tab(`ODataUriParts as ${keywords.ODataUriParts},`)}
 ${tab(`QueryPrimitive as ${keywords.QueryPrimitive},`)}
 ${tab(`QueryArray as ${keywords.QueryArray},`)}
 ${tab(`EntityQuery as ${keywords.EntityQuery},`)}
-${tab(`IEntityQueryWithoutId as ${keywords.IEntityQueryWithoutId},`)}
 ${tab(`QueryComplexObject as ${keywords.QueryComplexObject} } from 'odata-query';`)}`
     }
 
@@ -404,7 +412,12 @@ ${tab(mapSimpleType("Single", "Number"))}
         return namespace.replace(/[^a-zA-Z0-9$._]/, settings?.namespaceSpecialCharacter || ".");
     }
 
-    function fullyQualifiedTsType(type: ODataTypeRef, transformTypeName: ((name: string) => string) | null = null) {
+    function fullyQualifiedTsType(type: ODataPropertyType, transformTypeName: ((name: string) => string) | null = null): string {
+
+        if (type.isCollection) {
+            return `${fullyQualifiedTsType(type.collectionType, transformTypeName)}[]`
+        }
+
         transformTypeName ??= id;
         const ns = type.namespace ? `${sanitizeNamespace(type.namespace)}.` : "";
         return `${ns}${transformTypeName(type.name)}`;
@@ -437,16 +450,19 @@ ${tab(mapSimpleType("Single", "Number"))}
                 const typeRef: ODataTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
                 const generics = [
                     fullyQualifiedTsType(typeRef),
-                    getKeyType(t) || "any",
+                    getKeyType(t) || "never",
                     fullyQualifiedTsType(typeRef, getQueryableName),
                     fullyQualifiedTsType(typeRef, getCasterName)
                 ].join(", ");
 
-                return `${name(t)}(): ${keywords.CastPlaceholder}<${generics}>`
+                return `${name(t)}(): ${keywords.CastSelection}<${generics}>`
             })
+    }
 
-
-        // User<TEntity, TQuery, TKey, TCaster>(): CastPlaceholder<TEntity, TKey, TQuery, TCaster>
+    function digOutTypeRef(type: ODataPropertyType): ODataTypeRef {
+        return !type.isCollection
+            ? type
+            : digOutTypeRef(type.collectionType)
     }
 
     function mapComplexType(type: ODataComplexType, allTypes: ODataServiceTypes) {
