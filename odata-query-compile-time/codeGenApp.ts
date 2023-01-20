@@ -5,6 +5,7 @@ import { loadConfig, LocationType, XmlLocation } from "./odataConfigLoader.js";
 import { processConfig } from "./odataConfigProcessor.js";
 
 async function persist(code: string, file: string) {
+    console.log(`Saving: ${file}`);
     if (existsSync(file)) {
         await deleteFile(file);
     }
@@ -31,12 +32,14 @@ function persistFile(file: string, content: string) {
 }
 
 function loadConfigFile(location: string) {
+    console.log("Loading config");
     return loadFile(location)
         .then(x => JSON.parse(x) as Config)
 }
 
 export function generateCode(odataConfig: XmlLocation, settings: Config): Promise<string> {
 
+    console.log("Generating code file");
     return loadConfig(settings, odataConfig)
         .then(x => processConfig(settings.warningSettings || {}, x))
         .then(x => codeGen(x, settings.codeGenSettings, settings.warningSettings));

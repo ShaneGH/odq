@@ -35,7 +35,7 @@ export function httpClient(
         .join("\n\n");
 
     const args = [
-        "// add a basic http client in here. Such as a browser fetch, node18 fetch or the node-fetch module",
+        "// add a basic http client in here. Such as a browser fetch, node18 fetch or the node-fetch npm module",
         "fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>",
         "",
         "// the root URI of all collections. Something like: https://my.service.com/my-odata-collections",

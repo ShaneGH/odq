@@ -29,9 +29,17 @@ export function buildTab(settings: CodeGenConfig | null | undefined): Tab {
     return f;
 }
 
-export function linting() {
+// TODO: some licensing or marketing?
+export function lintingAndComments() {
     return `/* tslint:disable */
-/* eslint-disable */`
+/* eslint-disable */
+
+/*****************************************************/    
+/*****************************************************/
+/**************** Auto generated code ****************/
+/****************    Do not modify    ****************/
+/*****************************************************/
+/*****************************************************/`
 }
 
 export function configObj(serviceConfig: ODataServiceConfig, keywords: Keywords, settings: CodeGenConfig | null | undefined, tab: Tab) {

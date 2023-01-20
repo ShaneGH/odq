@@ -2,11 +2,11 @@
 import { ODataServiceConfig } from "odata-query-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { edm } from "./edm.js";
-import { ProcessedNamespace, processServiceConfig } from "./entities.js";
+import { ProcessedNamespace, ProcessedServiceConfig, processServiceConfig } from "./entities.js";
 import { httpClient } from "./httpClient.js";
 import { imports } from "./imports.js";
 import { generateKeywords } from "./keywords.js";
-import { buildTab, configObj, linting } from "./utils.js";
+import { buildTab, configObj, lintingAndComments } from "./utils.js";
 
 export function codeGen(serviceConfig: ODataServiceConfig, settings: CodeGenConfig | null | undefined, warnings: SupressWarnings | null | undefined) {
 
@@ -17,30 +17,76 @@ export function codeGen(serviceConfig: ODataServiceConfig, settings: CodeGenConf
     const output = `
 ${imports(keywords, tab)}
 
-${linting()}
+${lintingAndComments()}
+
+${httpClient(serviceConfig, tab, keywords, settings, warnings)}
 
 ${configObj(serviceConfig, keywords, settings, tab)}
 
 ${edm(tab)}
 
-${entities()}
-
-${httpClient(serviceConfig, tab, keywords, settings, warnings)}`
+${entities()}`
 
     return output
         .replace(/\r\n/g, "\n")
         .replace(/s+\n/g, "\n") + "\n";
 
+    function splitConfig(config: ProcessedServiceConfig) {
+
+        return config
+
+        // TODO: good idea. Will allow us to export types for actual data, but keep 
+        // non data types local. But some module reference issues
+        // return Object
+        //     .keys(config)
+        //     .reduce((s, x) => ({
+        //         ...s,
+        //         [x]: removeUtils(config[x]),
+        //         [addUtilsNs(x)]: removeNonUtils(config[x])
+        //     }), {} as ProcessedServiceConfig)
+
+        // function addUtilsNs(ns: string) {
+        //     return ns ? `${keywords.ODataUtils}.${ns}` : keywords.ODataUtils
+        // }
+
+        // function removeUtils(ns: ProcessedNamespace): ProcessedNamespace {
+        //     return Object
+        //         .keys(ns)
+        //         .reduce((s, x) => ({
+        //             ...s,
+        //             [x]: {
+        //                 data: ns[x].data,
+        //                 caster: null,
+        //                 query: null
+        //             }
+        //         }), {} as ProcessedNamespace);
+        // }
+
+        // function removeNonUtils(ns: ProcessedNamespace): ProcessedNamespace {
+        //     return Object
+        //         .keys(ns)
+        //         .reduce((s, x) => ({
+        //             ...s,
+        //             [x]: {
+        //                 data: null,
+        //                 caster: ns[x].caster,
+        //                 query: ns[x].query
+        //             }
+        //         }), {} as ProcessedNamespace);
+        // }
+    }
+
     function entities() {
-        const result = processServiceConfig(settings, tab, keywords, serviceConfig, warnings)
+        const result = splitConfig(
+            processServiceConfig(settings, tab, keywords, serviceConfig, warnings))
 
         return Object
             .keys(result)
-            .map(x => `export module ${x} {
-${tab(processModule(result[x]))}
-}`)
+            .map(x => x
+                ? `export module ${x} {\n${tab(processModule(result[x]))}\n}`
+                // TODO: test this case (with namespace == "")
+                : processModule(result[x]))
             .join("\n\n");
-
 
         function processModule(module: ProcessedNamespace) {
             return Object
@@ -49,7 +95,9 @@ ${tab(processModule(result[x]))}
                     module[name].data,
                     module[name].query,
                     module[name].caster
-                ].join("\n\n"))
+                ]
+                    .filter(x => x)
+                    .join("\n\n"))
                 .join("\n\n")
         }
 

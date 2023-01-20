@@ -5,11 +5,11 @@ export type Keywords = {
     QueryPrimitive: string
     QueryArray: string
     QueryComplexObject: string
-    ODataMultiResult: string
     EntityQuery: string
     rootConfig: string
     ODataUriParts: string,
     CastSelection: string,
+    ODataUtils: string,
     _httpClientArgs: string
 };
 
@@ -31,9 +31,9 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         QueryArray: getKeyword("QueryArray"),
         QueryComplexObject: getKeyword("QueryComplexObject"),
         CastSelection: getKeyword("CastSelection"),
-        ODataMultiResult: getKeyword("ODataMultiResult"),
         EntityQuery: getKeyword("EntityQuery"),
         rootConfig: getKeyword("rootConfig"),
+        ODataUtils: getKeyword("ODataUtils"),
         ODataUriParts: getKeyword("ODataUriParts"),
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
         _httpClientArgs: getKeyword("_httpClientArgs")

@@ -7,9 +7,9 @@ import { Keywords } from "./keywords.js"
 import { buildSanitizeNamespace, Tab } from "./utils.js"
 
 export type EntityParts = {
-    data: string
-    caster: string
-    query: string
+    data: string | null
+    caster: string | null
+    query: string | null
 }
 
 type EntityBuilder = (type: ODataComplexType) => EntityParts

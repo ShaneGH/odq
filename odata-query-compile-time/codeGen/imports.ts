@@ -4,12 +4,17 @@ import { Tab } from "./utils.js";
 export function imports(keywords: Keywords, tab: Tab) {
     // TODO: audit are all of these still used?
     return `import {
-${tab(`ODataServiceConfig as ${keywords.ODataServiceConfig},`)}
-${tab(`ODataMultiResult as ${keywords.ODataMultiResult},`)}
-${tab(`CastSelection as ${keywords.CastSelection},`)}
-${tab(`ODataUriParts as ${keywords.ODataUriParts},`)}
-${tab(`QueryPrimitive as ${keywords.QueryPrimitive},`)}
-${tab(`QueryArray as ${keywords.QueryArray},`)}
-${tab(`EntityQuery as ${keywords.EntityQuery},`)}
-${tab(`QueryComplexObject as ${keywords.QueryComplexObject} } from 'odata-query';`)}`
+${tab(importWithAlias("ODataServiceConfig", keywords.ODataServiceConfig))},
+${tab(importWithAlias("CastSelection", keywords.CastSelection))},
+${tab(importWithAlias("ODataUriParts", keywords.ODataUriParts))},
+${tab(importWithAlias("QueryPrimitive", keywords.QueryPrimitive))},
+${tab(importWithAlias("QueryArray", keywords.QueryArray))},
+${tab(importWithAlias("EntityQuery", keywords.EntityQuery))},
+${tab(importWithAlias("QueryComplexObject", keywords.QueryComplexObject))}
+} from 'odata-query';`
+}
+
+function importWithAlias(importName: string, alias: string) {
+    return importName === alias ? importName : `${importName} as ${alias}`
+
 }

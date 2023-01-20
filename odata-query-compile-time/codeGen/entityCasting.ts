@@ -10,7 +10,6 @@ export const buildGetCasterName = (settings: CodeGenConfig | null | undefined): 
     return qTemplate.replace(/\{0\}/g, forType);
 }
 
-
 // TODO: duplicate_logic_key: caster
 // TODO: this is a fairly heavy method to be called quite a bit. Optisation?
 function getCasterProps(
