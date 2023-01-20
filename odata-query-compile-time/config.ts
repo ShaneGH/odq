@@ -61,7 +61,12 @@ export type SupressWarnings = Partial<{
     /* 
      * Default false
      */
-    suppressMultiplBaseTypes: boolean
+    suppressMultipleBaseTypes: boolean
+
+    /* 
+     * Default false
+     */
+    suppressTypeNameOverlap: boolean
 }>
 
 // TODO: settings from cmd
@@ -72,6 +77,12 @@ export type CodeGenConfig = Partial<{
      * Default false
      */
     prettyPrintJsonConfig: boolean,
+
+    /* 
+     * If true, the type definition json object will be exported. For debug purposes only
+     * Default false
+     */
+    exportTypeDefinitionJsObject: boolean,
 
     /* 
      * Specifies how to name query builder classes. Use "{0}" to inject the name of the type

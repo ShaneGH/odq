@@ -1,0 +1,54 @@
+import { Tab } from "./utils.js";
+
+
+export function edm(tab: Tab) {
+    return `// type references for described Edm data types
+export module Edm {
+${tab(mapSimpleType("String", "string"))}
+
+${tab(mapSimpleType("Guid", "string"))}
+
+${tab(mapSimpleType("Boolean", "boolean"))}
+
+${tab(mapSimpleType("DateTime", "Date"))}
+
+${tab(mapSimpleType("DateTimeOffset", "Date"))}
+
+${tab(mapSimpleType("Int16", "Number"))}
+
+${tab(mapSimpleType("Int32", "Number"))}
+
+${tab(mapSimpleType("Int64", "Number"))}
+
+${tab(mapSimpleType("Decimal", "Number"))}
+
+${tab(mapSimpleType("Double", "Number"))}
+
+${tab(mapSimpleType("Single", "Number"))}
+
+    /* TODO:
+<xs:enumeration value="Edm.Byte"/>
+<xs:enumeration value="Edm.Binary"/>
+<xs:enumeration value="Edm.Duration"/>
+<xs:enumeration value="Edm.TimeOfDay"/>
+<xs:enumeration value="Edm.GeographyPoint"/>
+<xs:enumeration value="Edm.GeographyLineString"/>
+<xs:enumeration value="Edm.GeographyPolygon"/>
+<xs:enumeration value="Edm.GeographyMultiPoint"/>
+<xs:enumeration value="Edm.GeographyMultiLineString"/>
+<xs:enumeration value="Edm.GeographyMultiPolygon"/>
+<xs:enumeration value="Edm.GeographyCollection"/>
+<xs:enumeration value="Edm.GeometryPoint"/>
+<xs:enumeration value="Edm.GeometryLineString"/>
+<xs:enumeration value="Edm.GeometryPolygon"/>
+<xs:enumeration value="Edm.GeometryMultiPoint"/>
+<xs:enumeration value="Edm.GeometryMultiLineString"/>
+<xs:enumeration value="Edm.GeometryMultiPolygon"/>
+<xs:enumeration value="Edm.GeometryCollection"/>
+<xs:enumeration value="Edm.SByte"/> */
+}`
+
+    function mapSimpleType(edmName: string, primitiveName: string) {
+        return `export type ${edmName} = ${primitiveName};`;
+    }
+}

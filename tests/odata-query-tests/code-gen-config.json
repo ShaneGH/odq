@@ -5,7 +5,8 @@
     },
     "outputFileLocation": "./generatedCode.ts",
     "codeGenSettings": {
-        "prettyPrintJsonConfig": false
+        "prettyPrintJsonConfig": false,
+        "exportTypeDefinitionJsObject": true
     },
     "printODataConfig": false,
     "warningSettings": {}

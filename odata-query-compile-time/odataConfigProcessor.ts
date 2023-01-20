@@ -162,7 +162,7 @@ function mapEntityType(warningConfig: SupressWarnings, node: Node): ODataComplex
     function baseType() {
 
         const baseType = nsLookup(node, "@BaseType") as Attr[];
-        if (baseType.length > 1 && !warningConfig.suppressAll && !warningConfig.suppressMultiplBaseTypes) {
+        if (baseType.length > 1 && !warningConfig.suppressAll && !warningConfig.suppressMultipleBaseTypes) {
             console.warn(`Found multiple base types for ${name()}: ${baseType.map(x => x.value)}. Using first one found`);
         }
 

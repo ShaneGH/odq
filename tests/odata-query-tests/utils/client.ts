@@ -161,12 +161,6 @@ export type CommentTag = {
     Comments?: BlogComment[]
 }
 
-export function getTags(
-    query: (x: My.Odata.Entities.CommentTagQueryBuilder) => My.Odata.Entities.CommentTagQueryBuilder,
-    logQuery = false) {
-    return get<CommentTag>("CommentTags", query(new My.Odata.Entities.CommentTagQueryBuilder()), logQuery);
-}
-
 export async function postTag(val: CommentTag) {
     await post("CommentTags", val);
 }

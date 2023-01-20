@@ -1,7 +1,7 @@
 
 import { addFullUserChain, Blog, BlogComment, BlogPost, CommentTag, postBlog, postBlogPost, postComment, postUser, User } from "../utils/client.js";
-import { My, ODataClient } from "../generatedCode.js";
-import { FilterUtils as F, ExpandUtils as E } from "odata-query";
+import { My, ODataClient, rootConfig } from "../generatedCode.js";
+import { FilterUtils as F, ExpandUtils as E, QueryBuilder } from "odata-query";
 import { uniqueString } from "../utils/utils.js";
 import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
 
@@ -323,12 +323,25 @@ describe("Query.Filter", function () {
         }
     });
 
+    function qb<T>(fullName: string) {
+
+        const dot = fullName.lastIndexOf(".");
+        const namespace = dot === -1 ? "" : fullName.substring(0, dot)
+        const name = dot === -1 ? fullName : fullName.substring(dot + 1)
+        const type = rootConfig.types[namespace] && rootConfig.types[namespace][name]
+        if (!type) {
+            throw new Error(fullName);
+        }
+
+        return new QueryBuilder<T>(type, rootConfig.types);
+    }
+
     // TODO: not sure if HasSubset is a real thing
     // BlogPost, Words, HasSubset
     testCase("Complex -> Array<Simple> -> HasSubset", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.BlogPostQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(bp => F.hasSubset(bp.Words, ["something"]))
                 .toQueryParts(false);
 
@@ -365,7 +378,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Array<Complex> -> Complex -> Array<Simple> -> Simple", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.BlogPostQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(bp => F.any(bp.Comments, c => F.any(c.Words, w => F.eq(w, "something"))))
                 .toQueryParts(false);
 
@@ -377,7 +390,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Array<Complex> -> Complex -> Array<Simple> -> Simple", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.BlogQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableBlog>("My.Odata.Entities.Blog")
                 .filter(b => F.and(
                     F.any(b.Posts, b => F.any(b.Words, w => F.eq(w, "something")))))
                 .toQueryParts(false);
@@ -390,7 +403,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Array<Complex> -> Complex -> Array<Simple> -> HasSubset", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.BlogPostQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(bp => F.any(bp.Comments, c => F.any(c.Words, w => F.eq(w, "something"))))
                 .toQueryParts(false);
 
@@ -402,7 +415,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Array<Simple> -> Simple", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.BlogPostQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(b => F.any(b.Words, w => F.eq(w, "something")))
                 .toQueryParts(false);
 
@@ -414,7 +427,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Complex -> Array<Simple> -> Simple", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.CommentQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
                 .filter(c => F.any(c.BlogPost.Words, w => F.eq(w, "something")))
                 .toQueryParts(false);
 
@@ -426,7 +439,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Complex -> Array<Simple> -> HasSubset", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.CommentQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
                 .filter(c => F.hasSubset(c.BlogPost.Words, ["something"]))
                 .toQueryParts(false);
 
@@ -438,7 +451,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Array<Complex> -> Complex -> Complex -> Array<Simple> -> HasSubset", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.UserQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableUser>("My.Odata.Entities.User")
                 .filter(u =>
                     F.any(u.BlogPostComments, c => F.hasSubset(c.BlogPost.Words, ["something"])))
                 .toQueryParts(false);
@@ -451,7 +464,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Array<Complex> -> Complex -> Complex -> Array<Simple> -> Simple", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.UserQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableUser>("My.Odata.Entities.User")
                 .filter(u =>
                     F.any(u.BlogPostComments, c => F.any(c.BlogPost.Words, w => F.eq(w, "something"))))
                 .toQueryParts(false);
@@ -464,7 +477,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Complex -> Array<Complex> -> Complex -> Array<Simple> -> HasSubset", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.CommentQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
                 .filter(c => F.hasSubset(c.BlogPost.Words, ["something"]))
                 .toQueryParts(false);
 
@@ -478,7 +491,7 @@ describe("Query.Filter", function () {
     testCase("Complex -> Complex -> Array<Complex> -> Complex -> Array<Simple> -> Simple", function () {
 
         it("Should build filter (server can't process)", () => {
-            const q = new My.Odata.Entities.CommentQueryBuilder()
+            const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
                 .filter(c1 => F.any(c1.BlogPost.Comments, c2 => F.any(c2.Words, w => F.eq(w, "something"))))
                 .toQueryParts(false);
 

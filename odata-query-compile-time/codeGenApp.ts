@@ -1,5 +1,5 @@
 import { existsSync, readFile, unlink, writeFile } from "fs";
-import { codeGen } from "./codeGen.js";
+import { codeGen } from "./codeGen/codeGen.js";
 import { CodeGenConfig, Config } from "./config.js";
 import { loadConfig, LocationType, XmlLocation } from "./odataConfigLoader.js";
 import { processConfig } from "./odataConfigProcessor.js";
