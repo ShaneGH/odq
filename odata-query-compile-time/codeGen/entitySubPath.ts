@@ -3,6 +3,7 @@ import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildSanitizeNamespace, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
 
+// TODO: duplicate_logic_key: subPath
 enum ObjectType {
     ComplexType = "ComplexType",
     PrmitiveType = "PrmitiveType"
@@ -49,6 +50,7 @@ function buildGetSubPathProps(
 
                 const entityInfo = getEntityTypeInfo(value)
                 const tEntity = typeName(entityInfo)
+                const tEntityMinus1 = typeName(entityInfo, 1)
 
                 const generics = {
                     tEntity,
@@ -56,13 +58,13 @@ function buildGetSubPathProps(
                     tQuery: getTQuery(entityInfo),
                     tCaster: getTCaster(entityInfo),
                     tSingleCaster: getTCaster(entityInfo, true),
-                    tSubPath: getTSubPath(entityInfo),
-                    tSingleSubPath: getTSubPath(entityInfo),
-                    tResult: entityInfo.collectionDepth ? `ODataMultiResult<${tEntity}>` : `ODataSingleResult<${tEntity}>`
+                    tSubPath: entityInfo.collectionDepth ? "never" : getTSubPath(entityInfo),
+                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo) : "never",
+                    tResult: entityInfo.collectionDepth ? `ODataMultiResult<${tEntityMinus1}>` : `ODataSingleResult<${tEntityMinus1}>`
                 }
 
                 const entityQueryType = httpClientType(keywords, generics, tab, false);
-                return `${key}(): ${keywords.SubPathSelection}<${entityQueryType}>`
+                return `${key}: ${keywords.SubPathSelection}<${entityQueryType}>`
             })
     }
 
@@ -73,13 +75,11 @@ function buildGetSubPathProps(
             return "never";
         }
 
-        const caster = fullyQualifiedTsType({
+        return fullyQualifiedTsType({
             isCollection: false,
             namespace: info.type.complexType.namespace,
             name: info.type.complexType.name
         }, getSubPathName)
-
-        return `${caster}.Single`
     }
 
     function getTCaster(info: EntityTypeInfo, forceSingle = false) {
@@ -186,28 +186,12 @@ export const buildEntitySubPath = (tab: Tab, settings: CodeGenConfig | null | un
     return (type: ODataComplexType) => {
         const subPathName = getSubPathName(type.name)
         const baseTypeNs = type.baseType?.namespace ? `${sanitizeNamespace(type.baseType?.namespace)}.` : ""
-        const baseType = type.baseType ? `${baseTypeNs}${getSubPathName(type.baseType.name)}` : null;
-
-        return `export module ${subPathName} {
-${tab(single(type, baseType))}
-${tab(collection(type, baseType))}
-}`
-    }
-
-    function single(type: ODataComplexType, fullyQualifiedBaseTypeName: string | null) {
-        const baseType = (fullyQualifiedBaseTypeName || "") && `${fullyQualifiedBaseTypeName}.Single & `
+        const fullyQualifiedBaseTypeName = type.baseType ? `${baseTypeNs}${getSubPathName(type.baseType.name)}` : null;
+        const baseType = (fullyQualifiedBaseTypeName || "") && `${fullyQualifiedBaseTypeName} & `
         const props = getSubPathProps(type)
-        return `export type Single = ${baseType}{
+
+        return `export type ${subPathName} = ${baseType}{
 ${tab(props.join("\n"))}
 }`;
-    }
-
-    function collection(type: ODataComplexType, fullyQualifiedBaseTypeName: string | null) {
-        const baseType = (fullyQualifiedBaseTypeName || "") && `${fullyQualifiedBaseTypeName}.Collection & `
-        const props = getSubPathProps(type)
-        return `export type Collection = ${baseType}{
-${tab(props.join("\n"))}
-}`;
-
     }
 }

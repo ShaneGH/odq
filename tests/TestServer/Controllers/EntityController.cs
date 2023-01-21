@@ -159,11 +159,13 @@ public class BlogsController : ODataControllerBase<Blog>
         return SingleResult.Create(_inMemoryDb.Blogs.Where(x => x.Id == key).Select(x => x.User));
     }
 
-    [HttpGet("Blogs({key})/Posts")]
+    [HttpGet("Blogs({key})/User/BlogPostComments")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public IQueryable<BlogPost> GetBlogBlogPosts([FromRoute] string key)
+    public IQueryable<Comment> GetBlogUsersComments([FromRoute] string key)
     {
-        return _inMemoryDb.Blogs.Where(x => x.Id == key).SelectMany(x => x.Posts);
+        return _inMemoryDb.Blogs
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.User.BlogPostComments);
     }
 
     protected override void AddEntity(EntityDbContext db, Blog entity) => db.Blogs.Add(entity);
@@ -179,6 +181,40 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
         : base(inMemoryDb)
     {
         this._inMemoryDb = inMemoryDb;
+    }
+
+    [HttpGet("BlogPosts({key})/Blog")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<Blog> GetBlogPostBlog([FromRoute] string key)
+    {
+        return SingleResult.Create(
+            _inMemoryDb.BlogPosts.Where(x => x.Id == key).Select(x => x.Blog));
+    }
+
+    [HttpGet("BlogPosts({key})/Blog/User")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<User> GetBlogPostBlogUser([FromRoute] string key)
+    {
+        return SingleResult.Create(
+            _inMemoryDb.BlogPosts.Where(x => x.Id == key).Select(x => x.Blog.User));
+    }
+
+    [HttpGet("BlogPosts({key})/Blog/User/BlogPostComments")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<Comment> GetBlogPostBlogUsersComments([FromRoute] string key)
+    {
+        return _inMemoryDb.BlogPosts
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Blog.User.BlogPostComments);
+    }
+    //
+    [HttpGet("BlogPosts({key})/Comments")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<Comment> GetBlogPostComments([FromRoute] string key)
+    {
+        return _inMemoryDb.BlogPosts
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Comments);
     }
 
     protected override void AddEntity(EntityDbContext db, BlogPost entity) => db.BlogPosts.Add(entity);

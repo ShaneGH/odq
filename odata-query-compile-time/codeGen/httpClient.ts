@@ -99,7 +99,7 @@ ${methods}
             tCaster: `${casterType}.Collection`,
             tSingleCaster: `${casterType}.Single`,
             tSubPath: "never",
-            tSingleSubPath: `${subPathType}.Single`,
+            tSingleSubPath: `${subPathType}`,
             tResult: `${keywords.ODataMultiResult}<${resultType}>`
         }
 

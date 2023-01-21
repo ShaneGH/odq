@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataEntitySet, ODataPropertyType, ODataServiceConfig } from "odata-query-shared";
+import { ODataComplexType, ODataEntitySet, ODataPropertyType, ODataServiceConfig, ODataTypeName, ODataTypeRef } from "odata-query-shared";
 import { IQueryBulder, QueryBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
@@ -111,6 +111,17 @@ export type CastSelection<TNewEntityQuery> = {
 }
 
 export type SubPathSelection<TNewEntityQuery> = {
+    propertyName: string
+}
+
+function tryFindKeyName(
+    type: ODataComplexType,
+    root: ODataServiceConfig): string | null {
+
+    if (type.keyProp) return type.keyProp;
+
+    const parent = tryFindBaseType(type, root);
+    return (parent && tryFindKeyName(parent, root)) || null
 }
 
 // TODO: composite_keys (search whole proj for composite_keys)
@@ -118,32 +129,117 @@ function tryFindKeyType(
     type: ODataComplexType,
     root: ODataServiceConfig): ODataPropertyType | null {
 
-    if (!type.keyProp) {
-        if (!type.baseType) {
-            return null;
-        }
+    const key = tryFindKeyName(type, root);
+    return (key && tryFindPropertyType(type, key, root)) || null;
+}
 
-        const parent = root.types[type.baseType.namespace] && root.types[type.baseType.namespace][type.baseType.name];
-        if (!parent) {
-            throw new Error(`Could not find parent type: ${fullTypeName(type.baseType.namespace, type.baseType.name)}`);
-        }
+function tryFindBaseType(
+    type: ODataComplexType,
+    root: ODataServiceConfig) {
 
-        return tryFindKeyType(parent, root);
+    if (!type.baseType) {
+        return null;
     }
 
-    const keyType = type.properties[type.keyProp]?.type
-    if (!keyType) {
-        throw new Error(`Type ${fullTypeName(type.namespace, type.name)} does not have a key property`);
-    }
+    return (root.types[type.baseType.namespace] && root.types[type.baseType.namespace][type.baseType.name])
+        || err(type.baseType);
 
-    return keyType;
-
-    function fullTypeName(namespace: string, name: string) {
-        const ns = namespace && `${namespace}.`
-        return `${ns}${type.name}`;
-
+    function err(type: ODataTypeName): null {
+        const ns = type.namespace && `${type.namespace}.`
+        throw new Error(`Base type ${ns}${type.name} does not exist`);
     }
 }
+
+function tryFindPropertyType(
+    type: ODataComplexType,
+    propertyName: string,
+    root: ODataServiceConfig): ODataPropertyType | null {
+
+    if (type.properties[propertyName]) return type.properties[propertyName].type;
+
+    const parent = tryFindBaseType(type, root);
+    return (parent && tryFindPropertyType(parent, propertyName, root)) || null;
+}
+
+// might return duplicates if and child property names clash
+function listAllProperties(
+    type: ODataComplexType,
+    root: ODataServiceConfig,
+    includeParent = true): string[] {
+
+    const parent = includeParent
+        ? tryFindBaseType(type, root)
+        : null;
+
+    return Object
+        .keys(type.properties)
+        .concat(parent
+            ? listAllProperties(parent, root, true)
+            : []);
+}
+
+// TODO: duplicate_logic_key: subPath (begin)
+enum ObjectType {
+    ComplexType = "ComplexType",
+    PrmitiveType = "PrmitiveType"
+}
+
+type IsObjectDescription<T extends ObjectType> = {
+    objectType: T
+}
+
+type IsComplexType = IsObjectDescription<ObjectType.ComplexType> & {
+    complexType: ODataComplexType
+}
+
+type IsPrimitiveType = IsObjectDescription<ObjectType.PrmitiveType> & {
+    primitiveType: ODataTypeRef
+}
+
+type EntityTypeInfo = {
+    // the number of collection in this type info. e.g. MyType[][][] === 3
+    collectionDepth: number
+    // if null, this is a primitive object
+    type: IsComplexType | IsPrimitiveType
+}
+
+function getEntityTypeInfo(
+    propertyType: ODataPropertyType,
+    root: ODataServiceConfig): EntityTypeInfo {
+
+    if (propertyType.isCollection) {
+        const innerResult = getEntityTypeInfo(propertyType.collectionType, root)
+        return {
+            ...innerResult,
+            collectionDepth: innerResult.collectionDepth + 1
+        }
+    }
+
+    if (propertyType.namespace === "Edm") {
+        return {
+            collectionDepth: 0,
+            type: {
+                objectType: ObjectType.PrmitiveType,
+                primitiveType: propertyType
+            }
+        };
+    }
+
+    const type = root.types[propertyType.namespace] && root.types[propertyType.namespace][propertyType.name]
+    if (!type) {
+        const ns = propertyType.namespace && `${propertyType.namespace}.`
+        throw new Error(`Could not find key for type ${ns}${propertyType.name}`);
+    }
+
+    return {
+        collectionDepth: 0,
+        type: {
+            objectType: ObjectType.ComplexType,
+            complexType: type
+        }
+    };
+}
+// TODO: duplicate_logic_key: subPath (end)
 
 // TODO: test
 export enum WithKeyType {
@@ -164,7 +260,7 @@ export enum WithKeyType {
 // TODO: do not return instances from any methods. Return interfaces instead
 // TODO: not a great name: EntityQuery
 // TODO: method documentation
-export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath, TSingleSubPath, TResult> {
+export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
 
     state: EntityQueryState
 
@@ -217,7 +313,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath
             throw new Error(`Invalid WithKeyType: ${keyEmbedType}`);
         }
 
-        return new EntityQuery<TEntity, never, TQuery, TSingleCaster, TSingleCaster, TSingleSubPath, TSingleSubPath, ODataSingleResult<TEntity>>(
+        return new EntityQuery<TEntity, never, TQuery, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataSingleResult<TEntity>>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -246,24 +342,41 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath
     }
 
     subPath<TNewEntityQuery>(
-        cast: (caster: TSubpath) => SubPathSelection<TNewEntityQuery>): TNewEntityQuery {
+        subPath: (caster: TSubPath) => SubPathSelection<TNewEntityQuery>): TNewEntityQuery {
 
-        throw new Error("Not implemented")
-        // if (this.state.query) {
-        //     throw new Error("You cannot add query components before casting");
-        // }
+        if (this.state.query) {
+            throw new Error("You cannot add query components before navigating a sub path");
+        }
 
-        // const newT = cast(this.buildCaster());
-        // const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
-        // const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
+        const newT = subPath(this.buildSubPath());
 
-        // // TODO: Are these anys harmful, can they be removed?
-        // return new EntityQuery<any, any, any, any, any, any, any, any>(
-        //     this.requestTools,
-        //     this.type,
-        //     this.entitySet,
-        //     this.root,
-        //     { ...this.state, path }) as TNewEntityQuery;
+        // console.log("##### 1", this.buildSubPath())
+        // console.log("##### 2", subPath.toString())
+        // console.log("##### 3", subPath(this.buildSubPath()))
+
+        const prop = tryFindPropertyType(this.type, newT.propertyName, this.root);
+        if (!prop) {
+            throw new Error(`Invalid property ${newT.propertyName}`);
+        }
+
+        const typeInfo = getEntityTypeInfo(prop, this.root)
+        if (typeInfo.collectionDepth > 1) {
+            throw new Error("TODO");
+        }
+
+        if (typeInfo.type.objectType === ObjectType.PrmitiveType) {
+            throw new Error("TODO");
+        }
+
+        const path = this.state.path?.length ? [...this.state.path, newT.propertyName] : [newT.propertyName];
+
+        // TODO: Are these anys harmful, can they be removed?
+        return new EntityQuery<any, any, any, any, any, any, any, any>(
+            this.requestTools,
+            typeInfo.type.complexType,
+            this.entitySet,
+            this.root,
+            { ...this.state, path }) as TNewEntityQuery;
     }
 
     // TODO: this allows the user to do illegal queries on singletons:
@@ -275,7 +388,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath
         }
 
         const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts(true)
-        return new EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath, TSingleSubPath, TResult>(
+        return new EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -373,5 +486,12 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath
                 }
                 // TODO: any
             }), {} as any);
+    }
+
+    private buildSubPath(): TSubPath {
+
+        return listAllProperties(this.type, this.root, true)
+            // TODO: any
+            .reduce((s, x) => ({ ...s, [x]: { propertyName: x } }), {} as any);
     }
 }

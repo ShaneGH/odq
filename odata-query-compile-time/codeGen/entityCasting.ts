@@ -15,8 +15,9 @@ function buildGetCasterProps(
     keywords: Keywords,
     tab: Tab) {
 
-    return (type: ODataComplexType, resultWrapper: string, casterType: string) => {
+    return (type: ODataComplexType, resultWrapper: string, singleCasterType: boolean) => {
 
+        const casterType = singleCasterType ? "Single" : "Collection"
         const inherits = Object
             .keys(allTypes)
             .map(ns => Object
@@ -49,8 +50,8 @@ function buildGetCasterProps(
                     tQuery: fullyQualifiedTsType(typeRef, getQueryableName),
                     tCaster: `${caster}.${casterType}`,
                     tSingleCaster: `${caster}.Single`,
-                    tSubPath: `${subProps}.${casterType}`,
-                    tSingleSubPath: `${subProps}.Single`,
+                    tSubPath: singleCasterType ? `${subProps}` : "never",
+                    tSingleSubPath: singleCasterType ? "never" : `${subProps}`,
                     tResult: `${resultWrapper}<${resultType}>`
                 }
 
@@ -81,14 +82,14 @@ ${tab(collection(type))}
     }
 
     function single(type: ODataComplexType) {
-        const props = getCasterProps(type, "ODataSingleResult", "Single")
+        const props = getCasterProps(type, "ODataSingleResult", true)
         return `export type Single = {
 ${tab(props.join("\n"))}
 }`;
     }
 
     function collection(type: ODataComplexType) {
-        const props = getCasterProps(type, "ODataMultiResult", "Collection")
+        const props = getCasterProps(type, "ODataMultiResult", false)
         return `export type Collection = {
 ${tab(props.join("\n"))}
 }`;
