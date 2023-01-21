@@ -195,7 +195,11 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
     public IQueryable<string> GetBlogWords([FromRoute] string key)
     {
-        return _inMemoryDb.BlogPosts.Where(x => x.Id == key).SelectMany(x => x.Words);
+        return _inMemoryDb.BlogPosts
+            .Where(x => x.Id == key)
+            .ToList()
+            .SelectMany(x => x.Words)
+            .AsQueryable();
     }
 
     [HttpGet("BlogPosts({key})/Blog/User")]

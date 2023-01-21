@@ -89,15 +89,5 @@ public class EntityDbContext : DbContext
             .Entity<CommentTag>()
             .HasMany(b => b.Comments)
             .WithMany(u => u.Tags);
-
-        modelBuilder
-            .Entity<UserValueDump>()
-            .HasOne(b => b.User)
-            .WithOne(b => b.UserValueDump);
-
-        modelBuilder
-            .Entity<UserValueDump>()
-            .HasMany(b => b.Blogs)
-            .WithOne(b => ((Blog)b).UserValueDump);
     }
 }
