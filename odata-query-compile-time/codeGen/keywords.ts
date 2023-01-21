@@ -7,6 +7,7 @@ export type Keywords = {
     QueryComplexObject: string
     EntityQuery: string
     rootConfig: string
+    rootConfigExporter: string
     ODataUriParts: string,
     CastSelection: string,
     SubPathSelection: string
@@ -17,6 +18,7 @@ export type Keywords = {
     ICollectionQueryBulder: string,
     ODataMultiResult: string
     ODataSingleResult: string
+    Internal: string
     SingleEntitiesCannotBeQueriedByKey: string
     EntitySetsCannotBeTraversed: string
     PrimitiveTypesCannotBeTraversed: string
@@ -37,6 +39,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
     // TODO: tests for all keyword re-mappings
     return {
         RequestTools: getKeyword("RequestTools"),
+        rootConfigExporter: getKeyword("rootConfigExporter"),
         QueryPrimitive: getKeyword("QueryPrimitive"),
         QueryArray: getKeyword("QueryArray"),
         QueryComplexObject: getKeyword("QueryComplexObject"),
@@ -54,7 +57,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         _httpClientArgs: getKeyword("_httpClientArgs"),
         SingleEntitiesCannotBeQueriedByKey: getKeyword("SingleEntitiesCannotBeQueriedByKey"),
         EntitySetsCannotBeTraversed: getKeyword("EntitySetsCannotBeTraversed"),
-        PrimitiveTypesCannotBeTraversed: getKeyword("PrimitiveTypesCannotBeTraversed")
+        PrimitiveTypesCannotBeTraversed: getKeyword("PrimitiveTypesCannotBeTraversed"),
+        Internal: getKeyword("Internal")
     }
 
     function getKeyword(defaultVal: string) {

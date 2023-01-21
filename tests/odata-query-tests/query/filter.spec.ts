@@ -1,9 +1,11 @@
 
-import { addFullUserChain, Blog, BlogComment, BlogPost, CommentTag, postBlog, postBlogPost, postComment, postUser, User } from "../utils/client.js";
-import { My, ODataClient, rootConfig } from "../generatedCode.js";
-import { FilterUtils as F, ExpandUtils as E, QueryBuilder } from "odata-query";
+import { addFullUserChain } from "../utils/client.js";
+import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
+import { FilterUtils as F, QueryBuilder } from "odata-query";
 import { uniqueString } from "../utils/utils.js";
-import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
+import { describeEntityRelationship as testCase } from "../correctness/entityRelationships.js";
+
+const rootConfig = rootConfigExporter();
 
 const client = new ODataClient({
     fetch: (x, y) => {

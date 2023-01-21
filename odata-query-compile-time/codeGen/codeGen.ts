@@ -33,48 +33,49 @@ ${entities()}`
         .replace(/s+\n/g, "\n") + "\n";
 
     function splitConfig(config: ProcessedServiceConfig) {
-
-        return config
+        return config;
 
         // TODO: good idea. Will allow us to export types for actual data, but keep 
         // non data types local. But some module reference issues
-        // return Object
-        //     .keys(config)
-        //     .reduce((s, x) => ({
-        //         ...s,
-        //         [x]: removeUtils(config[x]),
-        //         [addUtilsNs(x)]: removeNonUtils(config[x])
-        //     }), {} as ProcessedServiceConfig)
+        return Object
+            .keys(config)
+            .reduce((s, x) => ({
+                ...s,
+                [x]: removeUtils(config[x]),
+                [addUtilsNs(x)]: removeNonUtils(config[x])
+            }), {} as ProcessedServiceConfig)
 
-        // function addUtilsNs(ns: string) {
-        //     return ns ? `${keywords.ODataUtils}.${ns}` : keywords.ODataUtils
-        // }
+        function addUtilsNs(ns: string) {
+            return ns ? `${keywords.ODataUtils}.${ns}` : keywords.ODataUtils
+        }
 
-        // function removeUtils(ns: ProcessedNamespace): ProcessedNamespace {
-        //     return Object
-        //         .keys(ns)
-        //         .reduce((s, x) => ({
-        //             ...s,
-        //             [x]: {
-        //                 data: ns[x].data,
-        //                 caster: null,
-        //                 query: null
-        //             }
-        //         }), {} as ProcessedNamespace);
-        // }
+        function removeUtils(ns: ProcessedNamespace): ProcessedNamespace {
+            return Object
+                .keys(ns)
+                .reduce((s, x) => ({
+                    ...s,
+                    [x]: {
+                        data: ns[x].data,
+                        caster: null,
+                        subPath: null,
+                        query: null
+                    }
+                }), {} as ProcessedNamespace);
+        }
 
-        // function removeNonUtils(ns: ProcessedNamespace): ProcessedNamespace {
-        //     return Object
-        //         .keys(ns)
-        //         .reduce((s, x) => ({
-        //             ...s,
-        //             [x]: {
-        //                 data: null,
-        //                 caster: ns[x].caster,
-        //                 query: ns[x].query
-        //             }
-        //         }), {} as ProcessedNamespace);
-        // }
+        function removeNonUtils(ns: ProcessedNamespace): ProcessedNamespace {
+            return Object
+                .keys(ns)
+                .reduce((s, x) => ({
+                    ...s,
+                    [x]: {
+                        data: null,
+                        caster: ns[x].caster,
+                        subPath: ns[x].subPath,
+                        query: ns[x].query
+                    }
+                }), {} as ProcessedNamespace);
+        }
     }
 
     function entities() {

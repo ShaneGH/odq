@@ -47,10 +47,17 @@ export function configObj(serviceConfig: ODataServiceConfig, keywords: Keywords,
         ? JSON.stringify(serviceConfig, null, tab.spaces)
         : JSON.stringify(serviceConfig);
 
-    const exportSettings = settings?.exportTypeDefinitionJsObject ? "export " : ""
+    const exportSettings = settings?.exportTypeDefinitionJsObject
+        ? `export const ${keywords.rootConfigExporter} = (function () {
+${tab(`const ${keywords.rootConfigExporter}: ${keywords.ODataServiceConfig} = JSON.parse(JSON.stringify(${keywords.rootConfig}))`)}
+${tab(`return () => ${keywords.rootConfigExporter}`)}
+}());`
+        : ""
 
     return `// a config object which describes relationships between types
-${exportSettings}const ${keywords.rootConfig}: ${keywords.ODataServiceConfig} = ${oDataServiceConfig}`
+const ${keywords.rootConfig}: ${keywords.ODataServiceConfig} = ${oDataServiceConfig}
+
+${exportSettings}`
 }
 
 type SanitizeNamespace = (namespace: string) => string

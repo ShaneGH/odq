@@ -79,7 +79,7 @@ export type CodeGenConfig = Partial<{
     prettyPrintJsonConfig: boolean,
 
     /* 
-     * If true, the type definition json object will be exported. For debug purposes only
+     * If true, the type definition json object will be exported as "rootConfigExporter". For debug purposes only
      * Default false
      */
     exportTypeDefinitionJsObject: boolean,
