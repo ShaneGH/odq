@@ -49,8 +49,7 @@ function buildGetSubPathProps(
                 // TODO: test with arrays of arrays?
 
                 const entityInfo = getEntityTypeInfo(value)
-                const tEntity = typeName(entityInfo)
-                const tEntityMinus1 = typeName(entityInfo, 1)
+                const tEntity = typeName(entityInfo, 1)
 
                 const generics = {
                     tEntity,
@@ -58,9 +57,9 @@ function buildGetSubPathProps(
                     tQuery: getTQuery(entityInfo),
                     tCaster: getTCaster(entityInfo),
                     tSingleCaster: getTCaster(entityInfo, true),
-                    tSubPath: entityInfo.collectionDepth ? "never" : getTSubPath(entityInfo),
-                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo) : "never",
-                    tResult: entityInfo.collectionDepth ? `ODataMultiResult<${tEntityMinus1}>` : `ODataSingleResult<${tEntityMinus1}>`
+                    tSubPath: entityInfo.collectionDepth ? "never" : getTSubPath(entityInfo, false),
+                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : "never",
+                    tResult: entityInfo.collectionDepth ? `ODataMultiResult<${tEntity}>` : `ODataSingleResult<${tEntity}>`
                 }
 
                 const entityQueryType = httpClientType(keywords, generics, tab, false);
@@ -68,10 +67,14 @@ function buildGetSubPathProps(
             })
     }
 
-    function getTSubPath(info: EntityTypeInfo) {
+    function getTSubPath(info: EntityTypeInfo, single: boolean) {
 
         // TODO: is is possible to cast a primitive? (e.g. int -> string)
-        if (info.type.objectType !== ObjectType.ComplexType || info.collectionDepth) {
+        if (info.type.objectType !== ObjectType.ComplexType) {
+            return "never";
+        }
+
+        if (info.collectionDepth > 1 || (info.collectionDepth && !single)) {
             return "never";
         }
 

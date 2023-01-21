@@ -108,13 +108,13 @@ describe("SubPath", function () {
             it("Should work correctly", async () => {
 
                 const user = await addFullUserChain();
-                const comments = await client.My.Odata.Container.BlogPosts
+                const comment = await client.My.Odata.Container.BlogPosts
                     .withKey(user.blogPost.Id!)
                     .subPath(x => x.Comments)
+                    .withKey(user.comment.Id!)
                     .get();
 
-                expect(comments.value.length).toBe(1);
-                expect(comments.value[0].Text).toBe(user.comment.Text);
+                expect(comment.Text).toBe(user.comment.Text);
             });
         });
 

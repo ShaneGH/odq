@@ -207,7 +207,7 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
             .Where(x => x.Id == key)
             .SelectMany(x => x.Blog.User.BlogPostComments);
     }
-    //
+
     [HttpGet("BlogPosts({key})/Comments")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
     public IQueryable<Comment> GetBlogPostComments([FromRoute] string key)
@@ -215,6 +215,17 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
         return _inMemoryDb.BlogPosts
             .Where(x => x.Id == key)
             .SelectMany(x => x.Comments);
+    }
+
+    [HttpGet("BlogPosts({key})/Comments({commentKey})")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<Comment> GetBlogPostComment([FromRoute] string key, [FromRoute] string commentKey)
+    {
+        return _inMemoryDb.BlogPosts
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Comments)
+            .Where(c => c.Id == commentKey)
+            .AsSingleResult();
     }
 
     protected override void AddEntity(EntityDbContext db, BlogPost entity) => db.BlogPosts.Add(entity);
@@ -250,4 +261,9 @@ public class CommentTagsController : ODataControllerBase<CommentTag>
     protected override void AddEntity(EntityDbContext db, CommentTag entity) => db.Tags.Add(entity);
 
     protected override IQueryable<CommentTag> AllEntities(EntityDbContext db) => db.Tags;
+}
+
+public static class Utils
+{
+    public static SingleResult<T> AsSingleResult<T>(this IQueryable<T> items) => SingleResult.Create(items);
 }
