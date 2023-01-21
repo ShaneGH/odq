@@ -118,6 +118,21 @@ describe("SubPath", function () {
             });
         });
 
+        describe("Collection, Key, Collection, Key, Singleton", () => {
+            it("Should work correctly", async () => {
+
+                const user = await addFullUserChain();
+                const comment = await client.My.Odata.Container.BlogPosts
+                    .withKey(user.blogPost.Id!)
+                    .subPath(x => x.Comments)
+                    .withKey(user.comment.Id!)
+                    .subPath(x => x.User)
+                    .get();
+
+                expect(comment.Name).toBe(user.commentUser.Name);
+            });
+        });
+
         // it("Should retrieve items in the path, 2 levels", async () => {
         //     const context = await addFullUserChain({ addFullChainToCommentUser: {} });
         //     const comments = await client.My.Odata.Container.Blogs

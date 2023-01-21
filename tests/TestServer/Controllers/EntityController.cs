@@ -228,6 +228,18 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
             .AsSingleResult();
     }
 
+    [HttpGet("BlogPosts({key})/Comments({commentKey})/User")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<User> GetBlogPostCommentUser([FromRoute] string key, [FromRoute] string commentKey)
+    {
+        return _inMemoryDb.BlogPosts
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Comments)
+            .Where(c => c.Id == commentKey)
+            .Select(x => x.User)
+            .AsSingleResult();
+    }
+
     protected override void AddEntity(EntityDbContext db, BlogPost entity) => db.BlogPosts.Add(entity);
 
     protected override IQueryable<BlogPost> AllEntities(EntityDbContext db) => db.BlogPosts;
