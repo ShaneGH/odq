@@ -105,7 +105,7 @@ function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
     return defaultVal;
 }
 
-export type CastSelection<TEntity, TKey, TQuery, TCaster> = {
+export type CastSelection<TNewEntityQuery> = {
     type: ODataComplexType
 }
 
@@ -143,7 +143,9 @@ function tryFindKeyType(
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
-export class EntityQuery<TEntity, TKey, TQueryBuilder extends IQueryBulder, TCaster> {
+// TODO: not a great name: EntityQuery
+// TODO: method documentation
+export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
 
     state: EntityQueryState
 
@@ -186,7 +188,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder extends IQueryBulder, TCas
             ...this.state.path.slice(1)
         ]
 
-        return new EntityQuery<TEntity, never, TQueryBuilder, TCaster>(
+        return new EntityQuery<TEntity, never, TQuery, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -194,8 +196,8 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder extends IQueryBulder, TCas
             { ...this.state, path });
     }
 
-    cast<TChild extends TEntity, TChildKey, TQueryChild extends TQueryBuilder, TNewCaster>(
-        cast: (caster: TCaster) => CastSelection<TChild, TChildKey, TQueryChild, TNewCaster>): EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster> {
+    cast<TNewEntityQuery>(
+        cast: (caster: TCaster) => CastSelection<TNewEntityQuery>): TNewEntityQuery {
 
         if (this.state.query) {
             throw new Error("You cannot add query components before casting");
@@ -205,43 +207,25 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder extends IQueryBulder, TCas
         const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
-        return new EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster>(
+        // TODO: Are these anys harmful, can they be removed?
+        return new EntityQuery<any, any, any, any>(
             this.requestTools,
             newT.type,
             this.entitySet,
             this.root,
-            { ...this.state, path });
+            { ...this.state, path }) as TNewEntityQuery;
     }
 
-    // cast1<TChild extends TEntity, TQueryChild extends TQuery>(fullyQualifiedName: string): EntityQuery<TChild, TKey, TQueryChild, TCaster> {
-    //     const dot = fullyQualifiedName.lastIndexOf(".")
-    //     const namespace = dot === -1 ? "" : fullyQualifiedName.substring(0, dot);
-    //     const name = dot === -1 ? fullyQualifiedName : fullyQualifiedName.substring(dot + 1);
-
-    //     // TODO: tests for child entites with no namespace
-    //     const type = this.root.types[namespace] && this.root.types[namespace][name];
-    //     if (!type) {
-    //         throw new Error(`Unknown Entity type ${fullyQualifiedName}`);
-    //     }
-
-    //     return new EntityQuery<TChild, TKey, TQueryChild>(
-    //         // TODO: cast as any
-    //         this.requestTools as any,
-    //         this.type,
-    //         this.entitySet,
-    //         this.root,
-    //         // TODO: cast as any
-    //         { ...this.state, cast: fullyQualifiedName } as any);
-    // }
-
-    withQuery(queryBuilder: (q: TQueryBuilder) => TQueryBuilder) {
+    // TODO: this allows the user to do illegal queries on singletons:
+    //  The query specified in the URI is not valid. The requested resource is not a collection. Query options $filter, $orderby, $count, $skip, and $top can be applied only on collections
+    withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) {
 
         if (this.state.query) {
             throw new Error("This request already has a query");
         }
 
-        const query = queryBuilder(new QueryBuilder<TQueryBuilder>(this.type, this.root.types) as any).toQueryParts(true)
-        return new EntityQuery<TEntity, TKey, TQueryBuilder, TCaster>(
+        const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts(true)
+        return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -323,11 +307,13 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder extends IQueryBulder, TCas
         return inherits
             .reduce((s, type) => ({
                 ...s,
-                [name(type)]: function (): CastSelection<any, any, any, any> {
+                // TODO: any
+                [name(type)]: function (): CastSelection<any> {
                     return {
                         type
                     }
                 }
+                // TODO: any
             }), {} as any);
     }
 }

@@ -95,7 +95,8 @@ ${methods}
         const generics = [
             resultType,
             idType || "never",
-            `${keywords.ICollectionQueryBulder}<${queryableType}>`,
+            queryableType,
+            //`${keywords.ICollectionQueryBulder}<${queryableType}>`,
             casterType
         ].join(", ");
 

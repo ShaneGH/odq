@@ -50,7 +50,7 @@ function getCasterProps(
                 fullyQualifiedTsType(typeRef, getCasterName)
             ].join(", ");
 
-            return `${name(t)}(): ${keywords.CastSelection}<${generics}>`
+            return `${name(t)}(): ${keywords.CastSelection}<${keywords.EntityQuery}<${generics}>>`
         })
 }
 

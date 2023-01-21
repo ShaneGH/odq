@@ -152,6 +152,20 @@ public class BlogsController : ODataControllerBase<Blog>
         this._inMemoryDb = inMemoryDb;
     }
 
+    [HttpGet("Blogs({key})/User")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<User> GetBlogUser([FromRoute] string key)
+    {
+        return SingleResult.Create(_inMemoryDb.Blogs.Where(x => x.Id == key).Select(x => x.User));
+    }
+
+    [HttpGet("Blogs({key})/Posts")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<BlogPost> GetBlogBlogPosts([FromRoute] string key)
+    {
+        return _inMemoryDb.Blogs.Where(x => x.Id == key).SelectMany(x => x.Posts);
+    }
+
     protected override void AddEntity(EntityDbContext db, Blog entity) => db.Blogs.Add(entity);
 
     protected override IQueryable<Blog> AllEntities(EntityDbContext db) => db.Blogs;
