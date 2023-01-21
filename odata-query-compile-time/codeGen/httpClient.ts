@@ -34,7 +34,10 @@ export function httpClient(
 
     const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}) { }`;
 
-    return `export class ${settings?.oDataClientName || "ODataClient"} {
+    return `/*
+ * The http client which serves as an entry point to OData
+ */
+export class ${settings?.oDataClientName || "ODataClient"} {
 ${tab(constructor)}
 
 ${tab(methods)}

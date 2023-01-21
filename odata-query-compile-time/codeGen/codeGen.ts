@@ -22,32 +22,33 @@ type TODO_Type = never
 
 ${httpClient(serviceConfig, tab, keywords, settings, warnings)}
 
+${entities()}
+
 ${configObj(serviceConfig, keywords, settings, tab)}
 
-${edm(tab)}
-
-${entities()}`
+${edm(tab)}`
 
     return output
         .replace(/\r\n/g, "\n")
         .replace(/s+\n/g, "\n") + "\n";
 
-    function splitConfig(config: ProcessedServiceConfig) {
-        return config;
+    function splitConfig(config: ProcessedServiceConfig): [ProcessedServiceConfig, ProcessedServiceConfig] {
+        // return config;
 
         // TODO: good idea. Will allow us to export types for actual data, but keep 
         // non data types local. But some module reference issues
         return Object
             .keys(config)
-            .reduce((s, x) => ({
-                ...s,
-                [x]: removeUtils(config[x]),
-                [addUtilsNs(x)]: removeNonUtils(config[x])
-            }), {} as ProcessedServiceConfig)
-
-        function addUtilsNs(ns: string) {
-            return ns ? `${keywords.ODataUtils}.${ns}` : keywords.ODataUtils
-        }
+            .reduce((s, x) => [
+                {
+                    ...s[0],
+                    [x]: removeUtils(config[x])
+                },
+                {
+                    ...s[1],
+                    [x]: removeNonUtils(config[x])
+                }
+            ] as [ProcessedServiceConfig, ProcessedServiceConfig], [{}, {}] as [ProcessedServiceConfig, ProcessedServiceConfig])
 
         function removeUtils(ns: ProcessedNamespace): ProcessedNamespace {
             return Object
@@ -79,16 +80,28 @@ ${entities()}`
     }
 
     function entities() {
-        const result = splitConfig(
+        const [data, utils] = splitConfig(
             processServiceConfig(settings, tab, keywords, serviceConfig, warnings))
 
-        return Object
-            .keys(result)
-            .map(x => x
-                ? `export module ${x} {\n${tab(processModule(result[x]))}\n}`
-                // TODO: test this case (with namespace == "")
-                : processModule(result[x]))
-            .join("\n\n");
+        return `/*
+ * Entities and complex types from the data model
+ */
+${buildModule(data)}
+
+/*
+ * Helper types for static typing of OData uris.
+ */
+${buildModule(utils)}`
+
+        function buildModule(result: ProcessedServiceConfig) {
+            return Object
+                .keys(result)
+                .map(x => x
+                    ? `export module ${x} {\n${tab(processModule(result[x]))}\n}`
+                    // TODO: test this case (with namespace == "")
+                    : processModule(result[x]))
+                .join("\n\n");
+        }
 
         function processModule(module: ProcessedNamespace) {
             return Object

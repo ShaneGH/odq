@@ -77,6 +77,7 @@ export const buildEntityCasting = (tab: Tab, settings: CodeGenConfig | null | un
 
         return `export module ${casterName} {
 ${tab(single(type))}
+
 ${tab(collection(type))}
 }`
     }

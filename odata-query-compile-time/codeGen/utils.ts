@@ -48,13 +48,18 @@ export function configObj(serviceConfig: ODataServiceConfig, keywords: Keywords,
         : JSON.stringify(serviceConfig);
 
     const exportSettings = settings?.exportTypeDefinitionJsObject
-        ? `export const ${keywords.rootConfigExporter} = (function () {
+        ? `/*
+ * A copy of ${keywords.rootConfig}, exported for debug purposes
+ */
+export const ${keywords.rootConfigExporter} = (function () {
 ${tab(`const ${keywords.rootConfigExporter}: ${keywords.ODataServiceConfig} = JSON.parse(JSON.stringify(${keywords.rootConfig}))`)}
 ${tab(`return () => ${keywords.rootConfigExporter}`)}
 }());`
         : ""
 
-    return `// a config object which describes relationships between types
+    return `/*
+ * A config object which describes relationships between types.
+ */
 const ${keywords.rootConfig}: ${keywords.ODataServiceConfig} = ${oDataServiceConfig}
 
 ${exportSettings}`

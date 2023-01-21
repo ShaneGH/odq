@@ -8,10 +8,9 @@ export type Keywords = {
     EntityQuery: string
     rootConfig: string
     rootConfigExporter: string
-    ODataUriParts: string,
-    CastSelection: string,
+    ODataUriParts: string
+    CastSelection: string
     SubPathSelection: string
-    ODataUtils: string,
     RequestTools: string,
     _httpClientArgs: string,
     ISingletonQueryBulder: string,
@@ -36,6 +35,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         .concat(rootLevelTypes)
         .reduce((s, x) => ({ ...s, [x]: true }), {} as Dict<boolean>)
 
+    const keys = Object.keys(lookup)
+
     // TODO: tests for all keyword re-mappings
     return {
         RequestTools: getKeyword("RequestTools"),
@@ -47,7 +48,6 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         CastSelection: getKeyword("CastSelection"),
         EntityQuery: getKeyword("EntityQuery"),
         rootConfig: getKeyword("rootConfig"),
-        ODataUtils: getKeyword("ODataUtils"),
         ODataUriParts: getKeyword("ODataUriParts"),
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
         ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),

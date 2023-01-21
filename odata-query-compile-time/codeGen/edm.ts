@@ -1,32 +1,7 @@
 import { Tab } from "./utils.js";
 
 
-export function edm(tab: Tab) {
-    return `// type references for described Edm data types
-export module Edm {
-${tab(mapSimpleType("String", "string"))}
-
-${tab(mapSimpleType("Guid", "string"))}
-
-${tab(mapSimpleType("Boolean", "boolean"))}
-
-${tab(mapSimpleType("DateTime", "Date"))}
-
-${tab(mapSimpleType("DateTimeOffset", "Date"))}
-
-${tab(mapSimpleType("Int16", "Number"))}
-
-${tab(mapSimpleType("Int32", "Number"))}
-
-${tab(mapSimpleType("Int64", "Number"))}
-
-${tab(mapSimpleType("Decimal", "Number"))}
-
-${tab(mapSimpleType("Double", "Number"))}
-
-${tab(mapSimpleType("Single", "Number"))}
-
-    /* TODO:
+/* TODO:
 <xs:enumeration value="Edm.Byte"/>
 <xs:enumeration value="Edm.Binary"/>
 <xs:enumeration value="Edm.Duration"/>
@@ -46,6 +21,23 @@ ${tab(mapSimpleType("Single", "Number"))}
 <xs:enumeration value="Edm.GeometryMultiPolygon"/>
 <xs:enumeration value="Edm.GeometryCollection"/>
 <xs:enumeration value="Edm.SByte"/> */
+
+export function edm(tab: Tab) {
+    return `/*
+ * Type references for described Edm data types.
+ */
+export module Edm {
+${tab(mapSimpleType("String", "string"))}
+${tab(mapSimpleType("Guid", "string"))}
+${tab(mapSimpleType("Boolean", "boolean"))}
+${tab(mapSimpleType("DateTime", "Date"))}
+${tab(mapSimpleType("DateTimeOffset", "Date"))}
+${tab(mapSimpleType("Int16", "Number"))}
+${tab(mapSimpleType("Int32", "Number"))}
+${tab(mapSimpleType("Int64", "Number"))}
+${tab(mapSimpleType("Decimal", "Number"))}
+${tab(mapSimpleType("Double", "Number"))}
+${tab(mapSimpleType("Single", "Number"))}
 }`
 
     function mapSimpleType(edmName: string, primitiveName: string) {
