@@ -92,8 +92,14 @@ ${methods}
         const queryableType = fullyQualifiedTsType(entitySet.forType, getQueryableName);
         const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
         const idType = getKeyType(type, true);
-        const instanceType = `${keywords.EntityQuery}<${resultType}, ${idType || "any"}, ${queryableType}, ${casterType}>`;
+        const generics = [
+            resultType,
+            idType || "never",
+            `${keywords.ICollectionQueryBulder}<${queryableType}>`,
+            casterType
+        ].join(", ");
 
+        const instanceType = `${keywords.EntityQuery}<${generics}>`;
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
             `${keywords.rootConfig}.types["${entitySet.forType.namespace || ""}"]["${entitySet.forType.name}"]`,

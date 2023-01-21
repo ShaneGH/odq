@@ -13,6 +13,8 @@ ${tab(importWithAlias("CastSelection"))},
 ${tab(importWithAlias("ODataUriParts"))},
 ${tab(importWithAlias("QueryPrimitive"))},
 ${tab(importWithAlias("QueryArray"))},
+${tab(importWithAlias("ICollectionQueryBulder"))},
+${tab(importWithAlias("ISingletonQueryBulder"))},
 ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))}
 } from 'odata-query';`

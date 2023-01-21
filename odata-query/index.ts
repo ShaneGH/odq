@@ -6,6 +6,8 @@ export {
 export {
     QueryBuilder,
     PrimitiveQueryBuilder,
+    ICollectionQueryBulder,
+    ISingletonQueryBulder
 } from "./queryBuilder.js"
 
 export * as ExpandUtils from "./expandUtils.js"

@@ -11,7 +11,9 @@ export type Keywords = {
     CastSelection: string,
     ODataUtils: string,
     RequestTools: string,
-    _httpClientArgs: string
+    _httpClientArgs: string,
+    ISingletonQueryBulder: string,
+    ICollectionQueryBulder: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -38,6 +40,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ODataUtils: getKeyword("ODataUtils"),
         ODataUriParts: getKeyword("ODataUriParts"),
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
+        ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),
+        ICollectionQueryBulder: getKeyword("ICollectionQueryBulder"),
         _httpClientArgs: getKeyword("_httpClientArgs")
     }
 

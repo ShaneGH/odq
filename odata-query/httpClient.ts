@@ -1,5 +1,5 @@
 import { ODataComplexType, ODataEntitySet, ODataPropertyType, ODataServiceConfig } from "odata-query-shared";
-import { QueryBuilder } from "./queryBuilder.js";
+import { IQueryBulder, QueryBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -143,7 +143,7 @@ function tryFindKeyType(
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
-export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
+export class EntityQuery<TEntity, TKey, TQueryBuilder extends IQueryBulder, TCaster> {
 
     state: EntityQueryState
 
@@ -186,7 +186,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             ...this.state.path.slice(1)
         ]
 
-        return new EntityQuery<TEntity, never, TQuery, TCaster>(
+        return new EntityQuery<TEntity, never, TQueryBuilder, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -194,7 +194,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             { ...this.state, path });
     }
 
-    cast<TChild extends TEntity, TChildKey, TQueryChild extends TQuery, TNewCaster>(
+    cast<TChild extends TEntity, TChildKey, TQueryChild extends TQueryBuilder, TNewCaster>(
         cast: (caster: TCaster) => CastSelection<TChild, TChildKey, TQueryChild, TNewCaster>): EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster> {
 
         if (this.state.query) {
@@ -234,14 +234,14 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
     //         { ...this.state, cast: fullyQualifiedName } as any);
     // }
 
-    withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) {
+    withQuery(queryBuilder: (q: TQueryBuilder) => TQueryBuilder) {
 
         if (this.state.query) {
             throw new Error("This request already has a query");
         }
 
-        const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts()
-        return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
+        const query = queryBuilder(new QueryBuilder<TQueryBuilder>(this.type, this.root.types) as any).toQueryParts(true)
+        return new EntityQuery<TEntity, TKey, TQueryBuilder, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -265,12 +265,6 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
     _entitySetName() {
 
         return (this.state.path || []).join("/");
-    }
-
-    private _getQueryParts(query: ((q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) | null | undefined) {
-        return query
-            ? query(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts()
-            : {};
     }
 
     private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools> | undefined): Promise<any> {
