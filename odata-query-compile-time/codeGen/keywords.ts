@@ -9,12 +9,14 @@ export type Keywords = {
     rootConfig: string
     ODataUriParts: string,
     CastSelection: string,
+    SubPathSelection: string
     ODataUtils: string,
     RequestTools: string,
     _httpClientArgs: string,
     ISingletonQueryBulder: string,
     ICollectionQueryBulder: string,
     ODataMultiResult: string
+    ODataSingleResult: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -35,6 +37,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         QueryPrimitive: getKeyword("QueryPrimitive"),
         QueryArray: getKeyword("QueryArray"),
         QueryComplexObject: getKeyword("QueryComplexObject"),
+        SubPathSelection: getKeyword("SubPathSelection"),
         CastSelection: getKeyword("CastSelection"),
         EntityQuery: getKeyword("EntityQuery"),
         rootConfig: getKeyword("rootConfig"),
@@ -44,6 +47,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),
         ICollectionQueryBulder: getKeyword("ICollectionQueryBulder"),
         ODataMultiResult: getKeyword("ODataMultiResult"),
+        ODataSingleResult: getKeyword("ODataSingleResult"),
         _httpClientArgs: getKeyword("_httpClientArgs")
     }
 
@@ -59,13 +63,12 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
 export function imports(keywords: Keywords, tab: Tab) {
 
-    const kw = keywords as Dict<string>
-
     // TODO: audit are all of these still used?
     return `import {
 ${tab(importWithAlias("RequestTools"))},
 ${tab(importWithAlias("ODataServiceConfig"))},
 ${tab(importWithAlias("CastSelection"))},
+${tab(importWithAlias("SubPathSelection"))},
 ${tab(importWithAlias("ODataUriParts"))},
 ${tab(importWithAlias("QueryPrimitive"))},
 ${tab(importWithAlias("QueryArray"))},
@@ -73,13 +76,14 @@ ${tab(importWithAlias("ICollectionQueryBulder"))},
 ${tab(importWithAlias("ISingletonQueryBulder"))},
 ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))},
-${tab(importWithAlias("ODataMultiResult"))}
+${tab(importWithAlias("ODataMultiResult"))},
+${tab(importWithAlias("ODataSingleResult"))}
 } from 'odata-query';`
 
-    function importWithAlias(importName: string) {
-        if (!kw[importName]) {
+    function importWithAlias(importName: keyof Keywords) {
+        if (!keywords[importName]) {
             throw new Error(`Invalid keyword: ${importName}`);
         }
-        return kw[importName] === importName ? importName : `${importName} as ${kw[importName]}`
+        return keywords[importName] === importName ? importName : `${importName} as ${keywords[importName]}`
     }
 }

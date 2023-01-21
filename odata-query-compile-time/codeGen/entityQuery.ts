@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataPropertyType, ODataServiceConfig } from "odata-query-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
-import { buildFullyQualifiedTsType, buildSanitizeNamespace, FullyQualifiedTsType, Tab } from "./utils.js";
+import { buildFullyQualifiedTsType, buildGetQueryableName, buildSanitizeNamespace, FullyQualifiedTsType, GetQueryableName, Tab } from "./utils.js";
 
 
 
@@ -48,15 +48,6 @@ function getQueryableType(type: ODataPropertyType, keywords: Keywords,
         wrapper: keywords.QueryComplexObject,
         generics: [t]
     };
-}
-
-export type GetQueryableName = (forType: string) => string
-export const buildGetQueryableName = (settings: CodeGenConfig | null | undefined): GetQueryableName => {
-
-    return (forType: string) => {
-        const qTemplate = settings?.queryableTypeNameTemplate || "Queryable{0}";
-        return qTemplate.replace(/\{0\}/g, forType);
-    }
 }
 
 export type EntityQuery = (type: ODataComplexType) => string

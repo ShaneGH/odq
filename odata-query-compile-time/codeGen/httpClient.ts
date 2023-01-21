@@ -1,9 +1,7 @@
 import { ODataEntitySet, ODataServiceConfig } from "odata-query-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
-import { buildGetCasterName } from "./entityCasting.js";
-import { buildGetQueryableName } from "./entityQuery.js";
 import { Keywords } from "./keywords.js";
-import { buildFullyQualifiedTsType, buildGetKeyType, buildLookupType, buildSanitizeNamespace, LookupType, Tab } from "./utils.js";
+import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";
 
 export function httpClient(
     serviceConfig: ODataServiceConfig,
@@ -17,9 +15,9 @@ export function httpClient(
     const getKeyType = buildGetKeyType(settings, serviceConfig);
     const lookupType = buildLookupType(serviceConfig);
 
-
     const getQueryableName = buildGetQueryableName(settings);
     const getCasterName = buildGetCasterName(settings)
+    const getSubPathName = buildGetSubPathName(settings)
 
     // TODO: _httpClientArgs keyword is different to others.It needs to be unique from the point of
     // view of an EntitySet, not an Entity(or root namespace)
@@ -91,17 +89,21 @@ ${methods}
         const resultType = fullyQualifiedTsType(entitySet.forType);
         const queryableType = fullyQualifiedTsType(entitySet.forType, getQueryableName);
         const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
-        const idType = getKeyType(type, true);
-        const generics = [
-            resultType,
-            idType || "never",
-            queryableType,
-            //`${keywords.ICollectionQueryBulder}<${queryableType}>`,
-            casterType,
-            `${keywords.ODataMultiResult}<${resultType}>`
-        ].join(", ");
+        const subPathType = fullyQualifiedTsType(entitySet.forType, getSubPathName)
 
-        const instanceType = `${keywords.EntityQuery}<${generics}>`;
+        const idType = getKeyType(type, true);
+        const generics = {
+            tEntity: resultType,
+            tKey: idType || "never",
+            tQuery: queryableType,
+            tCaster: `${casterType}.Collection`,
+            tSingleCaster: `${casterType}.Single`,
+            tSubPath: "never",
+            tSingleSubPath: `${subPathType}.Single`,
+            tResult: `${keywords.ODataMultiResult}<${resultType}>`
+        }
+
+        const instanceType = httpClientType(keywords, generics, tab, true);
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
             `${keywords.rootConfig}.types["${entitySet.forType.namespace || ""}"]["${entitySet.forType.name}"]`,

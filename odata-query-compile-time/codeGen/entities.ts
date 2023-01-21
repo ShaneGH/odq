@@ -3,12 +3,14 @@ import { CodeGenConfig, SupressWarnings } from "../config.js"
 import { buildEntityCasting } from "./entityCasting.js"
 import { buildEntityData } from "./entityData.js"
 import { buildEntityQuery } from "./entityQuery.js"
+import { buildEntitySubPath } from "./entitySubPath.js"
 import { Keywords } from "./keywords.js"
 import { buildSanitizeNamespace, Tab } from "./utils.js"
 
 export type EntityParts = {
     data: string | null
     caster: string | null
+    subPath: string | null
     query: string | null
 }
 
@@ -18,11 +20,13 @@ const buildEntityBuilder = (settings: CodeGenConfig | null | undefined, tab: Tab
     const entityData = buildEntityData(settings, tab);
     const entityDataBuilder = buildEntityQuery(settings, tab, keywords, serviceConfig);
     const entityCastings = buildEntityCasting(tab, settings, serviceConfig, keywords);
+    const entitySubPathProps = buildEntitySubPath(tab, settings, serviceConfig, keywords);
 
     return (type: ODataComplexType) => ({
         data: entityData(type),
         query: entityDataBuilder(type),
-        caster: entityCastings(type)
+        caster: entityCastings(type),
+        subPath: entitySubPathProps(type)
     })
 }
 

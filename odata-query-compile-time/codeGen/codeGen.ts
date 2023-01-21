@@ -18,6 +18,8 @@ ${imports(keywords, tab)}
 
 ${lintingAndComments()}
 
+type TODO_Type = never
+
 ${httpClient(serviceConfig, tab, keywords, settings, warnings)}
 
 ${configObj(serviceConfig, keywords, settings, tab)}
@@ -93,7 +95,8 @@ ${entities()}`
                 .map(name => [
                     module[name].data,
                     module[name].query,
-                    module[name].caster
+                    module[name].caster,
+                    module[name].subPath
                 ]
                     .filter(x => x)
                     .join("\n\n"))

@@ -147,3 +147,55 @@ export const buildGetTypeString = (settings: CodeGenConfig | null | undefined) =
 
     return getTypeString;
 }
+
+export type HttpClientGenerics = {
+    tEntity: string,
+    tKey: string,
+    tQuery: string,
+    tCaster: string,
+    tSingleCaster: string,
+    tSubPath: string,
+    tSingleSubPath: string,
+    tResult: string
+}
+
+export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab, genericsOnNewLine = false) {
+
+    const gs = [
+        generics.tEntity,
+        generics.tKey,
+        generics.tQuery,
+        generics.tCaster,
+        generics.tSingleCaster,
+        generics.tSubPath,
+        generics.tSingleSubPath,
+        generics.tResult
+    ]
+        .map(genericsOnNewLine ? tab : id)
+        .join(genericsOnNewLine ? ",\n" : ", ");
+
+    const nl = genericsOnNewLine ? "\n" : "";
+
+    return `${keywords.EntityQuery}<${nl}${gs}>`
+}
+
+export type GetSubPathName = (forType: string) => string
+export const buildGetSubPathName = (settings: CodeGenConfig | null | undefined): GetSubPathName => (forType: string) => {
+    const qTemplate = settings?.subPathTypeNameTemplate || "{0}SubPath";
+    return qTemplate.replace(/\{0\}/g, forType);
+}
+
+export type GetCasterName = (forType: string) => string
+export const buildGetCasterName = (settings: CodeGenConfig | null | undefined): GetCasterName => (forType: string) => {
+    const qTemplate = settings?.casterTypeNameTemplate || "{0}Caster";
+    return qTemplate.replace(/\{0\}/g, forType);
+}
+
+export type GetQueryableName = (forType: string) => string
+export const buildGetQueryableName = (settings: CodeGenConfig | null | undefined): GetQueryableName => {
+
+    return (forType: string) => {
+        const qTemplate = settings?.queryableTypeNameTemplate || "Queryable{0}";
+        return qTemplate.replace(/\{0\}/g, forType);
+    }
+}

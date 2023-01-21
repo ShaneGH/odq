@@ -9,6 +9,7 @@ export type ODataResultMetadata = Partial<{
     "@odata.context": string
 }>
 
+// TODO: rename ODataCollectionResult
 export type ODataMultiResult<T> = ODataResultMetadata & {
 
     value: T[]
@@ -109,6 +110,9 @@ export type CastSelection<TNewEntityQuery> = {
     type: ODataComplexType
 }
 
+export type SubPathSelection<TNewEntityQuery> = {
+}
+
 // TODO: composite_keys (search whole proj for composite_keys)
 function tryFindKeyType(
     type: ODataComplexType,
@@ -141,11 +145,26 @@ function tryFindKeyType(
     }
 }
 
+// TODO: test
+export enum WithKeyType {
+    /*
+     * Specifies that a key should be embedded added as a function call
+     * e.g. ~/Users(1)
+     */
+    FunctionCall = "PathSegment",
+
+    /*
+     * Specifies that a key should be embedded added as a path segment
+     * e.g. ~/Users/1
+     */
+    PathSegment = "PathSegment"
+}
+
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
 // TODO: not a great name: EntityQuery
 // TODO: method documentation
-export class EntityQuery<TEntity, TKey, TQuery, TCaster, TResult> {
+export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath, TSingleSubPath, TResult> {
 
     state: EntityQueryState
 
@@ -161,7 +180,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TResult> {
         };
     }
 
-    withKey(key: TKey) {
+    withKey(key: TKey, keyEmbedType = WithKeyType.FunctionCall) {
         if (this.state.query) {
             throw new Error("You cannot add query components before doing a key lookup");
         }
@@ -182,12 +201,23 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TResult> {
         }
 
         const k = key === null ? "null" : serialize(key, keyType);
-        const path = [
-            `${this.state.path[0]}(${k})`,
-            ...this.state.path.slice(1)
-        ]
+        const path = keyEmbedType === WithKeyType.FunctionCall
+            ? [
+                ...this.state.path.slice(0, this.state.path.length - 1),
+                `${this.state.path[this.state.path.length - 1]}(${k})`,
+            ]
+            : keyEmbedType === WithKeyType.FunctionCall
+                ? [
+                    ...this.state.path,
+                    k,
+                ]
+                : null;
 
-        return new EntityQuery<TEntity, never, TQuery, TCaster, ODataSingleResult<TEntity>>(
+        if (!path) {
+            throw new Error(`Invalid WithKeyType: ${keyEmbedType}`);
+        }
+
+        return new EntityQuery<TEntity, never, TQuery, TSingleCaster, TSingleCaster, TSingleSubPath, TSingleSubPath, ODataSingleResult<TEntity>>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -207,12 +237,33 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TResult> {
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
             newT.type,
             this.entitySet,
             this.root,
             { ...this.state, path }) as TNewEntityQuery;
+    }
+
+    subPath<TNewEntityQuery>(
+        cast: (caster: TSubpath) => SubPathSelection<TNewEntityQuery>): TNewEntityQuery {
+
+        throw new Error("Not implemented")
+        // if (this.state.query) {
+        //     throw new Error("You cannot add query components before casting");
+        // }
+
+        // const newT = cast(this.buildCaster());
+        // const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
+        // const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
+
+        // // TODO: Are these anys harmful, can they be removed?
+        // return new EntityQuery<any, any, any, any, any, any, any, any>(
+        //     this.requestTools,
+        //     this.type,
+        //     this.entitySet,
+        //     this.root,
+        //     { ...this.state, path }) as TNewEntityQuery;
     }
 
     // TODO: this allows the user to do illegal queries on singletons:
@@ -224,7 +275,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TResult> {
         }
 
         const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts(true)
-        return new EntityQuery<TEntity, TKey, TQuery, TCaster, TResult>(
+        return new EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubpath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,

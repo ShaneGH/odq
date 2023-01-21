@@ -17,9 +17,11 @@ export * as FilterUtils from "./filterUtils.js"
 export {
     RequestTools,
     ODataMultiResult,
+    ODataSingleResult,
     EntityQuery,
     ODataUriParts,
-    CastSelection
+    CastSelection,
+    SubPathSelection
 } from "./httpClient.js"
 
 export {
