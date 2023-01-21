@@ -34,25 +34,7 @@ export function httpClient(
         .map(x => methodsForEntitySetNamespace(x.escapedNamespaceParts, x.entitySets))
         .join("\n\n");
 
-    const args = [
-        "// add a basic http client in here. Such as a browser fetch, node18 fetch or the node-fetch npm module",
-        "fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>",
-        "",
-        "// the root URI of all collections. Something like: https://my.service.com/my-odata-collections",
-        "uriRoot: string",
-        "",
-        `// optional. Interceptor for uri building`,
-        `uriBuilder?: (uri: ${keywords.ODataUriParts}) => string`,
-        "",
-        "// optional. Interceptor for http requests. Use this to add security",
-        "requestInterceptor?: (uri: string, reqValues: RequestInit,) => RequestInit",
-        "",
-        `// optinal. Add custom response parsing`,
-        `responseParser?: (input: Response, uri: string, reqValues: RequestInit, defaultParser: (input: Response) => Promise<any>) => Promise<any>`,
-    ].join("\n")
-
-    const constructor = `constructor(private ${keywords._httpClientArgs}: {
-${tab(args)} }) { }`;
+    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}) { }`;
 
     return `export class ${settings?.oDataClientName || "ODataClient"} {
 ${tab(constructor)}

@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataEntitySet, ODataServiceConfig } from "odata-query-shared";
+import { ODataComplexType, ODataEntitySet, ODataPropertyType, ODataServiceConfig } from "odata-query-shared";
 import { QueryBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
@@ -31,11 +31,31 @@ export type ODataUriParts = {
 // TODO: document: 1. Add code comments, 2. Add article
 // TODO: test all of these
 export type RequestTools = {
+    /* 
+     * A basic http client. Set this to a browser fetch, node18 fetch or a client from the the node-fetch npm module
+     */
     fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+
+    /* 
+     * The root URI of all collections. Something like: https://my.service.com/my-odata-collections",
+     */
     uriRoot: string
-    uriBuilder?: (uri: ODataUriParts) => string
+
+    /* 
+     * Interceptor for uri building
+     * Optional
+     */
+    uriInterceptor?: (uri: ODataUriParts) => string
+
+    /* 
+     * Interceptor for http requests. Use this to add custom http headers
+     */
     requestInterceptor?: (uri: string, reqValues: RequestInit) => RequestInit
-    responseParser?: (input: Response, uri: string, reqValues: RequestInit, defaultParser: (input: Response) => Promise<any>) => Promise<any>
+
+    /* 
+     * Interceptor for http responses. Use this to add custom error handling or deserialization
+     */
+    responseInterceptor?: (input: Response, uri: string, reqValues: RequestInit, defaultInterceptor: (input: Response) => Promise<any>) => Promise<any>
 }
 
 function addLeadingSlash(path: string) {
@@ -70,9 +90,11 @@ function processResponse<TEntity>(response: Response, uri: any, reqValues: any, 
     return response.json();
 }
 
-type EntityQueryState<TQuery> = Partial<{
+type Dict<T> = { [key: string]: T }
+
+type EntityQueryState = Partial<{
     path: string[]
-    queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>
+    query: Dict<string>
 }>
 
 function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
@@ -83,21 +105,54 @@ function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
     return defaultVal;
 }
 
-export type CastSelection<TEntity, TQuery, TKey, TCaster> = {
+export type CastSelection<TEntity, TKey, TQuery, TCaster> = {
     type: ODataComplexType
 }
 
+// TODO: composite_keys (search whole proj for composite_keys)
+function tryFindKeyType(
+    type: ODataComplexType,
+    root: ODataServiceConfig): ODataPropertyType | null {
+
+    if (!type.keyProp) {
+        if (!type.baseType) {
+            return null;
+        }
+
+        const parent = root.types[type.baseType.namespace] && root.types[type.baseType.namespace][type.baseType.name];
+        if (!parent) {
+            throw new Error(`Could not find parent type: ${fullTypeName(type.baseType.namespace, type.baseType.name)}`);
+        }
+
+        return tryFindKeyType(parent, root);
+    }
+
+    const keyType = type.properties[type.keyProp]?.type
+    if (!keyType) {
+        throw new Error(`Type ${fullTypeName(type.namespace, type.name)} does not have a key property`);
+    }
+
+    return keyType;
+
+    function fullTypeName(namespace: string, name: string) {
+        const ns = namespace && `${namespace}.`
+        return `${ns}${type.name}`;
+
+    }
+}
+
+// TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
 export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
 
-    state: EntityQueryState<TQuery>
+    state: EntityQueryState
 
     constructor(
         private requestTools: RequestTools,
         private type: ODataComplexType,
         private entitySet: ODataEntitySet,
         private root: ODataServiceConfig,
-        state: EntityQueryState<TQuery> | undefined = undefined) {
+        state: EntityQueryState | undefined = undefined) {
 
         this.state = state || {
             path: [entitySet.name]
@@ -105,6 +160,10 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
     }
 
     withKey(key: TKey) {
+        if (this.state.query) {
+            throw new Error("You cannot add query components before doing a key lookup");
+        }
+
         if (key === undefined) {
             throw new Error("Cannot set key to undefined. Try setting to null instead");
         }
@@ -113,8 +172,9 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             throw new Error("Invalid path");
         }
 
+
         // TODO: composite_keys (search whole proj for composite_keys)
-        const keyType = this.type.keyProp && this.type.properties[this.type.keyProp]?.type
+        const keyType = tryFindKeyType(this.type, this.root);
         if (!keyType) {
             const ns = this.type.namespace && `${this.type.namespace}.`
             throw new Error(`Type ${ns}${this.type.name} does not have a key property`);
@@ -126,7 +186,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             ...this.state.path.slice(1)
         ]
 
-        return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
+        return new EntityQuery<TEntity, never, TQuery, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -137,25 +197,20 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
     cast<TChild extends TEntity, TChildKey, TQueryChild extends TQuery, TNewCaster>(
         cast: (caster: TCaster) => CastSelection<TChild, TChildKey, TQueryChild, TNewCaster>): EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster> {
 
-        if (this.state.queryBuilder) {
+        if (this.state.query) {
             throw new Error("You cannot add query components before casting");
         }
 
         const newT = cast(this.buildCaster());
         const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
-        const newState: EntityQueryState<TQueryChild> = {
-            ...this.state,
-            queryBuilder: undefined,
-            path
-        };
 
         return new EntityQuery<TChild, TChildKey, TQueryChild, TNewCaster>(
             this.requestTools,
             newT.type,
             this.entitySet,
             this.root,
-            newState);
+            { ...this.state, path });
     }
 
     // cast1<TChild extends TEntity, TQueryChild extends TQuery>(fullyQualifiedName: string): EntityQuery<TChild, TKey, TQueryChild, TCaster> {
@@ -181,28 +236,30 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
 
     withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) {
 
+        if (this.state.query) {
+            throw new Error("This request already has a query");
+        }
+
+        const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts()
         return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
             this.requestTools,
             this.type,
             this.entitySet,
             this.root,
-            { ...this.state, queryBuilder });
+            { ...this.state, query });
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<ODataMultiResult<TEntity>> {
-        const query = this._getQueryParts(this.state.queryBuilder)
-        return this.fetch(this._entitySetName(), query, overrideRequestTools)
+        return this.fetch(this._entitySetName(), overrideRequestTools)
     }
 
     // TODO: better way???
     getSingle(overrideRequestTools?: Partial<RequestTools>): Promise<ODataSingleResult<TEntity>> {
-        const query = this._getQueryParts(this.state.queryBuilder)
-        return this.fetch(this._entitySetName(), query, overrideRequestTools)
+        return this.fetch(this._entitySetName(), overrideRequestTools)
     }
 
     count(overrideRequestTools?: Partial<RequestTools>): Promise<ODataMultiResult<TEntity>> {
-        const query = this._getQueryParts(this.state.queryBuilder)
-        return this.fetch(`${this._entitySetName()}/$count`, query, overrideRequestTools);
+        return this.fetch(`${this._entitySetName()}/$count`, overrideRequestTools);
     }
 
     _entitySetName() {
@@ -216,8 +273,8 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             : {};
     }
 
-    private fetch(relativePath: string, query: Dictionary<string>, overrideRequestTools: Partial<RequestTools> | undefined): Promise<any> {
-        const uriB = firstNonNull(uriBuilder, overrideRequestTools?.uriBuilder, this.requestTools.uriBuilder);
+    private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools> | undefined): Promise<any> {
+        const uriB = firstNonNull(uriBuilder, overrideRequestTools?.uriInterceptor, this.requestTools.uriInterceptor);
         const uri = uriB({
             uriRoot: firstNonNull(this.requestTools.uriRoot, overrideRequestTools?.uriRoot),
             // if namespace === "", give null instead
@@ -227,7 +284,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             entitySetNamespace: this.entitySet.namespace || null,
             entitySetName: this.entitySet.name,
             relativePath: relativePath,
-            query: query
+            query: this.state.query || {}
         });
 
         let init: RequestInit = firstNonNull(
@@ -240,12 +297,12 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
                 }
             })
 
-        const responseParser = firstNonNull(
-            processResponse, this.requestTools.responseParser, overrideRequestTools?.responseParser);
+        const responseInterceptor = firstNonNull(
+            processResponse, this.requestTools.responseInterceptor, overrideRequestTools?.responseInterceptor);
 
         return this.requestTools
             .fetch(uri, init)
-            .then(x => responseParser(x, uri, init, x => processResponse(x, null, null, null)));
+            .then(x => responseInterceptor(x, uri, init, x => processResponse(x, null, null, null)));
     }
 
     // TODO: duplicate_logic_key: caster

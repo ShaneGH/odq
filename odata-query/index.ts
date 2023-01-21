@@ -13,6 +13,7 @@ export * as ExpandUtils from "./expandUtils.js"
 export * as FilterUtils from "./filterUtils.js"
 
 export {
+    RequestTools,
     ODataMultiResult,
     EntityQuery,
     ODataUriParts,

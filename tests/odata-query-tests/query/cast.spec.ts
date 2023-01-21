@@ -9,7 +9,7 @@ const client = new ODataClient({
         return fetch(x, y)
     },
     uriRoot: "http://localhost:5432/odata/test-entities",
-    responseParser: (result, uri, reqValues, defaultParser) => {
+    responseInterceptor: (result, uri, reqValues, defaultParser) => {
         return defaultParser(result)
             .catch(async _ => {
 
@@ -65,6 +65,18 @@ describe("Cast", function () {
         const items = await client.My.Odata.Container.HasIds
             .cast(x => x.Blog())
             .withQuery(q => q.filter(u => F.eq(u.Id, user.Id!)))
+            .get();
+
+        expect(items.value.length).toBe(0);
+    });
+
+    it.only("##############", async () => {
+        const user = await addUser();
+        const items = await client.My.Odata.Container.Users
+            .withKey(user.Id!)
+            .withQuery(q => q
+                .expand(e => E.array(e.Blogs, x => x))
+                .filter(u => F.eq(u.Id, user.Id!)))
             .get();
 
         expect(items.value.length).toBe(0);

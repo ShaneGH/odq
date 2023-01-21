@@ -1,20 +1,26 @@
 import { Keywords } from "./keywords.js";
-import { Tab } from "./utils.js";
+import { Dict, Tab } from "./utils.js";
 
 export function imports(keywords: Keywords, tab: Tab) {
+
+    const kw = keywords as Dict<string>
+
     // TODO: audit are all of these still used?
     return `import {
-${tab(importWithAlias("ODataServiceConfig", keywords.ODataServiceConfig))},
-${tab(importWithAlias("CastSelection", keywords.CastSelection))},
-${tab(importWithAlias("ODataUriParts", keywords.ODataUriParts))},
-${tab(importWithAlias("QueryPrimitive", keywords.QueryPrimitive))},
-${tab(importWithAlias("QueryArray", keywords.QueryArray))},
-${tab(importWithAlias("EntityQuery", keywords.EntityQuery))},
-${tab(importWithAlias("QueryComplexObject", keywords.QueryComplexObject))}
+${tab(importWithAlias("RequestTools"))},
+${tab(importWithAlias("ODataServiceConfig"))},
+${tab(importWithAlias("CastSelection"))},
+${tab(importWithAlias("ODataUriParts"))},
+${tab(importWithAlias("QueryPrimitive"))},
+${tab(importWithAlias("QueryArray"))},
+${tab(importWithAlias("EntityQuery"))},
+${tab(importWithAlias("QueryComplexObject"))}
 } from 'odata-query';`
-}
 
-function importWithAlias(importName: string, alias: string) {
-    return importName === alias ? importName : `${importName} as ${alias}`
-
+    function importWithAlias(importName: string) {
+        if (!kw[importName]) {
+            throw new Error(`Invalid keyword: ${importName}`);
+        }
+        return kw[importName] === importName ? importName : `${importName} as ${kw[importName]}`
+    }
 }

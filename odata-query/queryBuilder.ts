@@ -20,6 +20,26 @@ export type Expand = {
     expand: PathSegment[]
 }
 
+export interface IQueryBulder {
+
+    toQueryParts(urlEncode: boolean): Dict<string>;
+    toQueryString(urlEncode: boolean, addLeadingQuestionMark: boolean): string
+}
+
+export interface ISingletonQueryBulder<T> extends IQueryBulder {
+
+    expand(q: Expand | ((t: T) => QueryPath)): ISingletonQueryBulder<T>;
+}
+
+export interface ICollectionQueryBulder<T> extends IQueryBulder {
+
+    filter(q: Filter | ((t: T) => Filter)): ICollectionQueryBulder<T>;
+    expand(q: Expand | ((t: T) => QueryPath)): ICollectionQueryBulder<T>;
+    count(): ICollectionQueryBulder<T>;
+    top(top: number): ICollectionQueryBulder<T>;
+    skip(skip: number): ICollectionQueryBulder<T>;
+}
+
 function expand(pathSegment: PathSegment[] | undefined): string | undefined {
     if (!pathSegment?.length) return undefined;
 
@@ -35,7 +55,7 @@ function expand(pathSegment: PathSegment[] | undefined): string | undefined {
         : `${head}/${next}`;
 }
 
-export class QueryStringBuilder {
+export class QueryStringBuilder implements IQueryBulder {
 
     constructor(protected state: QueryParts) {
     }
@@ -156,7 +176,7 @@ export class PrimitiveQueryBuilder<T> extends QueryStringBuilder {
     }
 }
 
-export class QueryBuilder<T> extends QueryStringBuilder {
+export class QueryBuilder<T> extends QueryStringBuilder implements ISingletonQueryBulder<T>, ICollectionQueryBulder<T> {
     private typeRef: QueryComplexObject<T>
 
     constructor(

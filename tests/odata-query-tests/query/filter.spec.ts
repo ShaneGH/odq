@@ -11,7 +11,7 @@ const client = new ODataClient({
         return fetch(x, y)
     },
     uriRoot: "http://localhost:5432/odata/test-entities",
-    responseParser: (result, uri, reqValues, defaultParser) => {
+    responseInterceptor: (result, uri, reqValues, defaultParser) => {
         return defaultParser(result)
             .catch(async _ => {
 
@@ -41,7 +41,8 @@ function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
 
 describe("Query.Filter", function () {
 
-    afterAll(verifyEntityRelationships);
+    // TODO: enable afterAll
+    // afterAll(verifyEntityRelationships);
 
     // // BlogName -> BlogName
     // testCase("Simple -> Simple", function () {

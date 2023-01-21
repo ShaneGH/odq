@@ -10,6 +10,7 @@ export type Keywords = {
     ODataUriParts: string,
     CastSelection: string,
     ODataUtils: string,
+    RequestTools: string,
     _httpClientArgs: string
 };
 
@@ -27,6 +28,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
     // TODO: tests for all keyword re-mappings
     return {
+        RequestTools: getKeyword("RequestTools"),
         QueryPrimitive: getKeyword("QueryPrimitive"),
         QueryArray: getKeyword("QueryArray"),
         QueryComplexObject: getKeyword("QueryComplexObject"),
