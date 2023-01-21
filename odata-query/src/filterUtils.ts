@@ -1,6 +1,5 @@
-import { QueryPrimitive } from "./index.js";
 import { Filter } from "./queryBuilder.js";
-import { QueryArray, QueryObject, QueryObjectType } from "./typeRefBuilder.js";
+import { QueryArray, QueryObject, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 
 export function and(...conditions: Filter[]): Filter {
     if (conditions.length === 0) {

@@ -8,11 +8,11 @@ export {
     PrimitiveQueryBuilder,
     ICollectionQueryBulder,
     ISingletonQueryBulder
-} from "./queryBuilder.js"
+} from "./src/queryBuilder.js"
 
-export * as ExpandUtils from "./expandUtils.js"
+export * as ExpandUtils from "./src/expandUtils.js"
 
-export * as FilterUtils from "./filterUtils.js"
+export * as FilterUtils from "./src/filterUtils.js"
 
 export {
     RequestTools,
@@ -22,7 +22,7 @@ export {
     ODataUriParts,
     CastSelection,
     SubPathSelection
-} from "./httpClient.js"
+} from "./src/httpClient.js"
 
 export {
     QueryObjectType,
@@ -30,7 +30,7 @@ export {
     QueryArray,
     QueryComplexObject,
     QueryObject
-} from "./typeRefBuilder.js"
+} from "./src/typeRefBuilder.js"
 
 // TODO: never types below contain the word "entity". May need to say something about complex types also
 

@@ -1,11 +1,11 @@
 import * as path from "path";
 import { fileURLToPath } from "url";
-import { executeCodeGen } from "./codeGenCmd.js";
+import { executeCodeGen } from "./src/codeGenCmd.js";
 
 export {
     generateCode,
     generateTypescriptFile
-} from "./codeGenApp.js";
+} from "./src/codeGenApp.js";
 
 export {
     LocationType,
@@ -13,7 +13,7 @@ export {
     UriLocation,
     XmlString,
     XmlLocation
-} from "./odataConfigLoader.js";
+} from "./src/odataConfigLoader.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

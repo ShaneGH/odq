@@ -256,20 +256,20 @@ export enum WithKeyType {
     PathSegment = "PathSegment"
 }
 
-export enum QueryTypeCategory {
-    ComplexType = "ComplexType",
-    PrimitiveType = "PrimitiveType"
-}
+// export enum QueryTypeCategory {
+//     ComplexType = "ComplexType",
+//     PrimitiveType = "PrimitiveType"
+// }
 
-export type ComplexCategory = {
-    category: QueryTypeCategory.ComplexType
-    type: ODataComplexType
-}
+// export type ComplexCategory = {
+//     category: QueryTypeCategory.ComplexType
+//     type: ODataComplexType
+// }
 
-export type PrimitiveCategory = {
-    category: QueryTypeCategory.PrimitiveType
-    type: string
-}
+// export type PrimitiveCategory = {
+//     category: QueryTypeCategory.PrimitiveType
+//     type: string
+// }
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
@@ -281,7 +281,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
 
     constructor(
         private requestTools: RequestTools,
-        private type: ComplexCategory | PrimitiveCategory,
+        private type: ODataComplexType,
         private entitySet: ODataEntitySet,
         private root: ODataServiceConfig,
         state: EntityQueryState | undefined = undefined) {
@@ -304,15 +304,15 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error("Invalid path");
         }
 
-        if (this.type.category !== QueryTypeCategory.ComplexType) {
-            throw new Error("Primitive types do not have keys");
-        }
+        // if (this.type.category !== QueryTypeCategory.ComplexType) {
+        //     throw new Error("Primitive types do not have keys");
+        // }
 
         // TODO: composite_keys (search whole proj for composite_keys)
-        const keyType = tryFindKeyType(this.type.type, this.root);
+        const keyType = tryFindKeyType(this.type, this.root);
         if (!keyType) {
-            const ns = this.type.type.namespace && `${this.type.type.namespace}.`
-            throw new Error(`Type ${ns}${this.type.type.name} does not have a key property`);
+            const ns = this.type.namespace && `${this.type.namespace}.`
+            throw new Error(`Type ${ns}${this.type.name} does not have a key property`);
         }
 
         const k = key === null ? "null" : serialize(key, keyType);
@@ -347,10 +347,10 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error("You cannot add query components before casting");
         }
 
-        // TODO
-        if (this.type.category !== QueryTypeCategory.ComplexType) {
-            throw new Error("Primitive types cannot be casted");
-        }
+        // // TODO
+        // if (this.type.category !== QueryTypeCategory.ComplexType) {
+        //     throw new Error("Primitive types cannot be casted");
+        // }
 
         const newT = cast(this.buildCaster());
         const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
@@ -359,7 +359,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         // TODO: Are these anys harmful, can they be removed?
         return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
-            { category: QueryTypeCategory.ComplexType, type: newT.type },
+            newT.type,
             this.entitySet,
             this.root,
             { ...this.state, path }) as TNewEntityQuery;
@@ -372,17 +372,17 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error("You cannot add query components before navigating a sub path");
         }
 
-        // TODO
-        if (this.type.category !== QueryTypeCategory.ComplexType) {
-            throw new Error("Primitive types do not have sub paths");
-        }
+        // // TODO
+        // if (this.type.category !== QueryTypeCategory.ComplexType) {
+        //     throw new Error("Primitive types do not have sub paths");
+        // }
 
         // console.log("##### 1", this.buildSubPath())
         // console.log("##### 2", subPath.toString())
         // console.log("##### 3", subPath(this.buildSubPath()))
 
         const newT = subPath(this.buildSubPath());
-        const prop = tryFindPropertyType(this.type.type, newT.propertyName, this.root);
+        const prop = tryFindPropertyType(this.type, newT.propertyName, this.root);
         if (!prop) {
             throw new Error(`Invalid property ${newT.propertyName}`);
         }
@@ -401,7 +401,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         // TODO: Are these anys harmful, can they be removed?
         return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
-            { category: QueryTypeCategory.ComplexType, type: typeInfo.type.complexType },
+            typeInfo.type.complexType,
             this.entitySet,
             this.root,
             { ...this.state, path }) as TNewEntityQuery;
