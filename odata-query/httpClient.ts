@@ -92,10 +92,10 @@ function processResponse<TEntity>(response: Response, uri: any, reqValues: any, 
 
 type Dict<T> = { [key: string]: T }
 
-type EntityQueryState = Partial<{
+type EntityQueryState = {
     path: string[]
-    query: Dict<string>
-}>
+    query?: Dict<string>
+}
 
 function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
     for (let i = 0; i < items.length; i++) {
@@ -145,7 +145,7 @@ function tryFindKeyType(
 // TODO: do not return instances from any methods. Return interfaces instead
 // TODO: not a great name: EntityQuery
 // TODO: method documentation
-export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
+export class EntityQuery<TEntity, TKey, TQuery, TCaster, TResult> {
 
     state: EntityQueryState
 
@@ -174,7 +174,6 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             throw new Error("Invalid path");
         }
 
-
         // TODO: composite_keys (search whole proj for composite_keys)
         const keyType = tryFindKeyType(this.type, this.root);
         if (!keyType) {
@@ -188,7 +187,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             ...this.state.path.slice(1)
         ]
 
-        return new EntityQuery<TEntity, never, TQuery, TCaster>(
+        return new EntityQuery<TEntity, never, TQuery, TCaster, ODataSingleResult<TEntity>>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -208,7 +207,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any>(
             this.requestTools,
             newT.type,
             this.entitySet,
@@ -225,7 +224,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
         }
 
         const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts(true)
-        return new EntityQuery<TEntity, TKey, TQuery, TCaster>(
+        return new EntityQuery<TEntity, TKey, TQuery, TCaster, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -233,22 +232,30 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster> {
             { ...this.state, query });
     }
 
-    get(overrideRequestTools?: Partial<RequestTools>): Promise<ODataMultiResult<TEntity>> {
-        return this.fetch(this._entitySetName(), overrideRequestTools)
+    get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
+        return this.getAs<TResult>(overrideRequestTools)
     }
 
-    // TODO: better way???
-    getSingle(overrideRequestTools?: Partial<RequestTools>): Promise<ODataSingleResult<TEntity>> {
-        return this.fetch(this._entitySetName(), overrideRequestTools)
+    getAs<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools>): Promise<TOverrideResultType> {
+        return this.fetch(this.path(), overrideRequestTools)
     }
 
-    count(overrideRequestTools?: Partial<RequestTools>): Promise<ODataMultiResult<TEntity>> {
-        return this.fetch(`${this._entitySetName()}/$count`, overrideRequestTools);
+    // TODO: test
+    // TODO: is response type correct?
+    count(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
+        return this.fetch(this.path("$count"), overrideRequestTools);
     }
 
-    _entitySetName() {
+    private path(append?: string[] | string | undefined) {
 
-        return (this.state.path || []).join("/");
+        let path = this.state.path;
+        if (typeof append === "string") {
+            path = [...path, append]
+        } else if (Array.isArray(append)) {
+            path = [...path, ...append]
+        }
+
+        return path.join("/");
     }
 
     private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools> | undefined): Promise<any> {

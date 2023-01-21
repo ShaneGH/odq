@@ -1,4 +1,4 @@
-import { Dict } from "./utils.js";
+import { Dict, Tab } from "./utils.js";
 
 export type Keywords = {
     ODataServiceConfig: string
@@ -13,7 +13,8 @@ export type Keywords = {
     RequestTools: string,
     _httpClientArgs: string,
     ISingletonQueryBulder: string,
-    ICollectionQueryBulder: string
+    ICollectionQueryBulder: string,
+    ODataMultiResult: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -42,6 +43,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
         ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),
         ICollectionQueryBulder: getKeyword("ICollectionQueryBulder"),
+        ODataMultiResult: getKeyword("ODataMultiResult"),
         _httpClientArgs: getKeyword("_httpClientArgs")
     }
 
@@ -52,5 +54,32 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
             const val = `${defaultVal}${i}`;
             if (!lookup[val]) return val;
         }
+    }
+}
+
+export function imports(keywords: Keywords, tab: Tab) {
+
+    const kw = keywords as Dict<string>
+
+    // TODO: audit are all of these still used?
+    return `import {
+${tab(importWithAlias("RequestTools"))},
+${tab(importWithAlias("ODataServiceConfig"))},
+${tab(importWithAlias("CastSelection"))},
+${tab(importWithAlias("ODataUriParts"))},
+${tab(importWithAlias("QueryPrimitive"))},
+${tab(importWithAlias("QueryArray"))},
+${tab(importWithAlias("ICollectionQueryBulder"))},
+${tab(importWithAlias("ISingletonQueryBulder"))},
+${tab(importWithAlias("EntityQuery"))},
+${tab(importWithAlias("QueryComplexObject"))},
+${tab(importWithAlias("ODataMultiResult"))}
+} from 'odata-query';`
+
+    function importWithAlias(importName: string) {
+        if (!kw[importName]) {
+            throw new Error(`Invalid keyword: ${importName}`);
+        }
+        return kw[importName] === importName ? importName : `${importName} as ${kw[importName]}`
     }
 }

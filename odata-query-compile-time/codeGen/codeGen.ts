@@ -4,8 +4,7 @@ import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { edm } from "./edm.js";
 import { ProcessedNamespace, ProcessedServiceConfig, processServiceConfig } from "./entities.js";
 import { httpClient } from "./httpClient.js";
-import { imports } from "./imports.js";
-import { generateKeywords } from "./keywords.js";
+import { generateKeywords, imports } from "./keywords.js";
 import { buildTab, configObj, lintingAndComments } from "./utils.js";
 
 export function codeGen(serviceConfig: ODataServiceConfig, settings: CodeGenConfig | null | undefined, warnings: SupressWarnings | null | undefined) {

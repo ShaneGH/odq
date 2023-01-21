@@ -97,7 +97,8 @@ ${methods}
             idType || "never",
             queryableType,
             //`${keywords.ICollectionQueryBulder}<${queryableType}>`,
-            casterType
+            casterType,
+            `${keywords.ODataMultiResult}<${resultType}>`
         ].join(", ");
 
         const instanceType = `${keywords.EntityQuery}<${generics}>`;
