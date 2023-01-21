@@ -94,11 +94,11 @@ ${methods}
         const idType = getKeyType(type, true);
         const generics = {
             tEntity: resultType,
-            tKey: idType || "never",
+            tKey: idType || keywords.SingleEntitiesCannotBeQueriedByKey,
             tQuery: queryableType,
             tCaster: `${casterType}.Collection`,
             tSingleCaster: `${casterType}.Single`,
-            tSubPath: "never",
+            tSubPath: keywords.EntitySetsCannotBeTraversed,
             tSingleSubPath: `${subPathType}`,
             tResult: `${keywords.ODataMultiResult}<${resultType}>`
         }

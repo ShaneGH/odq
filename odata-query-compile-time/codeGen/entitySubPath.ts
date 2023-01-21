@@ -53,12 +53,12 @@ function buildGetSubPathProps(
 
                 const generics = {
                     tEntity,
-                    tKey: getPropertyKeyType(entityInfo) || "never",
+                    tKey: getPropertyKeyType(entityInfo) || keywords.SingleEntitiesCannotBeQueriedByKey,
                     tQuery: getTQuery(entityInfo),
                     tCaster: getTCaster(entityInfo),
                     tSingleCaster: getTCaster(entityInfo, true),
-                    tSubPath: entityInfo.collectionDepth ? "never" : getTSubPath(entityInfo, false),
-                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : "never",
+                    tSubPath: entityInfo.collectionDepth ? keywords.EntitySetsCannotBeTraversed : getTSubPath(entityInfo, false),
+                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : keywords.EntitySetsCannotBeTraversed,
                     tResult: entityInfo.collectionDepth ? `ODataMultiResult<${tEntity}>` : `ODataSingleResult<${tEntity}>`
                 }
 
@@ -71,11 +71,11 @@ function buildGetSubPathProps(
 
         // TODO: is is possible to cast a primitive? (e.g. int -> string)
         if (info.type.objectType !== ObjectType.ComplexType) {
-            return "never";
+            return keywords.PrimitiveTypesCannotBeTraversed;
         }
 
         if (info.collectionDepth > 1 || (info.collectionDepth && !single)) {
-            return "never";
+            return keywords.EntitySetsCannotBeTraversed;
         }
 
         return fullyQualifiedTsType({
@@ -89,7 +89,7 @@ function buildGetSubPathProps(
 
         // TODO: is is possible to cast a primitive? (e.g. int -> string)
         if (info.type.objectType !== ObjectType.ComplexType || info.collectionDepth > 1) {
-            return "never";
+            return "TODO_Type";
         }
 
         const caster = fullyQualifiedTsType({

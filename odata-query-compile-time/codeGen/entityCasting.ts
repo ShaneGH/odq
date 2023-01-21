@@ -46,12 +46,12 @@ function buildGetCasterProps(
 
                 const generics = {
                     tEntity: resultType,
-                    tKey: getKeyType(t, true) || "never",
+                    tKey: getKeyType(t, true) || keywords.SingleEntitiesCannotBeQueriedByKey,
                     tQuery: fullyQualifiedTsType(typeRef, getQueryableName),
                     tCaster: `${caster}.${casterType}`,
                     tSingleCaster: `${caster}.Single`,
-                    tSubPath: singleCasterType ? `${subProps}` : "never",
-                    tSingleSubPath: singleCasterType ? "never" : `${subProps}`,
+                    tSubPath: singleCasterType ? `${subProps}` : keywords.EntitySetsCannotBeTraversed,
+                    tSingleSubPath: singleCasterType ? keywords.EntitySetsCannotBeTraversed : `${subProps}`,
                     tResult: `${resultWrapper}<${resultType}>`
                 }
 

@@ -102,6 +102,12 @@ describe("SubPath", function () {
         });
     });
 
+    describe("Path Cast Combos", () => {
+        it("Is in the casting spec", () => {
+            expect(true).toBeTruthy();
+        });
+    });
+
     describe("Collection, key combos", () => {
 
         describe("Collection, Key, Collection, Key", () => {
@@ -132,30 +138,11 @@ describe("SubPath", function () {
                 expect(comment.Name).toBe(user.commentUser.Name);
             });
         });
+    });
 
-        // it("Should retrieve items in the path, 2 levels", async () => {
-        //     const context = await addFullUserChain({ addFullChainToCommentUser: {} });
-        //     const comments = await client.My.Odata.Container.Blogs
-        //         .withKey(context.commentUserChain!.blog.Id!)
-        //         .subPath(x => x.User)
-        //         .subPath(x => x.BlogPostComments)
-        //         .get();
-
-        //     expect(comments.value.length).toBe(1);
-        //     expect(comments.value[0].Text).toBe(context.comment.Text);
-        // });
-
-        // it("Should retrieve items in the path, 3 levels", async () => {
-        //     const context = await addFullUserChain({ addFullChainToCommentUser: {} });
-        //     const comments = await client.My.Odata.Container.BlogPosts
-        //         .withKey(context.commentUserChain!.blogPost.Id!)
-        //         .subPath(x => x.Blog)
-        //         .subPath(x => x.User)
-        //         .subPath(x => x.BlogPostComments)
-        //         .get();
-
-        //     expect(comments.value.length).toBe(1);
-        //     expect(comments.value[0].Text).toBe(context.comment.Text);
-        // });
+    describe("Path Cast Combos", () => {
+        it("Is in the casting spec", () => {
+            expect(true).toBeTruthy();
+        });
     });
 });

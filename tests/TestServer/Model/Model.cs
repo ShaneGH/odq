@@ -35,8 +35,18 @@ public class User : HasId
 {
     [Required]
     public string Name { get; set; }
+
+    public UserValueDump? UserValueDump { get; set; }
+
     public IList<Blog> Blogs { get; set; }
     public IList<Comment> BlogPostComments { get; set; }
+}
+
+/// another table hanging off user, that has blogs, but casted down
+public class UserValueDump : HasId
+{
+    public User User { get; set; }
+    public IList<HasId> Blogs { get; set; }
 }
 
 public class Blog : HasId

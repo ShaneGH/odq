@@ -95,13 +95,13 @@ public class HasIdsController : ODataControllerBase<HasId>
         return _inMemoryDb.Users;
     }
 
-    [HttpGet("HasIds({key})/My.Odata.Entities.User/Blogs")]
+    [HttpGet("HasIds({key})/My.Odata.Entities.User/BlogPostComments")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public IQueryable<Blog> GetUsersBlogsFromHasIds([FromRoute] string key)
+    public IQueryable<Comment> GetUsersCommentsFromHasIds([FromRoute] string key)
     {
         return _inMemoryDb.Users
             .Where(x => x.Id == key)
-            .SelectMany(x => x.Blogs);
+            .SelectMany(x => x.BlogPostComments);
     }
 
     [HttpGet("HasIds({key})/My.Odata.Entities.Blog")]

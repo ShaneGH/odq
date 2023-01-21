@@ -17,6 +17,9 @@ export type Keywords = {
     ICollectionQueryBulder: string,
     ODataMultiResult: string
     ODataSingleResult: string
+    SingleEntitiesCannotBeQueriedByKey: string
+    EntitySetsCannotBeTraversed: string
+    PrimitiveTypesCannotBeTraversed: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -48,7 +51,10 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ICollectionQueryBulder: getKeyword("ICollectionQueryBulder"),
         ODataMultiResult: getKeyword("ODataMultiResult"),
         ODataSingleResult: getKeyword("ODataSingleResult"),
-        _httpClientArgs: getKeyword("_httpClientArgs")
+        _httpClientArgs: getKeyword("_httpClientArgs"),
+        SingleEntitiesCannotBeQueriedByKey: getKeyword("SingleEntitiesCannotBeQueriedByKey"),
+        EntitySetsCannotBeTraversed: getKeyword("EntitySetsCannotBeTraversed"),
+        PrimitiveTypesCannotBeTraversed: getKeyword("PrimitiveTypesCannotBeTraversed")
     }
 
     function getKeyword(defaultVal: string) {
@@ -77,7 +83,10 @@ ${tab(importWithAlias("ISingletonQueryBulder"))},
 ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))},
 ${tab(importWithAlias("ODataMultiResult"))},
-${tab(importWithAlias("ODataSingleResult"))}
+${tab(importWithAlias("ODataSingleResult"))},
+${tab(importWithAlias("SingleEntitiesCannotBeQueriedByKey"))},
+${tab(importWithAlias("EntitySetsCannotBeTraversed"))},
+${tab(importWithAlias("PrimitiveTypesCannotBeTraversed"))}
 } from 'odata-query';`
 
     function importWithAlias(importName: keyof Keywords) {

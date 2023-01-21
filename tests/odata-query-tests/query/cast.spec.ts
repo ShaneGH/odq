@@ -1,7 +1,7 @@
 
 import { My, ODataClient } from "../generatedCode.js";
 import { FilterUtils as F, ExpandUtils as E } from "odata-query";
-import { addUser } from "../utils/client.js";
+import { addFullUserChain, addUser } from "../utils/client.js";
 
 const client = new ODataClient({
     fetch: (x, y) => {
@@ -96,5 +96,27 @@ describe("Cast", function () {
             .get();
 
         expect(items.Name).toBe(user.Name);
+    });
+
+    describe("Path Cast Combos", () => {
+        it("Is in the casting spec", () => {
+            expect(true).toBeTruthy();
+        });
+    });
+});
+
+describe("Path Cast Combos", () => {
+
+    // TODO: path -> cast
+    it("Should retrieve correct values after cast and path", async () => {
+        const ctxt = await addFullUserChain();
+        const comments = await client.My.Odata.Container.HasIds
+            .withKey(ctxt.commentUser.Id!)
+            .cast(c => c.User())
+            .subPath(u => u.BlogPostComments)
+            .get();
+
+        expect(comments.value.length).toBe(1);
+        expect(comments.value[0].Text).toBe(ctxt.comment.Text);
     });
 });
