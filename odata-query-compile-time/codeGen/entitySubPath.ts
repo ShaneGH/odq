@@ -6,7 +6,7 @@ import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGe
 // TODO: duplicate_logic_key: subPath
 enum ObjectType {
     ComplexType = "ComplexType",
-    PrmitiveType = "PrmitiveType"
+    PrimitiveType = "PrimitiveType"
 }
 
 type IsObjectDescription<T extends ObjectType> = {
@@ -17,7 +17,7 @@ type IsComplexType = IsObjectDescription<ObjectType.ComplexType> & {
     complexType: ODataComplexType
 }
 
-type IsPrimitiveType = IsObjectDescription<ObjectType.PrmitiveType> & {
+type IsPrimitiveType = IsObjectDescription<ObjectType.PrimitiveType> & {
     primitiveType: ODataTypeRef
 }
 
@@ -130,7 +130,7 @@ function buildGetSubPathProps(
             .map(_ => "[]")
             .join("")
 
-        return info.type.objectType === ObjectType.PrmitiveType
+        return info.type.objectType === ObjectType.PrimitiveType
             ? fullyQualifiedTsType(info.type.primitiveType) + collectionStr
             : fullyQualifiedTsType({
                 isCollection: false,
@@ -152,7 +152,7 @@ function buildGetSubPathProps(
             return {
                 collectionDepth: 0,
                 type: {
-                    objectType: ObjectType.PrmitiveType,
+                    objectType: ObjectType.PrimitiveType,
                     primitiveType: propertyType
                 }
             };

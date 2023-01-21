@@ -191,6 +191,13 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
             _inMemoryDb.BlogPosts.Where(x => x.Id == key).Select(x => x.Blog));
     }
 
+    [HttpGet("BlogPosts({key})/Words")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<string> GetBlogWords([FromRoute] string key)
+    {
+        return _inMemoryDb.BlogPosts.Where(x => x.Id == key).SelectMany(x => x.Words);
+    }
+
     [HttpGet("BlogPosts({key})/Blog/User")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
     public SingleResult<User> GetBlogPostBlogUser([FromRoute] string key)

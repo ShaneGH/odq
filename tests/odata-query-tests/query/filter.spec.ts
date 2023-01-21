@@ -3,7 +3,7 @@ import { addFullUserChain } from "../utils/client.js";
 import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
 import { FilterUtils as F, QueryBuilder } from "odata-query";
 import { uniqueString } from "../utils/utils.js";
-import { describeEntityRelationship as testCase } from "../correctness/entityRelationships.js";
+import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
 
 const rootConfig = rootConfigExporter();
 
@@ -43,34 +43,35 @@ function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
 
 describe("Query.Filter", function () {
 
-    // TODO: enable afterAll
-    // afterAll(verifyEntityRelationships);
+    afterAll(verifyEntityRelationships);
 
-    // // BlogName -> BlogName
-    // testCase("Simple -> Simple", function () {
+    // BlogName -> BlogName
+    testCase("Simple -> Simple", function () {
 
-    //     it("Should filter (success)", execute.bind(null, true));
-    //     it("Should filter (failure)", execute.bind(null, false))
+        it("Should filter (success)", execute.bind(null, true));
+        it("Should filter (failure)", execute.bind(null, false))
 
-    //     async function execute(success: boolean) {
+        async function execute(success: boolean) {
 
-    //         const user = await addFullUserChain();
-    //         const blogName = success
-    //             ? user.blog.Name
-    //             : "Not a valid name";
+            const user = await addFullUserChain();
+            const blogName = success
+                ? user.blog.Name
+                : "Not a valid name";
 
-    //         const result = await getUserBlogPostNames(
-    //             user.blogUser.Id!,
-    //             q => q.filter(n => F.eq(n, blogName)));
+            const result = await client.My.Odata.Container.BlogPosts
+                .withKey(user.blogUser.Id!)
+                .subPath(x => x.Words)
+                .withQuery(q => q.filter(n => F.eq(n, blogName)))
+                .get();
 
-    //         if (success) {
-    //             expect(result.length).toBe(1);
-    //             expect(result[0]).toBe(user.blog.Name);
-    //         } else {
-    //             expect(result.length).toBe(0);
-    //         }
-    //     }
-    // });
+            // if (success) {
+            //     expect(result.length).toBe(1);
+            //     expect(result[0]).toBe(user.blog.Name);
+            // } else {
+            //     expect(result.length).toBe(0);
+            // }
+        }
+    });
 
     // BlogPost, Blog, Name
     testCase("Complex -> Complex -> Simple", function () {
