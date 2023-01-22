@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataPropertyType, ODataServiceTypes, ODataTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef } from "odata-query-shared";
 
 type Dict<T> = { [key: string]: T }
 
@@ -74,7 +74,7 @@ function addAlias(aliasFor: string, aliases: Dict<boolean>) {
     };
 }
 
-function buildPropertyTypeRef<T>(type: ODataPropertyType, root: ODataServiceTypes, path: PathSegment[], usedAliases: Dict<boolean>): QueryObject<T> {
+function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, path: PathSegment[], usedAliases: Dict<boolean>): QueryObject<T> {
 
     if (type.isCollection) {
         if (!path.length) {

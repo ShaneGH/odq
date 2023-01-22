@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataPropertyType, ODataServiceConfig, ODataServiceTypes, ODataTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef } from "odata-query-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildSanitizeNamespace, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
@@ -18,7 +18,7 @@ type IsComplexType = IsObjectDescription<ObjectType.ComplexType> & {
 }
 
 type IsPrimitiveType = IsObjectDescription<ObjectType.PrimitiveType> & {
-    primitiveType: ODataTypeRef
+    primitiveType: ODataSingleTypeRef
 }
 
 type EntityTypeInfo = {
@@ -43,7 +43,7 @@ function buildGetSubPathProps(
 
         return Object
             .keys(type.properties)
-            .map(key => [key, type.properties[key].type] as [string, ODataPropertyType])
+            .map(key => [key, type.properties[key].type] as [string, ODataTypeRef])
             .map(([key, value]) => {
 
                 // TODO: test with arrays of arrays?
@@ -139,7 +139,7 @@ function buildGetSubPathProps(
             }) + collectionStr;
     }
 
-    function getEntityTypeInfo(propertyType: ODataPropertyType): EntityTypeInfo {
+    function getEntityTypeInfo(propertyType: ODataTypeRef): EntityTypeInfo {
         if (propertyType.isCollection) {
             const innerResult = getEntityTypeInfo(propertyType.collectionType)
             return {

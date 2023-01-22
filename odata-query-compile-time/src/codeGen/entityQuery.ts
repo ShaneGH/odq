@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataPropertyType, ODataServiceConfig } from "odata-query-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig } from "odata-query-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetQueryableName, buildSanitizeNamespace, FullyQualifiedTsType, GetQueryableName, Tab } from "./utils.js";
@@ -6,7 +6,7 @@ import { buildFullyQualifiedTsType, buildGetQueryableName, buildSanitizeNamespac
 
 
 function getQueryableTypeString(
-    type: ODataPropertyType, wrapInQueryObject: boolean, keywords: Keywords, serviceConfig: ODataServiceConfig,
+    type: ODataTypeRef, wrapInQueryObject: boolean, keywords: Keywords, serviceConfig: ODataServiceConfig,
     fullyQualifiedTsType: FullyQualifiedTsType, getQueryableName: GetQueryableName): string {
 
     const t = getQueryableType(type, keywords, serviceConfig, fullyQualifiedTsType, getQueryableName);
@@ -15,7 +15,7 @@ function getQueryableTypeString(
         : t.generics[0];
 }
 
-function getQueryableType(type: ODataPropertyType, keywords: Keywords,
+function getQueryableType(type: ODataTypeRef, keywords: Keywords,
     serviceConfig: ODataServiceConfig, fullyQualifiedTsType: FullyQualifiedTsType, getQueryableName: GetQueryableName) {
     // TODO: namespacing of value from getTypeString?
     // TODO: test for QueryArray<QueryArray<T>>

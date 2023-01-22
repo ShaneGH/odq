@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataEntitySet, ODataPropertyType, ODataServiceConfig, ODataTypeName, ODataTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef } from "odata-query-shared";
 import { IQueryBulder, QueryBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
@@ -127,7 +127,7 @@ function tryFindKeyName(
 // TODO: composite_keys (search whole proj for composite_keys)
 function tryFindKeyType(
     type: ODataComplexType,
-    root: ODataServiceConfig): ODataPropertyType | null {
+    root: ODataServiceConfig): ODataTypeRef | null {
 
     const key = tryFindKeyName(type, root);
     return (key && tryFindPropertyType(type, key, root)) || null;
@@ -153,7 +153,7 @@ function tryFindBaseType(
 function tryFindPropertyType(
     type: ODataComplexType,
     propertyName: string,
-    root: ODataServiceConfig): ODataPropertyType | null {
+    root: ODataServiceConfig): ODataTypeRef | null {
 
     if (type.properties[propertyName]) return type.properties[propertyName].type;
 
@@ -193,7 +193,7 @@ type IsComplexType = IsObjectDescription<ObjectType.ComplexType> & {
 }
 
 type IsPrimitiveType = IsObjectDescription<ObjectType.PrimitiveType> & {
-    primitiveType: ODataTypeRef
+    primitiveType: ODataSingleTypeRef
 }
 
 type EntityTypeInfo = {
@@ -204,7 +204,7 @@ type EntityTypeInfo = {
 }
 
 function getEntityTypeInfo(
-    propertyType: ODataPropertyType,
+    propertyType: ODataTypeRef,
     root: ODataServiceConfig): EntityTypeInfo {
 
     if (propertyType.isCollection) {

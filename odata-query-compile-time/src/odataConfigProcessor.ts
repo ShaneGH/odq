@@ -1,6 +1,6 @@
 
 import { useNamespaces } from 'xpath'
-import { ODataServiceTypes, ODataComplexType, ODataPropertyType, ODataTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet } from 'odata-query-shared'
+import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet } from 'odata-query-shared'
 import { SupressWarnings } from './config.js';
 
 const ns = {
@@ -68,7 +68,7 @@ function mapEntitySet(namespace: string, entitySet: Node): ODataEntitySet {
     }
 
     const lastDot = type[0].value.lastIndexOf(".");
-    const forType: ODataTypeRef = lastDot === -1
+    const forType: ODataSingleTypeRef = lastDot === -1
         // TODO: can this be true???
         ? { isCollection: false, namespace: "", name: type[0].value }
         : { isCollection: false, namespace: type[0].value.substring(0, lastDot), name: type[0].value.substring(lastDot + 1) };
@@ -186,7 +186,7 @@ function mapEntityType(warningConfig: SupressWarnings, node: Node): ODataComplex
     }
 }
 
-function parseTypeStr(type: string | undefined): ODataPropertyType {
+function parseTypeStr(type: string | undefined): ODataTypeRef {
     const collectionType = /^Collection\((.+?)\)$/.exec(type || "");
     if (collectionType) {
         return {

@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataPropertyType, ODataServiceConfig, ODataTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataSingleTypeRef } from "odata-query-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 
@@ -70,20 +70,20 @@ export const buildSanitizeNamespace = (settings: CodeGenConfig | null | undefine
     return namespace.replace(/[^a-zA-Z0-9$._]/, settings?.namespaceSpecialCharacter || ".");
 }
 
-export type LookupType = (t: ODataTypeRef) => ODataComplexType | undefined
+export type LookupType = (t: ODataSingleTypeRef) => ODataComplexType | undefined
 
 // TODO: if the key type is a collection, I think this function will fall over
-export const buildLookupType = (serviceConfig: ODataServiceConfig): LookupType => (t: ODataTypeRef) => {
+export const buildLookupType = (serviceConfig: ODataServiceConfig): LookupType => (t: ODataSingleTypeRef) => {
     return (serviceConfig.types[t.namespace] && serviceConfig.types[t.namespace][t.name]) || undefined
 }
 
 function id<T>(x: T) { return x }
 
-export type FullyQualifiedTsType = (type: ODataPropertyType, transformTypeName?: ((name: string) => string) | undefined) => string
+export type FullyQualifiedTsType = (type: ODataTypeRef, transformTypeName?: ((name: string) => string) | undefined) => string
 export const buildFullyQualifiedTsType = (settings: CodeGenConfig | null | undefined): FullyQualifiedTsType => {
     const sanitizeNamespace = buildSanitizeNamespace(settings)
 
-    const fullyQualifiedTsType = (type: ODataPropertyType, transformTypeName?: ((name: string) => string) | undefined): string => {
+    const fullyQualifiedTsType = (type: ODataTypeRef, transformTypeName?: ((name: string) => string) | undefined): string => {
 
         if (type.isCollection) {
             return `${fullyQualifiedTsType(type.collectionType, transformTypeName)}[]`
@@ -97,7 +97,7 @@ export const buildFullyQualifiedTsType = (settings: CodeGenConfig | null | undef
     return fullyQualifiedTsType;
 }
 
-function getKeyPropertyType(prop: ODataPropertyType, fullyQualifiedTsType: FullyQualifiedTsType): string {
+function getKeyPropertyType(prop: ODataTypeRef, fullyQualifiedTsType: FullyQualifiedTsType): string {
     if (prop.isCollection) {
         // TODO: test
         return getKeyPropertyType(prop.collectionType, fullyQualifiedTsType) + "[]"
@@ -144,11 +144,11 @@ export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serv
     return getKeyType;
 }
 
-export type GetTypeString = (type: ODataPropertyType) => string
+export type GetTypeString = (type: ODataTypeRef) => string
 export const buildGetTypeString = (settings: CodeGenConfig | null | undefined) => {
 
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
-    const getTypeString = (type: ODataPropertyType): string => {
+    const getTypeString = (type: ODataTypeRef): string => {
 
         if (type.isCollection) {
             return `${getTypeString(type.collectionType)}[]`;

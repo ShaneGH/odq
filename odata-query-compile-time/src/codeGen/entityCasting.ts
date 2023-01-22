@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataServiceConfig, ODataServiceTypes, ODataTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef } from "odata-query-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
@@ -39,7 +39,7 @@ function buildGetCasterProps(
 
         return inherits
             .map(t => {
-                const typeRef: ODataTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
+                const typeRef: ODataSingleTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
                 const resultType = fullyQualifiedTsType(typeRef)
                 const caster = fullyQualifiedTsType(typeRef, getCasterName)
                 const subProps = fullyQualifiedTsType(typeRef, getSubPathName)

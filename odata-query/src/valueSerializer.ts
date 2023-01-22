@@ -1,7 +1,7 @@
-import { ODataPropertyType } from "odata-query-shared";
+import { ODataTypeRef } from "odata-query-shared";
 
 
-export function serialize(value: any, type: ODataPropertyType): string {
+export function serialize(value: any, type: ODataTypeRef): string {
     if (type.isCollection) {
         throw new Error("TODO: not implemented")
         // if (!Array.isArray(value)) {

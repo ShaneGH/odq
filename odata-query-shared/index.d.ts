@@ -12,21 +12,21 @@ export type ODataComplexType = ODataTypeName & {
     properties: {
         [key: string]: {
             navigationProperty: boolean
-            type: ODataPropertyType
+            type: ODataTypeRef
         }
     }
 }
 
-export type ODataTypeRef = ODataTypeName & {
+export type ODataSingleTypeRef = ODataTypeName & {
     isCollection: false
 }
 
-export type ODataCollectionType = {
+export type ODataCollectionTypeRef = {
     isCollection: true,
-    collectionType: ODataPropertyType
+    collectionType: ODataTypeRef
 }
 
-export type ODataPropertyType = ODataCollectionType | ODataTypeRef
+export type ODataTypeRef = ODataCollectionTypeRef | ODataSingleTypeRef
 
 export type ODataServiceTypes = {
     [namespace: string]: {
@@ -41,7 +41,7 @@ export type ODataServiceConfig = {
 export type ODataEntitySet = {
     name: string,
     namespace: string,
-    forType: ODataTypeRef
+    forType: ODataSingleTypeRef
 }
 
 export type ODataEntitySetNamespaces = {

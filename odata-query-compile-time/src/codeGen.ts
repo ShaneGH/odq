@@ -1,7 +1,7 @@
 
 // Old file. Keeping for a while but can probably be deleted
 
-// import { ODataEntitySet, ODataServiceConfig, ODataComplexType, ODataPropertyType, ODataTypeRef, ODataServiceTypes } from "odata-query-shared";
+// import { ODataEntitySet, ODataServiceConfig, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceTypes } from "odata-query-shared";
 // import { CodeGenConfig, SupressWarnings } from "./config.js";
 
 // const defaultTabs = 2;
@@ -166,7 +166,7 @@
 //     }
 
 //     // TODO: if the key type is a collection, I think this function will fall over
-//     function lookupType(t: ODataTypeRef): ODataComplexType | undefined {
+//     function lookupType(t: ODataSingleTypeRef): ODataComplexType | undefined {
 //         return (allTypes[t.namespace] && allTypes[t.namespace][t.name]) || undefined
 //     }
 
@@ -194,7 +194,7 @@
 //         return getKeyPropertyType(prop.type);
 //     }
 
-//     function getKeyPropertyType(prop: ODataPropertyType): string {
+//     function getKeyPropertyType(prop: ODataTypeRef): string {
 //         if (prop.isCollection) {
 //             // TODO: test
 //             return getKeyPropertyType(prop.collectionType) + "[]"
@@ -344,7 +344,7 @@
 //             .join("\n");
 //     }
 
-//     function getQueryableTypeString(type: ODataPropertyType, wrapInQueryObject: boolean): string {
+//     function getQueryableTypeString(type: ODataTypeRef, wrapInQueryObject: boolean): string {
 
 //         const t = getQueryableType(type);
 //         return wrapInQueryObject
@@ -352,7 +352,7 @@
 //             : t.generics[0];
 //     }
 
-//     function getTypeString(type: ODataPropertyType): string {
+//     function getTypeString(type: ODataTypeRef): string {
 
 //         if (type.isCollection) {
 //             return `${getTypeString(type.collectionType)}[]`;
@@ -361,7 +361,7 @@
 //         return fullyQualifiedTsType(type);
 //     }
 
-//     function getQueryableType(type: ODataPropertyType) {
+//     function getQueryableType(type: ODataTypeRef) {
 //         // TODO: namespacing of value from getTypeString?
 //         // TODO: test for QueryArray<QueryArray<T>>
 //         if (type.isCollection) {
@@ -414,7 +414,7 @@
 //         return namespace.replace(/[^a-zA-Z0-9$._]/, settings?.namespaceSpecialCharacter || ".");
 //     }
 
-//     function fullyQualifiedTsType(type: ODataPropertyType, transformTypeName: ((name: string) => string) | null = null): string {
+//     function fullyQualifiedTsType(type: ODataTypeRef, transformTypeName: ((name: string) => string) | null = null): string {
 
 //         if (type.isCollection) {
 //             return `${fullyQualifiedTsType(type.collectionType, transformTypeName)}[]`
@@ -449,7 +449,7 @@
 
 //         return inherits
 //             .map(t => {
-//                 const typeRef: ODataTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
+//                 const typeRef: ODataSingleTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
 //                 const generics = [
 //                     fullyQualifiedTsType(typeRef),
 //                     getKeyType(t) || "never",
@@ -461,7 +461,7 @@
 //             })
 //     }
 
-//     function digOutTypeRef(type: ODataPropertyType): ODataTypeRef {
+//     function digOutTypeRef(type: ODataTypeRef): ODataSingleTypeRef {
 //         return !type.isCollection
 //             ? type
 //             : digOutTypeRef(type.collectionType)
