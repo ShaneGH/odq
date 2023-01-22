@@ -7,11 +7,13 @@ import { describeEntityRelationship as testCase, verifyEntityRelationships } fro
 
 const rootConfig = rootConfigExporter();
 
+function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
+    console.log(input, init)
+    return fetch(input, init)
+}
+
 const client = new ODataClient({
-    fetch: (x, y) => {
-        //console.log(x, y)
-        return fetch(x, y)
-    },
+    fetch,
     uriRoot: "http://localhost:5432/odata/test-entities",
     responseInterceptor: (result, uri, reqValues, defaultParser) => {
         return defaultParser(result)
@@ -53,23 +55,27 @@ describe("Query.Filter", function () {
 
         async function execute(success: boolean) {
 
-            const user = await addFullUserChain();
-            const blogName = success
-                ? user.blog.Name
-                : "Not a valid name";
+            const uniqueWord = uniqueString("FilterByWord")
+            const user = await addFullUserChain({
+                blogPostContent: `Blog ${uniqueWord}`
+            });
+
+            const word = success
+                ? uniqueWord
+                : uniqueString("FilterByWord");
 
             const result = await client.My.Odata.Container.BlogPosts
-                .withKey(user.blogUser.Id!)
+                .withKey(user.blogPost.Id!)
                 .subPath(x => x.Words)
-                .withQuery(q => q.filter(n => F.eq(n, blogName)))
+                .withQuery(q => q.filter(n => F.eq(n, word)))
                 .get();
 
-            // if (success) {
-            //     expect(result.length).toBe(1);
-            //     expect(result[0]).toBe(user.blog.Name);
-            // } else {
-            //     expect(result.length).toBe(0);
-            // }
+            if (success) {
+                expect(result.value.length).toBe(1);
+                expect(result.value[0]).toBe(word);
+            } else {
+                expect(result.value.length).toBe(0);
+            }
         }
     });
 

@@ -109,16 +109,19 @@ ${methods}
         const idType = getKeyType(type, true);
         const generics = {
             tEntity: resultType,
-            tKey: idType || keywords.SingleEntitiesCannotBeQueriedByKey,
-            tQuery: queryableType,
+            tKey: idType || keywords.SingleItemsCannotBeQueriedByKey,
+            tQuery: {
+                isPrimitive: false,
+                fullyQualifiedQueryableName: queryableType
+            },
             tCaster: `${casterType}.Collection`,
             tSingleCaster: `${casterType}.Single`,
-            tSubPath: keywords.EntitySetsCannotBeTraversed,
+            tSubPath: keywords.CollectionsCannotBeTraversed,
             tSingleSubPath: `${subPathType}`,
             tResult: `${keywords.ODataMultiResult}<${resultType}>`
         }
 
-        const instanceType = httpClientType(keywords, generics, tab, true);
+        const instanceType = httpClientType(keywords, generics, tab);
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
             `${className()}.toODataTypeRef("${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,

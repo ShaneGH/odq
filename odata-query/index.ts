@@ -34,23 +34,21 @@ export {
     QueryObject
 } from "./src/typeRefBuilder.js"
 
-// TODO: never types below contain the word "entity". May need to say something about complex types also
-
 /*
- * It is not possible to select an entity by key more than once
+ * It is not possible to select an item by key more than once
  * If you encounter this type, it is a sign that you are doing somethnig incorrect
  * 
  * This is a type designed not to be used
  */
-export type SingleEntitiesCannotBeQueriedByKey = never
+export type SingleItemsCannotBeQueriedByKey = never
 
 /*
- * It is not possible to traverse or select a property of an entity *set*
- * You must first apply a key to the entity set, and then you can traverse the entity
+ * It is not possible to traverse or select a property of an item inside a collection
+ * You must first apply a key to the collection, and then you can traverse the item
  * 
  * This is a type designed not to be used
  */
-export type EntitySetsCannotBeTraversed = never
+export type CollectionsCannotBeTraversed = never
 
 /*
  * It is not possible to traverse or select a property of a primitive type, e.g. a string or an Int32

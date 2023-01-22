@@ -49,7 +49,8 @@ export function configObj(serviceConfig: ODataServiceConfig, keywords: Keywords,
 
     const exportSettings = settings?.exportTypeDefinitionJsObject
         ? `/*
- * A copy of ${keywords.rootConfig}, exported for debug purposes
+ * A copy of ${keywords.rootConfig}, exported for debug purposes.
+ * Subject to breaking changes without warning
  */
 export const ${keywords.rootConfigExporter} = (function () {
 ${tab(`const ${keywords.rootConfigExporter}: ${keywords.ODataServiceConfig} = JSON.parse(JSON.stringify(${keywords.rootConfig}))`)}
@@ -163,7 +164,10 @@ export const buildGetTypeString = (settings: CodeGenConfig | null | undefined) =
 export type HttpClientGenerics = {
     tEntity: string,
     tKey: string,
-    tQuery: string,
+    tQuery: {
+        fullyQualifiedQueryableName: string
+        isPrimitive: boolean
+    },
     tCaster: string,
     tSingleCaster: string,
     tSubPath: string,
@@ -171,24 +175,35 @@ export type HttpClientGenerics = {
     tResult: string
 }
 
-export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab, genericsOnNewLine = false) {
+const httpClientGenericNames = ["TEntity", "TKey", "TQueryBuilder", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
+const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x ? s : x, -1);
+
+export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {
 
     const gs = [
         generics.tEntity,
         generics.tKey,
-        generics.tQuery,
+        generics.tQuery.isPrimitive
+            ? `${keywords.PrimitiveQueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`
+            : `${keywords.QueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,
         generics.tSingleSubPath,
         generics.tResult
     ]
-        .map(genericsOnNewLine ? tab : id)
-        .join(genericsOnNewLine ? ",\n" : ", ");
+        .map(addType)
+        .map(tab)
+        .join(",\n");
 
-    const nl = genericsOnNewLine ? "\n" : "";
+    return `${keywords.EntityQuery}<\n${gs}>`
 
-    return `${keywords.EntityQuery}<${nl}${gs}>`
+    function addType(name: string, i: number) {
+        const gType = httpClientGenericNames[i] || ""
+        const padded = `/* ${gType} */ ` + [...Array(Math.max(0, longest - gType.length)).keys()].map(_ => " ").join("")
+
+        return `${padded}${name}`
+    }
 }
 
 export type GetSubPathName = (forType: string) => string

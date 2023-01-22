@@ -53,16 +53,16 @@ function buildGetSubPathProps(
 
                 const generics = {
                     tEntity,
-                    tKey: getPropertyKeyType(entityInfo) || keywords.SingleEntitiesCannotBeQueriedByKey,
+                    tKey: getPropertyKeyType(entityInfo) || keywords.SingleItemsCannotBeQueriedByKey,
                     tQuery: getTQuery(entityInfo),
                     tCaster: getTCaster(entityInfo),
                     tSingleCaster: getTCaster(entityInfo, true),
-                    tSubPath: entityInfo.collectionDepth ? keywords.EntitySetsCannotBeTraversed : getTSubPath(entityInfo, false),
-                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : keywords.EntitySetsCannotBeTraversed,
+                    tSubPath: entityInfo.collectionDepth ? keywords.CollectionsCannotBeTraversed : getTSubPath(entityInfo, false),
+                    tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : keywords.CollectionsCannotBeTraversed,
                     tResult: entityInfo.collectionDepth ? `ODataMultiResult<${tEntity}>` : `ODataSingleResult<${tEntity}>`
                 }
 
-                const entityQueryType = httpClientType(keywords, generics, tab, false);
+                const entityQueryType = httpClientType(keywords, generics, tab);
                 return `${key}: ${keywords.SubPathSelection}<${entityQueryType}>`
             })
     }
@@ -75,7 +75,7 @@ function buildGetSubPathProps(
         }
 
         if (info.collectionDepth > 1 || (info.collectionDepth && !single)) {
-            return keywords.EntitySetsCannotBeTraversed;
+            return keywords.CollectionsCannotBeTraversed;
         }
 
         return fullyQualifiedTsType({
@@ -105,15 +105,28 @@ function buildGetSubPathProps(
 
     function getTQuery(info: EntityTypeInfo) {
 
-        if (info.type.objectType !== ObjectType.ComplexType || info.collectionDepth > 1) {
-            return "TODO_Type";
+        if (info.collectionDepth > 1) {
+            return {
+                isPrimitive: info.type.objectType === ObjectType.PrimitiveType,
+                fullyQualifiedQueryableName: "TODO_Type"
+            };
         }
 
-        return fullyQualifiedTsType({
-            isCollection: false,
-            namespace: info.type.complexType.namespace,
-            name: info.type.complexType.name
-        }, getQueryableName)
+        if (info.type.objectType === ObjectType.PrimitiveType) {
+            return {
+                isPrimitive: true,
+                fullyQualifiedQueryableName: `${info.type.primitiveType.namespace && `${info.type.primitiveType.namespace}.`}${info.type.primitiveType.name}`
+            };
+        }
+
+        return {
+            isPrimitive: false,
+            fullyQualifiedQueryableName: fullyQualifiedTsType({
+                isCollection: false,
+                namespace: info.type.complexType.namespace,
+                name: info.type.complexType.name
+            }, getQueryableName)
+        };
     }
 
     function getPropertyKeyType(type: EntityTypeInfo) {
@@ -194,7 +207,7 @@ export const buildEntitySubPath = (tab: Tab, settings: CodeGenConfig | null | un
         const props = getSubPathProps(type)
 
         return `export type ${subPathName} = ${baseType}{
-${tab(props.join("\n"))}
+${tab(props.join("\n\n"))}
 }`;
     }
 }

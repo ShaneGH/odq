@@ -1,5 +1,5 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes } from "odata-query-shared";
-import { IQueryBulder, PrimitiveQueryBuilder, QueryBuilder } from "./queryBuilder.js";
+import { IQueryBulder, PrimitiveQueryBuilder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -65,43 +65,11 @@ function removeTrailingSlash(path: string) {
     return path && path.replace(/\/$/, "")
 }
 
-function uriBuilder(uri: ODataUriParts) {
-
-    let queryPart = Object
-        .keys(uri.query)
-        .map(x => `${x}=${uri.query[x]}`)
-        .join("&");
-
-    const uriRoot = removeTrailingSlash(uri.uriRoot)
-    const entityName = addLeadingSlash(removeTrailingSlash(uri.relativePath))
-    queryPart = queryPart && `?${queryPart}`
-
-    return `${uriRoot}${entityName}${queryPart}`
-}
-
-
-function processResponse<TEntity>(response: Response, uri: any, reqValues: any, defaultProcessor: any): Promise<ODataMultiResult<TEntity>> {
-    // TODO: error handling
-    if (!response.ok) {
-        return new Promise<any>((_, rej) => rej(response));
-    }
-
-    return response.json();
-}
-
 type Dict<T> = { [key: string]: T }
 
 type EntityQueryState = {
     path: string[]
     query?: Dict<string>
-}
-
-function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
-    for (let i = 0; i < items.length; i++) {
-        if (items[i] != null) return items[i] as T;
-    }
-
-    return defaultVal;
 }
 
 export type CastSelection<TNewEntityQuery> = {
@@ -247,7 +215,7 @@ export enum WithKeyType {
      * Specifies that a key should be embedded added as a function call
      * e.g. ~/Users(1)
      */
-    FunctionCall = "PathSegment",
+    FunctionCall = "FunctionCall",
 
     /*
      * Specifies that a key should be embedded added as a path segment
@@ -256,26 +224,43 @@ export enum WithKeyType {
     PathSegment = "PathSegment"
 }
 
-// export enum QueryTypeCategory {
-//     ComplexType = "ComplexType",
-//     PrimitiveType = "PrimitiveType"
-// }
+const defaultRequestTools: Partial<RequestTools> = {
+    uriInterceptor: (uri: ODataUriParts) => {
 
-// export type ComplexCategory = {
-//     category: QueryTypeCategory.ComplexType
-//     type: ODataComplexType
-// }
+        let queryPart = Object
+            .keys(uri.query)
+            .map(x => `${x}=${uri.query[x]}`)
+            .join("&");
 
-// export type PrimitiveCategory = {
-//     category: QueryTypeCategory.PrimitiveType
-//     type: string
-// }
+        const uriRoot = removeTrailingSlash(uri.uriRoot)
+        const entityName = addLeadingSlash(removeTrailingSlash(uri.relativePath))
+        queryPart = queryPart && `?${queryPart}`
+
+        return `${uriRoot}${entityName}${queryPart}`
+    },
+
+    requestInterceptor: (_, x) => x,
+
+    // NOTE: defaultProcessor will always be null
+    responseInterceptor: <TEntity>(response: Response, uri: any, reqValues: any, defaultProcessor: any): Promise<ODataMultiResult<TEntity>> => {
+        // TODO: error handling
+        if (!response.ok) {
+            return new Promise<any>((_, rej) => rej(response));
+        }
+
+        return response.json();
+    }
+}
+
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
 // TODO: not a great name: EntityQuery
 // TODO: method documentation
-export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
+
+// NOTE: these generic type names are copy pasted into code gen project \src\codeGen\utils.ts
+// NOTE: make sure that they stay in sync
+export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
 
     state: EntityQueryState
 
@@ -329,7 +314,8 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
                 ...this.state.path.slice(0, this.state.path.length - 1),
                 `${this.state.path[this.state.path.length - 1]}(${k})`,
             ]
-            : keyEmbedType === WithKeyType.FunctionCall
+            // TODO: test
+            : keyEmbedType === WithKeyType.PathSegment
                 ? [
                     ...this.state.path,
                     k,
@@ -340,7 +326,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error(`Invalid WithKeyType: ${keyEmbedType}`);
         }
 
-        return new EntityQuery<TEntity, never, TQuery, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataSingleResult<TEntity>>(
+        return new EntityQuery<TEntity, never, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataSingleResult<TEntity>>(
             this.requestTools,
             this.type.collectionType,
             this.entitySet,
@@ -414,7 +400,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
 
     // TODO: this allows the user to do illegal queries on singletons:
     //  The query specified in the URI is not valid. The requested resource is not a collection. Query options $filter, $orderby, $count, $skip, and $top can be applied only on collections
-    withQuery(queryBuilder: (q: QueryBuilder<TQuery>) => QueryBuilder<TQuery>) {
+    withQuery(queryBuilder: (q: TQueryBuilder) => TQueryBuilder, urlEncode = true) {
 
         if (this.state.query) {
             throw new Error("This request already has a query");
@@ -424,16 +410,29 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         const { name, namespace } = getCastingTypeRef(this.type);
 
         const t = lookup({ name, namespace }, this.root.types)
-        const query = t.isComplex
-            ? queryBuilder(new QueryBuilder<TQuery>(t.result, this.root.types)).toQueryParts(true)
-            : queryBuilder(new PrimitiveQueryBuilder<TQuery>()).toQueryParts(true);
+        const queryObjBuilder = t.isComplex
+            ? this.executeComplexQueryBuilder(t, queryBuilder as any)
+            : this.executePrimitiveQueryBuilder(queryBuilder as any);
 
-        return new EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
+        return new EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,
             this.root,
-            { ...this.state, query });
+            { ...this.state, query: queryObjBuilder.toQueryParts(urlEncode) });
+    }
+
+    private executePrimitiveQueryBuilder(
+        queryBuilder: (q: PrimitiveQueryBuilder<TEntity>) => PrimitiveQueryBuilder<TEntity>): QueryStringBuilder {
+
+        return queryBuilder(new PrimitiveQueryBuilder<TEntity>());
+    }
+
+    private executeComplexQueryBuilder(
+        type: ComplexLookupResult,
+        queryBuilder: (q: QueryBuilder<TEntity>) => QueryBuilder<TEntity>): QueryStringBuilder {
+
+        return queryBuilder(new QueryBuilder<TEntity>(type.result, this.root.types));
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
@@ -463,9 +462,15 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
     }
 
     private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools> | undefined): Promise<any> {
-        const uriB = firstNonNull(uriBuilder, overrideRequestTools?.uriInterceptor, this.requestTools.uriInterceptor);
-        const uri = uriB({
-            uriRoot: firstNonNull(this.requestTools.uriRoot, overrideRequestTools?.uriRoot),
+
+        const tools = {
+            ...defaultRequestTools,
+            ...this.requestTools,
+            ...(overrideRequestTools || {})
+        };
+
+        const uri = tools.uriInterceptor!({
+            uriRoot: tools.uriRoot,
             // if namespace === "", give null instead
             entitySetNamespace: this.entitySet.namespace || null,
             entitySetName: this.entitySet.name,
@@ -473,22 +478,16 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             query: this.state.query || {}
         });
 
-        let init: RequestInit = firstNonNull(
-            (_, x) => x,
-            overrideRequestTools?.requestInterceptor,
-            this.requestTools.requestInterceptor)(uri, {
-                headers: {
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Accept": "application/json"
-                }
-            })
+        let init: RequestInit = tools.requestInterceptor!(uri, {
+            headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Accept": "application/json"
+            }
+        });
 
-        const responseInterceptor = firstNonNull(
-            processResponse, this.requestTools.responseInterceptor, overrideRequestTools?.responseInterceptor);
-
-        return this.requestTools
+        return tools
             .fetch(uri, init)
-            .then(x => responseInterceptor(x, uri, init, x => processResponse(x, null, null, null)));
+            .then(x => tools.responseInterceptor!(x, uri, init, x => defaultRequestTools.responseInterceptor!(x, uri, init, null as any)));
     }
 
     // TODO: duplicate_logic_key: caster

@@ -20,9 +20,11 @@ export type Keywords = {
     ODataMultiResult: string
     ODataSingleResult: string
     Internal: string
-    SingleEntitiesCannotBeQueriedByKey: string
-    EntitySetsCannotBeTraversed: string
+    SingleItemsCannotBeQueriedByKey: string
+    CollectionsCannotBeTraversed: string
     PrimitiveTypesCannotBeTraversed: string
+    QueryBuilder: string
+    PrimitiveQueryBuilder: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -41,6 +43,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
     // TODO: tests for all keyword re-mappings
     return {
+        QueryBuilder: getKeyword("QueryBuilder"),
+        PrimitiveQueryBuilder: getKeyword("PrimitiveQueryBuilder"),
         ODataTypeRef: getKeyword("ODataTypeRef"),
         ODataComplexType: getKeyword("ODataComplexType"),
         RequestTools: getKeyword("RequestTools"),
@@ -59,8 +63,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ODataMultiResult: getKeyword("ODataMultiResult"),
         ODataSingleResult: getKeyword("ODataSingleResult"),
         _httpClientArgs: getKeyword("_httpClientArgs"),
-        SingleEntitiesCannotBeQueriedByKey: getKeyword("SingleEntitiesCannotBeQueriedByKey"),
-        EntitySetsCannotBeTraversed: getKeyword("EntitySetsCannotBeTraversed"),
+        SingleItemsCannotBeQueriedByKey: getKeyword("SingleItemsCannotBeQueriedByKey"),
+        CollectionsCannotBeTraversed: getKeyword("CollectionsCannotBeTraversed"),
         PrimitiveTypesCannotBeTraversed: getKeyword("PrimitiveTypesCannotBeTraversed"),
         Internal: getKeyword("Internal")
     }
@@ -79,6 +83,8 @@ export function imports(keywords: Keywords, tab: Tab) {
 
     // TODO: audit are all of these still used?
     return `import {
+${tab(importWithAlias("QueryBuilder"))},
+${tab(importWithAlias("PrimitiveQueryBuilder"))},
 ${tab(importWithAlias("ODataComplexType"))},
 ${tab(importWithAlias("ODataTypeRef"))},
 ${tab(importWithAlias("RequestTools"))},
@@ -94,8 +100,8 @@ ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))},
 ${tab(importWithAlias("ODataMultiResult"))},
 ${tab(importWithAlias("ODataSingleResult"))},
-${tab(importWithAlias("SingleEntitiesCannotBeQueriedByKey"))},
-${tab(importWithAlias("EntitySetsCannotBeTraversed"))},
+${tab(importWithAlias("SingleItemsCannotBeQueriedByKey"))},
+${tab(importWithAlias("CollectionsCannotBeTraversed"))},
 ${tab(importWithAlias("PrimitiveTypesCannotBeTraversed"))}
 } from 'odata-query';`
 

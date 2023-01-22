@@ -15,15 +15,17 @@ function buildGetCasterProps(
     keywords: Keywords,
     tab: Tab) {
 
+    const allTypeFlatList = Object
+        .keys(allTypes)
+        .map(ns => Object
+            .keys(allTypes[ns])
+            .map(t => allTypes[ns][t]))
+        .reduce((s, x) => [...s, ...x], [])
+
     return (type: ODataComplexType, resultWrapper: string, singleCasterType: boolean) => {
 
         const casterType = singleCasterType ? "Single" : "Collection"
-        const inherits = Object
-            .keys(allTypes)
-            .map(ns => Object
-                .keys(allTypes[ns])
-                .map(t => allTypes[ns][t]))
-            .reduce((s, x) => [...s, ...x], [])
+        const inherits = allTypeFlatList
             .filter(x => x.baseType
                 && x.baseType.namespace === type.namespace
                 && x.baseType.name === type.name);
@@ -46,16 +48,19 @@ function buildGetCasterProps(
 
                 const generics = {
                     tEntity: resultType,
-                    tKey: getKeyType(t, true) || keywords.SingleEntitiesCannotBeQueriedByKey,
-                    tQuery: fullyQualifiedTsType(typeRef, getQueryableName),
+                    tKey: getKeyType(t, true) || keywords.SingleItemsCannotBeQueriedByKey,
+                    tQuery: {
+                        isPrimitive: t.namespace === "Edm",
+                        fullyQualifiedQueryableName: fullyQualifiedTsType(typeRef, getQueryableName)
+                    },
                     tCaster: `${caster}.${casterType}`,
                     tSingleCaster: `${caster}.Single`,
-                    tSubPath: singleCasterType ? `${subProps}` : keywords.EntitySetsCannotBeTraversed,
-                    tSingleSubPath: singleCasterType ? keywords.EntitySetsCannotBeTraversed : `${subProps}`,
+                    tSubPath: singleCasterType ? `${subProps}` : keywords.CollectionsCannotBeTraversed,
+                    tSingleSubPath: singleCasterType ? keywords.CollectionsCannotBeTraversed : `${subProps}`,
                     tResult: `${resultWrapper}<${resultType}>`
                 }
 
-                const entityQueryType = httpClientType(keywords, generics, tab, false);
+                const entityQueryType = httpClientType(keywords, generics, tab);
                 return `${name(t)}(): ${keywords.CastSelection}<${entityQueryType}>`
             })
     }
@@ -84,15 +89,19 @@ ${tab(collection(type))}
 
     function single(type: ODataComplexType) {
         const props = getCasterProps(type, "ODataSingleResult", true)
-        return `export type Single = {
-${tab(props.join("\n"))}
+        return !props.length
+            ? "export type Single = { }"
+            : `export type Single = {
+${tab(props.join("\n\n"))}
 }`;
     }
 
     function collection(type: ODataComplexType) {
         const props = getCasterProps(type, "ODataMultiResult", false)
-        return `export type Collection = {
-${tab(props.join("\n"))}
+        return !props.length
+            ? "export type Collection = { }"
+            : `export type Collection = {
+${tab(props.join("\n\n"))}
 }`;
 
     }
