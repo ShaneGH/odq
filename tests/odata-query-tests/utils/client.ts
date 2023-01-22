@@ -24,6 +24,7 @@ export async function drain() {
 export type AddFullUserChainArgs = Partial<{
     userName: string
     blogPostContent: string
+    commentTags: CommentTag[]
     addFullChainToCommentUser: AddFullUserChainArgs
 }>
 
@@ -55,7 +56,7 @@ export async function addFullUserChain(settings?: AddFullUserChainArgs): Promise
     const blogPost = await addBlogPost(blog.Id!, settings?.blogPostContent);
 
     const commentUser = await commentUserP;
-    const comment = await addComment(blogPost.Id!, commentUser.Id!, []);
+    const comment = await addComment(blogPost.Id!, commentUser.Id!, settings.commentTags || []);
 
     return {
         blogUser,

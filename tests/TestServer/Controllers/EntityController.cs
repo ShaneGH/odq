@@ -283,6 +283,26 @@ public class CommentsController : ODataControllerBase<Comment>
     protected override void AddEntity(EntityDbContext db, Comment entity) => db.Comments.Add(entity);
 
     protected override IQueryable<Comment> AllEntities(EntityDbContext db) => db.Comments;
+
+    [HttpGet("Comments({key})/Tags")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<CommentTag> GetCommentTags([FromRoute] string key)
+    {
+        return _inMemoryDb.Comments
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Tags);
+    }
+
+    [HttpGet("Comments({key})/Tags({tagKey})")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<CommentTag> GetCommentTags([FromRoute] string key, [FromRoute] string tagKey)
+    {
+        return _inMemoryDb.Comments
+            .Where(x => x.Id == key)
+            .SelectMany(x => x.Tags)
+            .Where(x => x.Tag == tagKey)
+            .AsSingleResult();
+    }
 }
 
 public static class Utils

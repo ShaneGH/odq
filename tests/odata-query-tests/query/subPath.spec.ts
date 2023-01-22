@@ -2,6 +2,7 @@
 import { My, ODataClient } from "../generatedCode.js";
 import { FilterUtils as F, ExpandUtils as E } from "odata-query";
 import { addFullUserChain, addUser } from "../utils/client.js";
+import { uniqueString } from "../utils/utils.js";
 
 const client = new ODataClient({
     fetch: (x, y) => {
@@ -140,9 +141,39 @@ describe("SubPath", function () {
         });
     });
 
-    describe("Path Cast Combos", () => {
-        it("Is in the casting spec", () => {
-            expect(true).toBeTruthy();
+    describe("Path to complex type", () => {
+        it("Should work correctly", async () => {
+
+            const tag = { Tag: uniqueString() }
+            const user = await addFullUserChain({ commentTags: [tag] });
+            const comment = await client.My.Odata.Container.Comments
+                .withKey(user.comment.Id!)
+                .subPath(x => x.Tags)
+                .get();
+
+            expect(comment.value.length).toBe(1);
+            expect(comment.value[0].Tag).toBe(tag.Tag);
         });
+
+        it("Should work correctly (with tag filter)", execute.bind(null, true));
+        it("Should work correctly (with invalid tag filter)", execute.bind(null, false));
+
+        async function execute(success: boolean) {
+
+            const tag = { Tag: uniqueString() }
+            const user = await addFullUserChain({ commentTags: [tag] });
+            const comment = await client.My.Odata.Container.Comments
+                .withKey(user.comment.Id!)
+                .subPath(x => x.Tags)
+                .withQuery(q => q.filter(t => F.eq(t.Tag, success ? tag.Tag : "invalid")))
+                .get();
+
+            if (success) {
+                expect(comment.value.length).toBe(1);
+                expect(comment.value[0].Tag).toBe(tag.Tag);
+            } else {
+                expect(comment.value.length).toBe(0);
+            }
+        };
     });
 });
