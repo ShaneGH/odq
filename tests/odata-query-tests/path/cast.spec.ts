@@ -1,11 +1,10 @@
 
-import { My, ODataClient } from "../generatedCode.js";
+import { ODataClient } from "../generatedCode.js";
 import { FilterUtils as F, ExpandUtils as E } from "odata-query";
 import { addFullUserChain, addUser } from "../utils/client.js";
 
 const client = new ODataClient({
     fetch: (x, y) => {
-        //console.log(x, y)
         return fetch(x, y)
     },
     uriRoot: "http://localhost:5432/odata/test-entities",
@@ -35,6 +34,11 @@ function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
             ToList: "true"
         }
     }
+}
+
+function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
+    console.log(input, init)
+    return fetch(input, init)
 }
 
 describe("Cast", function () {
@@ -108,7 +112,7 @@ describe("Cast", function () {
 describe("Path Cast Combos", () => {
 
     // TODO: path -> cast
-    it("Should retrieve correct values after cast and path", async () => {
+    it("Should retrieve correct values after cast and path (multi)", async () => {
         const ctxt = await addFullUserChain();
         const comments = await client.My.Odata.Container.HasIds
             .withKey(ctxt.commentUser.Id!)
@@ -118,5 +122,16 @@ describe("Path Cast Combos", () => {
 
         expect(comments.value.length).toBe(1);
         expect(comments.value[0].Text).toBe(ctxt.comment.Text);
+    });
+
+    it("Should retrieve correct values after cast and path (single)", async () => {
+        const ctxt = await addFullUserChain();
+        const user = await client.My.Odata.Container.HasIds
+            .withKey(ctxt.blog.Id!)
+            .cast(c => c.Blog())
+            .subPath(u => u.User)
+            .get();
+
+        expect(user.Name).toBe(ctxt.blogUser.Name);
     });
 });

@@ -16,13 +16,6 @@ TODO: evaluate
 
 Evaluated: v0
 
- * Casting v0
-     * https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-routing-conventions
-     * casting root done. Need to cast somewhere in path
-     * need to cast and then get single prop
-     * need to cast twice (e.g. ~/Cast.To.Child/Cast.To.GrandChild)
- * query on list collection of collections: search for "// TODO: this is a temp hack"
- * TODO_Type
  * Composite keys v0
  * Currently all types are given a client. This is not correct v0
  * Define a complex type (like value type from ddd ). Make sure it does not have an endpoint. Can it be $selected? v0
@@ -52,6 +45,10 @@ Evaluated: v0
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html point 11.5.2 -> v0
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_AdvertisingAvailableOperationswithin v0
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Functions v0
+ * Casting v0
+     * https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-routing-conventions
+     * casting root done. Need to cast somewhere in path
+     * need to cast twice (e.g. ~/Cast.To.Child/Cast.To.GrandChild)
 
 Evaluated: v1
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncompute v1

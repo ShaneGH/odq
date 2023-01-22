@@ -56,3 +56,19 @@ export type CollectionsCannotBeTraversed = never
  * This is a type designed not to be used
  */
 export type PrimitiveTypesCannotBeTraversed = never
+
+/*
+ * We are not sure if this is a valid use case. The odata spec is vague on the matter
+ * Many OData server implementations do not support this
+ * 
+ * This is a type designed not to be used
+ */
+export type CastingOnCollectionsOfCollectionsIsNotSupported = never
+
+/*
+ * We are not sure if this is a valid use case. The odata spec is vague on the matter
+ * Many OData server implementations do not support this
+ * 
+ * This is a type designed not to be used
+ */
+export type QueryingOnCollectionsOfCollectionsIsNotSupported = never

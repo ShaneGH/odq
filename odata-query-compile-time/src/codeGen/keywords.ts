@@ -23,6 +23,8 @@ export type Keywords = {
     SingleItemsCannotBeQueriedByKey: string
     CollectionsCannotBeTraversed: string
     PrimitiveTypesCannotBeTraversed: string
+    CastingOnCollectionsOfCollectionsIsNotSupported: string
+    QueryingOnCollectionsOfCollectionsIsNotSupported: string
     QueryBuilder: string
     PrimitiveQueryBuilder: string
 };
@@ -66,6 +68,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         SingleItemsCannotBeQueriedByKey: getKeyword("SingleItemsCannotBeQueriedByKey"),
         CollectionsCannotBeTraversed: getKeyword("CollectionsCannotBeTraversed"),
         PrimitiveTypesCannotBeTraversed: getKeyword("PrimitiveTypesCannotBeTraversed"),
+        CastingOnCollectionsOfCollectionsIsNotSupported: getKeyword("CastingOnCollectionsOfCollectionsIsNotSupported"),
+        QueryingOnCollectionsOfCollectionsIsNotSupported: getKeyword("QueryingOnCollectionsOfCollectionsIsNotSupported"),
         Internal: getKeyword("Internal")
     }
 
@@ -102,7 +106,9 @@ ${tab(importWithAlias("ODataMultiResult"))},
 ${tab(importWithAlias("ODataSingleResult"))},
 ${tab(importWithAlias("SingleItemsCannotBeQueriedByKey"))},
 ${tab(importWithAlias("CollectionsCannotBeTraversed"))},
-${tab(importWithAlias("PrimitiveTypesCannotBeTraversed"))}
+${tab(importWithAlias("PrimitiveTypesCannotBeTraversed"))},
+${tab(importWithAlias("CastingOnCollectionsOfCollectionsIsNotSupported"))},
+${tab(importWithAlias("QueryingOnCollectionsOfCollectionsIsNotSupported"))}
 } from 'odata-query';`
 
     function importWithAlias(importName: keyof Keywords) {

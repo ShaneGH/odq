@@ -18,8 +18,6 @@ ${imports(keywords, tab)}
 
 ${lintingAndComments()}
 
-type TODO_Type = never
-
 ${httpClient(serviceConfig, tab, keywords, settings, warnings)}
 
 ${entities()}

@@ -105,6 +105,16 @@ public class HasIdsController : ODataControllerBase<HasId>
             .SelectMany(x => x.BlogPostComments);
     }
 
+    [HttpGet("HasIds({key})/My.Odata.Entities.Blog/User")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<User> GetBlogsUserFromHasIds([FromRoute] string key)
+    {
+        return _inMemoryDb.Blogs
+            .Where(x => x.Id == key)
+            .Select(x => x.User)
+            .AsSingleResult();
+    }
+
     [HttpGet("HasIds({key})/My.Odata.Entities.Blog")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
     public SingleResult<Blog> GetBlogsFromHasIds([FromRoute] string key)
@@ -233,6 +243,7 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
             .SelectMany(x => x.Blog.User.BlogPostComments);
     }
 
+    [HttpGet("BlogPosts/{key}")]
     [HttpGet("BlogPosts({key})/Comments")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
     public IQueryable<Comment> GetBlogPostComments([FromRoute] string key)
@@ -242,6 +253,7 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
             .SelectMany(x => x.Comments);
     }
 
+    [HttpGet("BlogPosts/{key}/Comments/{commentKey}")]
     [HttpGet("BlogPosts({key})/Comments({commentKey})")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
     public SingleResult<Comment> GetBlogPostComment([FromRoute] string key, [FromRoute] string commentKey)
@@ -291,17 +303,6 @@ public class CommentsController : ODataControllerBase<Comment>
         return _inMemoryDb.Comments
             .Where(x => x.Id == key)
             .SelectMany(x => x.Tags);
-    }
-
-    [HttpGet("Comments({key})/Tags({tagKey})")]
-    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public SingleResult<CommentTag> GetCommentTags([FromRoute] string key, [FromRoute] string tagKey)
-    {
-        return _inMemoryDb.Comments
-            .Where(x => x.Id == key)
-            .SelectMany(x => x.Tags)
-            .Where(x => x.Tag == tagKey)
-            .AsSingleResult();
     }
 }
 

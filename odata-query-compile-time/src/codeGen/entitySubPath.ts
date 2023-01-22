@@ -89,7 +89,7 @@ function buildGetSubPathProps(
 
         // TODO: is is possible to cast a primitive? (e.g. int -> string)
         if (info.type.objectType !== ObjectType.ComplexType || info.collectionDepth > 1) {
-            return "TODO_Type";
+            return keywords.CastingOnCollectionsOfCollectionsIsNotSupported;
         }
 
         const caster = fullyQualifiedTsType({
@@ -108,7 +108,7 @@ function buildGetSubPathProps(
         if (info.collectionDepth > 1) {
             return {
                 isPrimitive: info.type.objectType === ObjectType.PrimitiveType,
-                fullyQualifiedQueryableName: "TODO_Type"
+                fullyQualifiedQueryableName: keywords.QueryingOnCollectionsOfCollectionsIsNotSupported
             };
         }
 

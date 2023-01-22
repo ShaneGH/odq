@@ -188,25 +188,36 @@ function listAllProperties(
 }
 
 // unwraps an ODataTypeRef to 0 or 1 levels of collections or throws an error
-function getCastingTypeRef(type: ODataTypeRef) {
+function getDeepTypeRef(type: ODataTypeRef): { name: string, namespace: string, collectionDepth: number } {
 
     if (!type.isCollection) {
         return {
             name: type.name,
             namespace: type.namespace,
-            isCollection: false
+            collectionDepth: 0
         }
     }
 
-    if (!type.collectionType.isCollection) {
-        return {
-            name: type.collectionType.name,
-            namespace: type.collectionType.namespace,
-            isCollection: true
-        }
+    const inner = getDeepTypeRef(type.collectionType)
+    return {
+        ...inner,
+        collectionDepth: inner.collectionDepth + 1
+    }
+}
+
+// unwraps an ODataTypeRef to 0 or 1 levels of collections or throws an error
+function getCastingTypeRef(type: ODataTypeRef) {
+
+    const result = getDeepTypeRef(type);
+    if (result.collectionDepth > 1) {
+        throw new Error("Casting collections of collections is not yet supported");
     }
 
-    throw new Error("Casting collections of collections is not yet supported");
+    return {
+        namespace: result.namespace,
+        name: result.name,
+        isCollection: result.collectionDepth === 1
+    }
 }
 
 // TODO: test
@@ -297,10 +308,6 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             throw new Error("Cannot search a collection of collections by key. You must search a collection instead");
         }
 
-        // if (this.type.category !== QueryTypeCategory.ComplexType) {
-        //     throw new Error("Primitive types do not have keys");
-        // }
-
         // TODO: composite_keys (search whole proj for composite_keys)
         const keyType = tryFindKeyType(this.type.collectionType, this.root.types);
         if (!keyType) {
@@ -341,11 +348,6 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             throw new Error("You cannot add query components before casting");
         }
 
-        // // TODO
-        // if (this.type.category !== QueryTypeCategory.ComplexType) {
-        //     throw new Error("Primitive types cannot be casted");
-        // }
-
         const newT = cast(this.buildCaster());
         const { namespace, name } = getCastingTypeRef(newT.type);
 
@@ -371,11 +373,6 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         if (this.type.isCollection) {
             throw new Error("You cannot navigate the subpath of a collection. Try to filter by key first");
         }
-
-        // // TODO
-        // if (this.type.category !== QueryTypeCategory.ComplexType) {
-        //     throw new Error("Primitive types do not have sub paths");
-        // }
 
         // console.log("##### 1", this.buildSubPath())
         // console.log("##### 2", subPath.toString())
@@ -406,10 +403,12 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             throw new Error("This request already has a query");
         }
 
-        // TODO: this is a temp hack
-        const { name, namespace } = getCastingTypeRef(this.type);
+        const typeRef = getDeepTypeRef(this.type);
+        if (typeRef.collectionDepth > 1) {
+            throw new Error("Querying of collections of collections is not supported");
+        }
 
-        const t = lookup({ name, namespace }, this.root.types)
+        const t = lookup(typeRef, this.root.types)
         const queryObjBuilder = t.isComplex
             ? this.executeComplexQueryBuilder(t, queryBuilder as any)
             : this.executePrimitiveQueryBuilder(queryBuilder as any);

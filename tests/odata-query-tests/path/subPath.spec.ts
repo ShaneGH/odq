@@ -3,10 +3,10 @@ import { My, ODataClient } from "../generatedCode.js";
 import { FilterUtils as F, ExpandUtils as E } from "odata-query";
 import { addFullUserChain, addUser } from "../utils/client.js";
 import { uniqueString } from "../utils/utils.js";
+import { WithKeyType } from "odata-query/dist/src/httpClient.js";
 
 const client = new ODataClient({
     fetch: (x, y) => {
-        //console.log(x, y)
         return fetch(x, y)
     },
     uriRoot: "http://localhost:5432/odata/test-entities",
@@ -35,6 +35,19 @@ function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
             ...(r.headers || {}),
             ToList: "true"
         }
+    }
+}
+
+function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
+    console.log(input, init)
+    return fetch(input, init)
+}
+
+type Recorder = { input: RequestInfo | URL, init?: RequestInit }
+function recordingFetcher(recorder: Recorder[]) {
+    return (input: RequestInfo | URL, init?: RequestInit) => {
+        recorder.push({ input, init })
+        return fetch(input, init)
     }
 }
 
@@ -112,17 +125,28 @@ describe("SubPath", function () {
     describe("Collection, key combos", () => {
 
         describe("Collection, Key, Collection, Key", () => {
-            it("Should work correctly", async () => {
+            it("Should work correctly with function key type", execute.bind(null, WithKeyType.FunctionCall));
+            it("Should work correctly with path key type", execute.bind(null, WithKeyType.PathSegment));
 
+            async function execute(keyType: WithKeyType) {
+
+                const records: Recorder[] = []
                 const user = await addFullUserChain();
                 const comment = await client.My.Odata.Container.BlogPosts
-                    .withKey(user.blogPost.Id!)
+                    .withKey(user.blogPost.Id!, keyType)
                     .subPath(x => x.Comments)
-                    .withKey(user.comment.Id!)
-                    .get();
+                    .withKey(user.comment.Id!, keyType)
+                    .get({ fetch: recordingFetcher(records) });
 
                 expect(comment.Text).toBe(user.comment.Text);
-            });
+                expect(records.length).toBe(1);
+
+                if (keyType === WithKeyType.FunctionCall) {
+                    expect(records[0].input).toContain("(");
+                } else {
+                    expect((records[0].input.toString()).indexOf("(")).toBe(-1);
+                }
+            }
         });
 
         describe("Collection, Key, Collection, Key, Singleton", () => {
