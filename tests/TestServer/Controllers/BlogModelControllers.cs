@@ -282,6 +282,29 @@ public class BlogPostsController : ODataControllerBase<BlogPost>
     protected override IQueryable<BlogPost> AllEntities(EntityDbContext db) => db.BlogPosts;
 }
 
+public class BlogPosts2Controller : ODataControllerBase<BlogPost>
+{
+    private readonly EntityDbContext _inMemoryDb;
+
+    public BlogPosts2Controller(EntityDbContext inMemoryDb)
+        : base(inMemoryDb)
+    {
+        this._inMemoryDb = inMemoryDb;
+    }
+
+    [HttpGet("BlogPosts2({key})")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<BlogPost> GetBlogPostBlog([FromRoute] string key)
+    {
+        return SingleResult.Create(
+            _inMemoryDb.BlogPosts.Where(x => x.Id == key));
+    }
+
+    protected override void AddEntity(EntityDbContext db, BlogPost entity) => db.BlogPosts.Add(entity);
+
+    protected override IQueryable<BlogPost> AllEntities(EntityDbContext db) => db.BlogPosts;
+}
+
 public class CommentsController : ODataControllerBase<Comment>
 {
     private readonly EntityDbContext _inMemoryDb;

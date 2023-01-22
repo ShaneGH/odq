@@ -59,6 +59,7 @@ public class Program
         builder.EntitySet<User>("Users");
         builder.EntitySet<Blog>("Blogs");
         builder.EntitySet<BlogPost>("BlogPosts");
+        builder.EntitySet<BlogPost>("BlogPosts2");
         builder.EntitySet<Comment>("Comments");
         builder.ComplexType<CommentTag>();
 
