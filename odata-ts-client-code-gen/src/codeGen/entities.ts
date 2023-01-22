@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataServiceConfig } from "odata-query-shared"
+import { ODataComplexType, ODataServiceConfig } from "odata-ts-client-shared"
 import { CodeGenConfig, SupressWarnings } from "../config.js"
 import { buildEntityCasting } from "./entityCasting.js"
 import { buildEntityData } from "./entityData.js"

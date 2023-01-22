@@ -1,5 +1,5 @@
 {
-  "name": "odata-query-compile-time",
+  "name": "odata-ts-client-code-gen",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "fix-links": "npm link ../odata-query-shared"
+    "fix-links": "npm link ../odata-ts-client-shared"
   },
   "author": "",
   "license": "ISC",

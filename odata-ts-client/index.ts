@@ -3,7 +3,7 @@ export {
     ODataServiceConfig,
     ODataComplexType,
     ODataTypeRef,
-} from "odata-query-shared"
+} from "odata-ts-client-shared"
 
 export {
     QueryBuilder,

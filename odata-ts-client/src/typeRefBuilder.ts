@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef } from "odata-ts-client-shared";
 
 type Dict<T> = { [key: string]: T }
 

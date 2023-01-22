@@ -1,7 +1,7 @@
 
 const fs = require("fs");
 
-const file = fs.readFileSync("C:\\Dev\\odata-query\\abnf\\rules.txt").toString();
+const file = fs.readFileSync("C:\\Dev\\odata-ts-client\\abnf\\rules.txt").toString();
 
 const charMap = file
     .split(/\r?\n/)

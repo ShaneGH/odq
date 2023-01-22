@@ -1,5 +1,5 @@
 
-pushd .\odata-query
+pushd .\odata-ts-client
 echo "Building query"
 tsc
 if (-not($?)) {
@@ -8,7 +8,7 @@ if (-not($?)) {
 }
 
 popd
-pushd .\odata-query-compile-time
+pushd .\odata-ts-client-code-gen
 echo "Building query compile time"
 tsc
 if (-not($?)) {

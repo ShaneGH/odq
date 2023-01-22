@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceConfig } from "odata-query-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetQueryableName, buildSanitizeNamespace, FullyQualifiedTsType, GetQueryableName, Tab } from "./utils.js";

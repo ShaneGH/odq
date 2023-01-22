@@ -112,7 +112,7 @@ ${tab(importWithAlias("CollectionsCannotBeTraversed"))},
 ${tab(importWithAlias("PrimitiveTypesCannotBeTraversed"))},
 ${tab(importWithAlias("CastingOnCollectionsOfCollectionsIsNotSupported"))},
 ${tab(importWithAlias("QueryingOnCollectionsOfCollectionsIsNotSupported"))}
-} from 'odata-query';`
+} from 'odata-ts-client';`
 
     function importWithAlias(importName: keyof Keywords) {
         if (!keywords[importName]) {

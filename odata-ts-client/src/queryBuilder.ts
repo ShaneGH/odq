@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataServiceTypes } from "odata-query-shared";
+import { ODataComplexType, ODataServiceTypes } from "odata-ts-client-shared";
 import { bulidTypeRef, PathSegment, QueryComplexObject, QueryObjectType, QueryPath, QueryPrimitive } from "./typeRefBuilder.js";
 
 

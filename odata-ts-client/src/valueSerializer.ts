@@ -1,4 +1,4 @@
-import { ODataTypeRef } from "odata-query-shared";
+import { ODataTypeRef } from "odata-ts-client-shared";
 
 
 export function serialize(value: any, type: ODataTypeRef): string {

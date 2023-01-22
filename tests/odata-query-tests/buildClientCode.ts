@@ -1,4 +1,4 @@
-// import { generateCode, LocationType } from "odata-query-compile-time"
+// import { generateCode, LocationType } from "odata-ts-client-code-gen"
 
 // generateCode({
 //     uri: "http://localhost:5432/service/odata/$metadata",

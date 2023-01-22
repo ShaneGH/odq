@@ -1,6 +1,6 @@
 
 import { ODataClient } from "../generatedCode.js";
-import { FilterUtils as F, ExpandUtils as E } from "odata-query";
+import { FilterUtils as F, ExpandUtils as E } from "odata-ts-client";
 import { addFullUserChain, addUser } from "../utils/client.js";
 
 const client = new ODataClient({

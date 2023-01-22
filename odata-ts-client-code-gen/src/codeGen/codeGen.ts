@@ -1,5 +1,5 @@
 
-import { ODataServiceConfig } from "odata-query-shared";
+import { ODataServiceConfig } from "odata-ts-client-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { edm } from "./edm.js";
 import { ProcessedNamespace, ProcessedServiceConfig, processServiceConfig } from "./entities.js";

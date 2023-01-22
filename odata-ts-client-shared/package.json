@@ -1,5 +1,5 @@
 {
-  "name": "odata-query-shared",
+  "name": "odata-ts-client-shared",
   "version": "1.0.0",
   "description": "",
   "types": "index.d.ts",

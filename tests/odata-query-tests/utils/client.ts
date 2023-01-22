@@ -1,5 +1,4 @@
 import fetch, { Response } from 'node-fetch'
-import { QueryStringBuilder } from 'odata-query/dist/queryBuilder.js'
 import { My } from '../generatedCode.js'
 import { uniqueString } from './utils.js'
 

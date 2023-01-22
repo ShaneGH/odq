@@ -1,4 +1,4 @@
-import { ODataEntitySet, ODataServiceConfig } from "odata-query-shared";
+import { ODataEntitySet, ODataServiceConfig } from "odata-ts-client-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";

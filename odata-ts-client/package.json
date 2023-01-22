@@ -1,5 +1,5 @@
 {
-  "name": "odata-query",
+  "name": "odata-ts-client",
   "version": "0.1.0",
   "description": "",
   "main": "dist/index.js",
@@ -7,9 +7,9 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "fix-links": "npm link ../odata-query-shared"
+    "fix-links": "npm link ../odata-ts-client-shared"
   },
-  "author": "odata-query",
+  "author": "odata-ts-client",
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {

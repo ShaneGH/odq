@@ -1,4 +1,4 @@
-import { ODataComplexType } from "odata-query-shared";
+import { ODataComplexType } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { buildGetTypeString, buildSanitizeNamespace, Tab } from "./utils.js";
 

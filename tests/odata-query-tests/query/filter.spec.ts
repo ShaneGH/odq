@@ -1,7 +1,7 @@
 
 import { addFullUserChain } from "../utils/client.js";
 import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
-import { FilterUtils as F, QueryBuilder } from "odata-query";
+import { FilterUtils as F, QueryBuilder } from "odata-ts-client";
 import { uniqueString } from "../utils/utils.js";
 import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
 
