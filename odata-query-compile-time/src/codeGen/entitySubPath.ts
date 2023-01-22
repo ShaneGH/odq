@@ -59,7 +59,10 @@ function buildGetSubPathProps(
                     tSingleCaster: getTCaster(entityInfo, true),
                     tSubPath: entityInfo.collectionDepth ? keywords.CollectionsCannotBeTraversed : getTSubPath(entityInfo, false),
                     tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : keywords.CollectionsCannotBeTraversed,
-                    tResult: entityInfo.collectionDepth ? `ODataAnnotatedResult<${tEntity}>` : `ODataResult<${tEntity}>`
+                    tResult: {
+                        annotated: entityInfo.type.objectType === ObjectType.PrimitiveType || !!entityInfo.collectionDepth,
+                        resultType: tEntity + (entityInfo.collectionDepth ? "[]" : "")
+                    }
                 }
 
                 const entityQueryType = httpClientType(keywords, generics, tab);

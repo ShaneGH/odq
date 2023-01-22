@@ -190,7 +190,10 @@ export type HttpClientGenerics = {
     tSingleCaster: string,
     tSubPath: string,
     tSingleSubPath: string,
-    tResult: string
+    tResult: {
+        resultType: string,
+        annotated: boolean
+    }
 }
 
 const httpClientGenericNames = ["TEntity", "TKey", "TQueryBuilder", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
@@ -208,7 +211,9 @@ export function httpClientType(keywords: Keywords, generics: HttpClientGenerics,
         generics.tSingleCaster,
         generics.tSubPath,
         generics.tSingleSubPath,
-        generics.tResult
+        generics.tResult.annotated
+            ? `${keywords.ODataAnnotatedResult}<${generics.tResult.resultType}>`
+            : `${keywords.ODataResult}<${generics.tResult.resultType}>`
     ]
         .map(addType)
         .map(tab)

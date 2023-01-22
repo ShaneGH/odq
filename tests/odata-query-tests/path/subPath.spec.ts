@@ -62,7 +62,7 @@ describe("SubPath", function () {
                 .subPath(x => x.Name)
                 .get();
 
-            expect(userName).toBe(user.blogUser.Name);
+            expect(userName.value).toBe(user.blogUser.Name);
         });
 
         it("Should retrieve primitive items in the path, 1 level", async () => {

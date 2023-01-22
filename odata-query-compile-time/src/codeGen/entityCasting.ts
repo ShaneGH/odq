@@ -22,7 +22,7 @@ function buildGetCasterProps(
             .map(t => allTypes[ns][t]))
         .reduce((s, x) => [...s, ...x], [])
 
-    return (type: ODataComplexType, resultWrapper: string, singleCasterType: boolean) => {
+    return (type: ODataComplexType, annotatedResult: boolean, singleCasterType: boolean) => {
 
         const casterType = singleCasterType ? "Single" : "Collection"
         const inherits = allTypeFlatList
@@ -57,7 +57,10 @@ function buildGetCasterProps(
                     tSingleCaster: `${caster}.Single`,
                     tSubPath: singleCasterType ? `${subProps}` : keywords.CollectionsCannotBeTraversed,
                     tSingleSubPath: singleCasterType ? keywords.CollectionsCannotBeTraversed : `${subProps}`,
-                    tResult: `${resultWrapper}<${resultType}>`
+                    tResult: {
+                        annotated: annotatedResult,
+                        resultType: resultType + (singleCasterType ? "" : "[]")
+                    }
                 }
 
                 const entityQueryType = httpClientType(keywords, generics, tab);
@@ -88,7 +91,7 @@ ${tab(collection(type))}
     }
 
     function single(type: ODataComplexType) {
-        const props = getCasterProps(type, "ODataResult", true)
+        const props = getCasterProps(type, false, true)
         return !props.length
             ? "export type Single = { }"
             : `export type Single = {
@@ -97,7 +100,7 @@ ${tab(props.join("\n\n"))}
     }
 
     function collection(type: ODataComplexType) {
-        const props = getCasterProps(type, "ODataAnnotatedResult", false)
+        const props = getCasterProps(type, true, false)
         return !props.length
             ? "export type Collection = { }"
             : `export type Collection = {

@@ -12,7 +12,7 @@ export type ODataResultMetadata = Partial<{
 // TODO: rename ODataCollectionResult
 export type ODataAnnotatedResult<T> = ODataResultMetadata & {
 
-    value: T[]
+    value: T
 }
 
 export type ODataResult<T> = ODataResultMetadata & T
