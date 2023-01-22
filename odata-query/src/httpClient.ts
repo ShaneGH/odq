@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef } from "odata-query-shared";
+import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes } from "odata-query-shared";
 import { IQueryBulder, QueryBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
@@ -21,8 +21,6 @@ export type Dictionary<T> = { [key: string]: T }
 
 export type ODataUriParts = {
     uriRoot: string,
-    entityNamespace: string | null,
-    entityName: string,
     entitySetNamespace: string | null;
     entitySetName: string;
     relativePath: string,
@@ -107,41 +105,55 @@ function firstNonNull<T>(defaultVal: T, ...items: (T | null | undefined)[]): T {
 }
 
 export type CastSelection<TNewEntityQuery> = {
-    type: ODataComplexType
+    type: ODataTypeRef
 }
 
 export type SubPathSelection<TNewEntityQuery> = {
     propertyName: string
 }
 
+function lookup(
+    type: ODataTypeName,
+    root: ODataServiceTypes) {
+
+    const t = root[type.namespace] && root[type.namespace][type.name];
+    if (!t) {
+        throw new Error(`Could not find type ${type.namespace && `${type.namespace}.`}${type.name}`)
+    }
+
+    return t;
+}
+
 function tryFindKeyName(
-    type: ODataComplexType,
-    root: ODataServiceConfig): string | null {
+    type: ODataTypeName,
+    root: ODataServiceTypes): string | null {
 
-    if (type.keyProp) return type.keyProp;
+    const t = lookup(type, root);
+    if (t.keyProp) return t.keyProp;
 
-    const parent = tryFindBaseType(type, root);
+    const parent = tryFindBaseType(t, root);
     return (parent && tryFindKeyName(parent, root)) || null
 }
 
 // TODO: composite_keys (search whole proj for composite_keys)
 function tryFindKeyType(
-    type: ODataComplexType,
-    root: ODataServiceConfig): ODataTypeRef | null {
+    type: ODataTypeName,
+    root: ODataServiceTypes): ODataTypeRef | null {
 
-    const key = tryFindKeyName(type, root);
-    return (key && tryFindPropertyType(type, key, root)) || null;
+    const t = lookup(type, root);
+    const key = tryFindKeyName(t, root);
+    return (key && tryFindPropertyType(t, key, root)) || null;
 }
 
 function tryFindBaseType(
     type: ODataComplexType,
-    root: ODataServiceConfig) {
+    root: ODataServiceTypes) {
 
     if (!type.baseType) {
         return null;
     }
 
-    return (root.types[type.baseType.namespace] && root.types[type.baseType.namespace][type.baseType.name])
+    return (root[type.baseType.namespace] && root[type.baseType.namespace][type.baseType.name])
         || err(type.baseType);
 
     function err(type: ODataTypeName): null {
@@ -151,20 +163,21 @@ function tryFindBaseType(
 }
 
 function tryFindPropertyType(
-    type: ODataComplexType,
+    type: ODataTypeName,
     propertyName: string,
-    root: ODataServiceConfig): ODataTypeRef | null {
+    root: ODataServiceTypes): ODataTypeRef | null {
 
-    if (type.properties[propertyName]) return type.properties[propertyName].type;
+    const t = lookup(type, root);
+    if (t.properties[propertyName]) return t.properties[propertyName].type;
 
-    const parent = tryFindBaseType(type, root);
+    const parent = tryFindBaseType(t, root);
     return (parent && tryFindPropertyType(parent, propertyName, root)) || null;
 }
 
 // might return duplicates if and child property names clash
 function listAllProperties(
     type: ODataComplexType,
-    root: ODataServiceConfig,
+    root: ODataServiceTypes,
     includeParent = true): string[] {
 
     const parent = includeParent
@@ -178,68 +191,27 @@ function listAllProperties(
             : []);
 }
 
-// TODO: duplicate_logic_key: subPath (begin)
-enum ObjectType {
-    ComplexType = "ComplexType",
-    PrimitiveType = "PrimitiveType"
-}
+// unwraps an ODataTypeRef to 0 or 1 levels of collections or throws an error
+function getCastingTypeRef(type: ODataTypeRef) {
 
-type IsObjectDescription<T extends ObjectType> = {
-    objectType: T
-}
-
-type IsComplexType = IsObjectDescription<ObjectType.ComplexType> & {
-    complexType: ODataComplexType
-}
-
-type IsPrimitiveType = IsObjectDescription<ObjectType.PrimitiveType> & {
-    primitiveType: ODataSingleTypeRef
-}
-
-type EntityTypeInfo = {
-    // the number of collection in this type info. e.g. MyType[][][] === 3
-    collectionDepth: number
-    // if null, this is a primitive object
-    type: IsComplexType | IsPrimitiveType
-}
-
-function getEntityTypeInfo(
-    propertyType: ODataTypeRef,
-    root: ODataServiceConfig): EntityTypeInfo {
-
-    if (propertyType.isCollection) {
-        const innerResult = getEntityTypeInfo(propertyType.collectionType, root)
+    if (!type.isCollection) {
         return {
-            ...innerResult,
-            collectionDepth: innerResult.collectionDepth + 1
+            name: type.name,
+            namespace: type.namespace,
+            isCollection: false
         }
     }
 
-    if (propertyType.namespace === "Edm") {
+    if (!type.collectionType.isCollection) {
         return {
-            collectionDepth: 0,
-            type: {
-                objectType: ObjectType.PrimitiveType,
-                primitiveType: propertyType
-            }
-        };
-    }
-
-    const type = root.types[propertyType.namespace] && root.types[propertyType.namespace][propertyType.name]
-    if (!type) {
-        const ns = propertyType.namespace && `${propertyType.namespace}.`
-        throw new Error(`Could not find key for type ${ns}${propertyType.name}`);
-    }
-
-    return {
-        collectionDepth: 0,
-        type: {
-            objectType: ObjectType.ComplexType,
-            complexType: type
+            name: type.collectionType.name,
+            namespace: type.collectionType.namespace,
+            isCollection: true
         }
-    };
+    }
+
+    throw new Error("Casting collections of collections is not yet supported");
 }
-// TODO: duplicate_logic_key: subPath (end)
 
 // TODO: test
 export enum WithKeyType {
@@ -281,7 +253,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
 
     constructor(
         private requestTools: RequestTools,
-        private type: ODataComplexType,
+        private type: ODataTypeRef,
         private entitySet: ODataEntitySet,
         private root: ODataServiceConfig,
         state: EntityQueryState | undefined = undefined) {
@@ -304,15 +276,23 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error("Invalid path");
         }
 
+        if (!this.type.isCollection) {
+            throw new Error("Cannot search for a single type by key. You must search a collection instead");
+        }
+
+        if (this.type.collectionType.isCollection) {
+            throw new Error("Cannot search a collection of collections by key. You must search a collection instead");
+        }
+
         // if (this.type.category !== QueryTypeCategory.ComplexType) {
         //     throw new Error("Primitive types do not have keys");
         // }
 
         // TODO: composite_keys (search whole proj for composite_keys)
-        const keyType = tryFindKeyType(this.type, this.root);
+        const keyType = tryFindKeyType(this.type.collectionType, this.root.types);
         if (!keyType) {
-            const ns = this.type.namespace && `${this.type.namespace}.`
-            throw new Error(`Type ${ns}${this.type.name} does not have a key property`);
+            const ns = this.type.collectionType.namespace && `${this.type.collectionType.namespace}.`
+            throw new Error(`Type ${ns}${this.type.collectionType.name} does not have a key property`);
         }
 
         const k = key === null ? "null" : serialize(key, keyType);
@@ -334,7 +314,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
 
         return new EntityQuery<TEntity, never, TQuery, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataSingleResult<TEntity>>(
             this.requestTools,
-            this.type,
+            this.type.collectionType,
             this.entitySet,
             this.root,
             { ...this.state, path });
@@ -353,7 +333,9 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         // }
 
         const newT = cast(this.buildCaster());
-        const fullyQualifiedName = newT.type.namespace ? `${newT.type.namespace}.${newT.type.name}` : newT.type.name;
+        const { namespace, name } = getCastingTypeRef(newT.type);
+
+        const fullyQualifiedName = namespace ? `${namespace}.${name}` : name;
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
         // TODO: Are these anys harmful, can they be removed?
@@ -372,6 +354,10 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error("You cannot add query components before navigating a sub path");
         }
 
+        if (this.type.isCollection) {
+            throw new Error("You cannot navigate the subpath of a collection. Try to filter by key first");
+        }
+
         // // TODO
         // if (this.type.category !== QueryTypeCategory.ComplexType) {
         //     throw new Error("Primitive types do not have sub paths");
@@ -381,19 +367,10 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         // console.log("##### 2", subPath.toString())
         // console.log("##### 3", subPath(this.buildSubPath()))
 
-        const newT = subPath(this.buildSubPath());
-        const prop = tryFindPropertyType(this.type, newT.propertyName, this.root);
+        const newT = subPath(this.buildSubPath(this.type));
+        const prop = tryFindPropertyType(this.type, newT.propertyName, this.root.types);
         if (!prop) {
             throw new Error(`Invalid property ${newT.propertyName}`);
-        }
-
-        const typeInfo = getEntityTypeInfo(prop, this.root)
-        if (typeInfo.collectionDepth > 1) {
-            throw new Error("TODO");
-        }
-
-        if (typeInfo.type.objectType === ObjectType.PrimitiveType) {
-            throw new Error("TODO");
         }
 
         const path = this.state.path?.length ? [...this.state.path, newT.propertyName] : [newT.propertyName];
@@ -401,7 +378,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         // TODO: Are these anys harmful, can they be removed?
         return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
-            typeInfo.type.complexType,
+            prop,
             this.entitySet,
             this.root,
             { ...this.state, path }) as TNewEntityQuery;
@@ -415,7 +392,10 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
             throw new Error("This request already has a query");
         }
 
-        const query = queryBuilder(new QueryBuilder<TQuery>(this.type, this.root.types)).toQueryParts(true)
+        // TODO: this is a temp hack
+        const { name, namespace } = getCastingTypeRef(this.type);
+
+        const query = queryBuilder(new QueryBuilder<TQuery>(lookup({ name, namespace }, this.root.types), this.root.types)).toQueryParts(true)
         return new EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
@@ -455,9 +435,6 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         const uri = uriB({
             uriRoot: firstNonNull(this.requestTools.uriRoot, overrideRequestTools?.uriRoot),
             // if namespace === "", give null instead
-            entityNamespace: this.type.namespace || null,
-            entityName: this.type.name,
-            // if namespace === "", give null instead
             entitySetNamespace: this.entitySet.namespace || null,
             entitySetName: this.entitySet.name,
             relativePath: relativePath,
@@ -484,6 +461,9 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
 
     // TODO: duplicate_logic_key: caster
     private buildCaster(): TCaster {
+
+        const { namespace, name, isCollection } = getCastingTypeRef(this.type);
+
         const inherits = Object
             .keys(this.root.types)
             .map(ns => Object
@@ -491,34 +471,43 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
                 .map(t => this.root.types[ns][t]))
             .reduce((s, x) => [...s, ...x], [])
             .filter(x => x.baseType
-                && x.baseType.namespace === this.type.namespace
-                && x.baseType.name === this.type.name);
+                && x.baseType.namespace === namespace
+                && x.baseType.name === name)
+            .map(x => {
+                const o: ODataSingleTypeRef = { isCollection: false, name: x.name, namespace: x.namespace }
+                return o
+            });
 
         const distinctNames = Object.keys(inherits
             .reduce((s, x) => ({ ...s, [x.name]: true }), {} as { [key: string]: boolean }))
 
-        const name = inherits.length === distinctNames.length
-            ? (x: ODataComplexType) => x.name
+        const getName = inherits.length === distinctNames.length
+            ? (x: ODataSingleTypeRef) => x.name
             // TODO: test
             // TODO: this logic will be duplicated in the code gen project. Possible to merge?
-            : (x: ODataComplexType) => `${x.namespace}.${x.name}`.replace(/[^\w]/g, "_")
+            // TODO: change "_" character in config file
+            : (x: ODataSingleTypeRef) => `${x.namespace}.${x.name}`.replace(/[^\w]/g, "_")
+
+        const reAddCollection = (t: ODataSingleTypeRef): ODataTypeRef => isCollection
+            ? { isCollection: true, collectionType: t }
+            : t;
 
         return inherits
             .reduce((s, type) => ({
                 ...s,
                 // TODO: any
-                [name(type)]: function (): CastSelection<any> {
+                [getName(type)]: function (): CastSelection<any> {
                     return {
-                        type
+                        type: reAddCollection(type)
                     }
                 }
                 // TODO: any
             }), {} as any);
     }
 
-    private buildSubPath(): TSubPath {
+    private buildSubPath(type: ODataTypeName): TSubPath {
 
-        return listAllProperties(this.type, this.root, true)
+        return listAllProperties(lookup(type, this.root.types), this.root.types, true)
             // TODO: any
             .reduce((s, x) => ({ ...s, [x]: { propertyName: x } }), {} as any);
     }

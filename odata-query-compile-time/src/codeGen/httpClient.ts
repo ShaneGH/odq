@@ -37,11 +37,23 @@ export function httpClient(
     return `/*
  * The http client which serves as an entry point to OData
  */
-export class ${settings?.oDataClientName || "ODataClient"} {
+export class ${className()} {
 ${tab(constructor)}
+
+${tab(toODataTypeRef())}
 
 ${tab(methods)}
 }`
+
+    function className() {
+        return settings?.oDataClientName || "ODataClient";
+    }
+
+    function toODataTypeRef() {
+        return `private static toODataTypeRef(namespace: string, name: string): ${keywords.ODataTypeRef} {
+${tab("return { isCollection: true, collectionType: { isCollection: false, name, namespace } }")}
+}`
+    }
 
     // TODO: need to test code gen for entysets with no namespace. The syntax is slightly different
     function methodsForEntitySetNamespace(
@@ -109,7 +121,7 @@ ${methods}
         const instanceType = httpClientType(keywords, generics, tab, true);
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
-            `${keywords.rootConfig}.types["${entitySet.forType.namespace || ""}"]["${entitySet.forType.name}"]`,
+            `${className()}.toODataTypeRef("${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,
             `${keywords.rootConfig}.entitySets["${entitySet.namespace || ""}"]["${entitySet.name}"]`,
             keywords.rootConfig
         ]

@@ -1,6 +1,8 @@
 
 export {
-    ODataServiceConfig
+    ODataServiceConfig,
+    ODataComplexType,
+    ODataTypeRef,
 } from "odata-query-shared"
 
 export {

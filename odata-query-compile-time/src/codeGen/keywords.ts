@@ -12,6 +12,8 @@ export type Keywords = {
     CastSelection: string
     SubPathSelection: string
     RequestTools: string,
+    ODataComplexType: string,
+    ODataTypeRef: string
     _httpClientArgs: string,
     ISingletonQueryBulder: string,
     ICollectionQueryBulder: string,
@@ -39,6 +41,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
     // TODO: tests for all keyword re-mappings
     return {
+        ODataTypeRef: getKeyword("ODataTypeRef"),
+        ODataComplexType: getKeyword("ODataComplexType"),
         RequestTools: getKeyword("RequestTools"),
         rootConfigExporter: getKeyword("rootConfigExporter"),
         QueryPrimitive: getKeyword("QueryPrimitive"),
@@ -75,6 +79,8 @@ export function imports(keywords: Keywords, tab: Tab) {
 
     // TODO: audit are all of these still used?
     return `import {
+${tab(importWithAlias("ODataComplexType"))},
+${tab(importWithAlias("ODataTypeRef"))},
 ${tab(importWithAlias("RequestTools"))},
 ${tab(importWithAlias("ODataServiceConfig"))},
 ${tab(importWithAlias("CastSelection"))},
