@@ -60,7 +60,7 @@ public class Program
         builder.EntitySet<Blog>("Blogs");
         builder.EntitySet<BlogPost>("BlogPosts");
         builder.EntitySet<Comment>("Comments");
-        builder.EntitySet<CommentTag>("CommentTags");
+        builder.ComplexType<CommentTag>();
 
         // builder.EntitySet<Shape>("Shapes");
         // builder.ComplexType<Square>().DerivesFrom<Shape>();

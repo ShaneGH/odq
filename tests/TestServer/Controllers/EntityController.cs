@@ -271,21 +271,6 @@ public class CommentsController : ODataControllerBase<Comment>
     protected override IQueryable<Comment> AllEntities(EntityDbContext db) => db.Comments;
 }
 
-public class CommentTagsController : ODataControllerBase<CommentTag>
-{
-    private readonly EntityDbContext _inMemoryDb;
-
-    public CommentTagsController(EntityDbContext inMemoryDb)
-        : base(inMemoryDb)
-    {
-        this._inMemoryDb = inMemoryDb;
-    }
-
-    protected override void AddEntity(EntityDbContext db, CommentTag entity) => db.Tags.Add(entity);
-
-    protected override IQueryable<CommentTag> AllEntities(EntityDbContext db) => db.Tags;
-}
-
 public static class Utils
 {
     public static SingleResult<T> AsSingleResult<T>(this IQueryable<T> items) => SingleResult.Create(items);
