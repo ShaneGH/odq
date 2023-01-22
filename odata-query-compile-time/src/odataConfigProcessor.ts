@@ -142,7 +142,7 @@ function mapEntityType(warningConfig: SupressWarnings, node: Node): ODataComplex
 
     return {
         name: name(),
-        keyProp: keyType(),
+        keyProps: keyTypes(),
         baseType: baseType(),
         namespace: (nsLookup(node.parentNode!, "@Namespace")[0] as Attr)?.value || "",
         properties: nsLookup(node, "edm:Property")
@@ -153,10 +153,11 @@ function mapEntityType(warningConfig: SupressWarnings, node: Node): ODataComplex
             .reduce((s, x) => ({ ...s, ...x }), {})
     };
 
-    function keyType() {
+    function keyTypes() {
 
         // TODO: is there another node other than PropertyRef
-        return (nsLookup(node, "edm:Key/edm:PropertyRef/@Name")[0] as Attr)?.value || undefined
+        const t = (nsLookup(node, "edm:Key/edm:PropertyRef/@Name") as Attr[]).map(x => x.value);
+        return t.length ? t : undefined;
     }
 
     function baseType() {

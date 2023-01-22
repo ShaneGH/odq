@@ -62,6 +62,8 @@ public class Program
         builder.EntitySet<Comment>("Comments");
         builder.ComplexType<CommentTag>();
 
+        builder.EntitySet<CompositeKeyItem>("CompositeKeyItems");
+
         // builder.EntitySet<Shape>("Shapes");
         // builder.ComplexType<Square>().DerivesFrom<Shape>();
         // builder.ComplexType<Circle>().DerivesFrom<Shape>();

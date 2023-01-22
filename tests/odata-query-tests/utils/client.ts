@@ -166,51 +166,15 @@ export async function postTag(val: CommentTag) {
     await post("CommentTags", val);
 }
 
-function get<T>(entityName: string, query: string | QueryStringBuilder, logQuery = false) {
+export async function postCompositeKeyItem(val: My.Odata.Entities.CompositeKeyItem) {
+    return await post("CompositeKeyItems", val);
+}
 
-    const q = typeof query !== "string"
-        ? query.toQueryString()
-        : query;
+export async function addCompositeKeyItem(compositeKeyItem?: Partial<My.Odata.Entities.CompositeKeyItem>) {
 
-    if (logQuery) {
-        console.log(JSON.stringify(niceQuery(), null, 2))
-    }
-
-    let uri = `http://localhost:5432/odata/test-entities/${entityName}`;
-    if (q) {
-        uri = `${uri}?${q}`
-    }
-
-    return fetch(uri)
-        .then(x => {
-            return x.status < 200 || x.status >= 300
-                ? x.text().then(err => handleError(uri, entityName, err, x, null)) as Promise<T[]>
-                : x.json() as Promise<T[]>;
-        })
-        .then(x => {
-            console.log(x)
-            return x;
-        });
-
-    function niceQuery() {
-        return q
-            .split("&")
-            .map(decodeURIComponent)
-            .reduce((s, x) => {
-                let eq = x.indexOf("=");
-                if (eq === -1) {
-                    eq = x.length
-                    x = `${x}=${x}`;
-                }
-
-                const k = x.substring(0, eq);
-                const v = x.substring(eq + 1);
-                return {
-                    ...s,
-                    [k]: v
-                };
-            }, {});
-    }
+    return postCompositeKeyItem({
+        Data: compositeKeyItem?.Data ?? uniqueString("Some data ")
+    });
 }
 
 function post<T>(entityName: string, value: T) {

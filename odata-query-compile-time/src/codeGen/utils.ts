@@ -98,7 +98,9 @@ export const buildFullyQualifiedTsType = (settings: CodeGenConfig | null | undef
     return fullyQualifiedTsType;
 }
 
+type KeyPropDescriptor = { name: string, type: ODataTypeRef }
 function getKeyPropertyType(prop: ODataTypeRef, fullyQualifiedTsType: FullyQualifiedTsType): string {
+
     if (prop.isCollection) {
         // TODO: test
         return getKeyPropertyType(prop.collectionType, fullyQualifiedTsType) + "[]"
@@ -109,7 +111,19 @@ function getKeyPropertyType(prop: ODataTypeRef, fullyQualifiedTsType: FullyQuali
         name: prop.name,
         namespace: prop.namespace
     });
+}
 
+function getKeyPropertiesType(props: KeyPropDescriptor[], fullyQualifiedTsType: FullyQualifiedTsType): string {
+
+    if (props.length === 1) {
+        return getKeyPropertyType(props[0].type, fullyQualifiedTsType);
+    }
+
+    const kvp = props
+        .map(x => `${x.name}: ${getKeyPropertyType(x.type, fullyQualifiedTsType)}`)
+        .join(", ");
+
+    return `{ ${kvp} }`
 }
 
 export type GetKeyType = (t: ODataComplexType, lookupParent: boolean) => string | undefined
@@ -119,7 +133,7 @@ export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serv
     const lookupType = buildLookupType(serviceConfig)
 
     const getKeyType: GetKeyType = (t: ODataComplexType, lookupParent = true): string | undefined => {
-        if (!t.keyProp) {
+        if (!t.keyProps) {
             if (t.baseType && lookupParent) {
                 const baseType = lookupType({ isCollection: false, namespace: t.baseType.namespace, name: t.baseType.name })
                 if (!baseType) {
@@ -133,13 +147,17 @@ export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serv
             return undefined;
         }
 
-        const prop = t.properties[t.keyProp];
-        if (!prop) {
-            const ns = t.namespace ? `${t.namespace}.` : ""
-            throw new Error(`Could not find key property: ${t.keyProp} of type ${ns}${t.name}`)
-        }
+        const propTypes = t.keyProps.map(name => {
+            const type = t.properties[name]?.type;
+            if (!type) {
+                const ns = t.namespace ? `${t.namespace}.` : ""
+                throw new Error(`Could not find key property: ${name} of type ${ns}${t.name}`)
+            }
 
-        return getKeyPropertyType(prop.type, fullyQualifiedTsType);
+            return { name, type };
+        });
+
+        return getKeyPropertiesType(propTypes, fullyQualifiedTsType);
     }
 
     return getKeyType;

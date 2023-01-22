@@ -54,7 +54,7 @@ export type RequestTools = {
     /* 
      * Interceptor for http responses. Use this to add custom error handling or deserialization
      */
-    responseInterceptor?: (input: Response, uri: string, reqValues: RequestInit, defaultInterceptor: (input: Response) => Promise<any>) => Promise<any>
+    responseInterceptor?: (input: Response, uri: string, reqValues: RequestInit, defaultInterceptor: (input: Response) => Promise<any>) => any
 }
 
 function addLeadingSlash(path: string) {
@@ -120,25 +120,25 @@ function lookupComplex(
     return result.result;
 }
 
-function tryFindKeyName(
+function tryFindKeyNames(
     type: ODataTypeName,
-    root: ODataServiceTypes): string | null {
+    root: ODataServiceTypes): string[] {
 
     const t = lookupComplex(type, root);
-    if (t.keyProp) return t.keyProp;
+    if (t.keyProps) return t.keyProps;
 
     const parent = tryFindBaseType(t, root);
-    return (parent && tryFindKeyName(parent, root)) || null
+    return (parent && tryFindKeyNames(parent, root)) || []
 }
 
-// TODO: composite_keys (search whole proj for composite_keys)
-function tryFindKeyType(
+type KeyType = { name: string, type: ODataTypeRef }
+function tryFindKeyTypes(
     type: ODataTypeName,
-    root: ODataServiceTypes): ODataTypeRef | null {
+    root: ODataServiceTypes): KeyType[] {
 
     const t = lookupComplex(type, root);
-    const key = tryFindKeyName(t, root);
-    return (key && tryFindPropertyType(t, key, root)) || null;
+    return tryFindKeyNames(t, root)
+        .map(name => ({ name, type: findPropertyType(t, name, root) }));
 }
 
 function tryFindBaseType(
@@ -168,6 +168,19 @@ function tryFindPropertyType(
 
     const parent = tryFindBaseType(t, root);
     return (parent && tryFindPropertyType(parent, propertyName, root)) || null;
+}
+
+function findPropertyType(
+    type: ODataTypeName,
+    propertyName: string,
+    root: ODataServiceTypes): ODataTypeRef {
+
+    const result = tryFindPropertyType(type, propertyName, root);
+    if (!result) {
+        throw new Error(`Could not find property ${propertyName} on type ${type.namespace && `${type.namespace}.`}${type.name}`);
+    }
+
+    return result;
 }
 
 // might return duplicates if and child property names clash
@@ -263,6 +276,48 @@ const defaultRequestTools: Partial<RequestTools> = {
     }
 }
 
+function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType) {
+
+    if (keyTypes.length === 1) {
+        const result = keyEmbedType === WithKeyType.FunctionCall
+            ? { appendToLatest: true, value: `(${serialize(key, keyTypes[0].type)})` }
+            : keyEmbedType === WithKeyType.PathSegment
+                ? { appendToLatest: false, value: `${serialize(key, keyTypes[0].type)}` }
+                : null;
+
+        if (!result) {
+            throw new Error(`Invalid WithKeyType: ${keyEmbedType}`);
+        }
+
+        return result;
+    }
+
+    const kvp = keyTypes
+        .map(t => Object.prototype.hasOwnProperty.call(key, t.name)
+            ? { key: t.name, value: serialize(key[t.name], t.type) }
+            : t.name);
+
+    const missingKeys = kvp.filter(x => typeof x === "string") as string[]
+
+    if (missingKeys.length) {
+        throw new Error(`Missing keys: ${missingKeys}`);
+    }
+
+    if (keyEmbedType !== WithKeyType.FunctionCall) {
+        console.warn(`${keyEmbedType} key types are not supported for composite keys. Defaulting to ${WithKeyType.FunctionCall}`);
+        keyEmbedType = WithKeyType.FunctionCall;
+    }
+
+    const value = (kvp as { key: string, value: string }[])
+        .map(({ key, value }) => `${key}=${value}`)
+        .join(",")
+
+    return {
+        appendToLatest: true,
+        value: `(${value})`
+    }
+}
+
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
@@ -308,30 +363,18 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             throw new Error("Cannot search a collection of collections by key. You must search a collection instead");
         }
 
-        // TODO: composite_keys (search whole proj for composite_keys)
-        const keyType = tryFindKeyType(this.type.collectionType, this.root.types);
-        if (!keyType) {
-            const ns = this.type.collectionType.namespace && `${this.type.collectionType.namespace}.`
-            throw new Error(`Type ${ns}${this.type.collectionType.name} does not have a key property`);
-        }
+        const keyTypes = tryFindKeyTypes(this.type.collectionType, this.root.types);
+        const keyPath = keyExpr(keyTypes, key, keyEmbedType);
 
-        const k = key === null ? "null" : serialize(key, keyType);
-        const path = keyEmbedType === WithKeyType.FunctionCall
+        const path = keyPath.appendToLatest
             ? [
                 ...this.state.path.slice(0, this.state.path.length - 1),
-                `${this.state.path[this.state.path.length - 1]}(${k})`,
+                `${this.state.path[this.state.path.length - 1]}${keyPath.value}`
             ]
-            // TODO: test
-            : keyEmbedType === WithKeyType.PathSegment
-                ? [
-                    ...this.state.path,
-                    k,
-                ]
-                : null;
-
-        if (!path) {
-            throw new Error(`Invalid WithKeyType: ${keyEmbedType}`);
-        }
+            : [
+                ...this.state.path,
+                keyPath.value
+            ]
 
         return new EntityQuery<TEntity, never, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataSingleResult<TEntity>>(
             this.requestTools,

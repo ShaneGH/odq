@@ -10,6 +10,7 @@ public class EntityDbContext : DbContext
     public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<CommentTag> Tags => Set<CommentTag>();
+    public DbSet<CompositeKeyItem> CompositeKeyItems => Set<CompositeKeyItem>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -20,7 +21,18 @@ public class EntityDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        MapBlogModel(modelBuilder);
+    }
 
+    private void MapOneOffUseCaseModel(ModelBuilder modelBuilder)
+    {
+        modelBuilder
+            .Entity<CompositeKeyItem>()
+            .HasKey(u => new { u.Id1, u.Id2 });
+    }
+
+    private void MapBlogModel(ModelBuilder modelBuilder)
+    {
         modelBuilder
             .Entity<User>()
             .HasKey(u => u.Id);

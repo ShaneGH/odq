@@ -6,8 +6,7 @@ export type ODataTypeName = {
 }
 
 export type ODataComplexType = ODataTypeName & {
-    // TODO: composite_keys (search whole proj for composite_keys)
-    keyProp?: string | undefined
+    keyProps?: string[] | undefined
     baseType?: ODataTypeName
     properties: {
         [key: string]: {
