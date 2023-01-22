@@ -18,8 +18,8 @@ export * as FilterUtils from "./src/filterUtils.js"
 
 export {
     RequestTools,
-    ODataMultiResult,
-    ODataSingleResult,
+    ODataAnnotatedResult,
+    ODataResult,
     EntityQuery,
     ODataUriParts,
     CastSelection,

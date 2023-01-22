@@ -118,7 +118,7 @@ ${methods}
             tSingleCaster: `${casterType}.Single`,
             tSubPath: keywords.CollectionsCannotBeTraversed,
             tSingleSubPath: `${subPathType}`,
-            tResult: `${keywords.ODataMultiResult}<${resultType}>`
+            tResult: `${keywords.ODataAnnotatedResult}<${resultType}>`
         }
 
         const instanceType = httpClientType(keywords, generics, tab);

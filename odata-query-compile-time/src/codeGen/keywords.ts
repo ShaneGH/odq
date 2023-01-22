@@ -17,8 +17,8 @@ export type Keywords = {
     _httpClientArgs: string,
     ISingletonQueryBulder: string,
     ICollectionQueryBulder: string,
-    ODataMultiResult: string
-    ODataSingleResult: string
+    ODataAnnotatedResult: string
+    ODataResult: string
     Internal: string
     SingleItemsCannotBeQueriedByKey: string
     CollectionsCannotBeTraversed: string
@@ -63,8 +63,8 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
         ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),
         ICollectionQueryBulder: getKeyword("ICollectionQueryBulder"),
-        ODataMultiResult: getKeyword("ODataMultiResult"),
-        ODataSingleResult: getKeyword("ODataSingleResult"),
+        ODataAnnotatedResult: getKeyword("ODataAnnotatedResult"),
+        ODataResult: getKeyword("ODataResult"),
         _httpClientArgs: getKeyword("_httpClientArgs"),
         SingleItemsCannotBeQueriedByKey: getKeyword("SingleItemsCannotBeQueriedByKey"),
         CollectionsCannotBeTraversed: getKeyword("CollectionsCannotBeTraversed"),
@@ -104,8 +104,8 @@ ${tab(importWithAlias("ICollectionQueryBulder"))},
 ${tab(importWithAlias("ISingletonQueryBulder"))},
 ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))},
-${tab(importWithAlias("ODataMultiResult"))},
-${tab(importWithAlias("ODataSingleResult"))},
+${tab(importWithAlias("ODataAnnotatedResult"))},
+${tab(importWithAlias("ODataResult"))},
 ${tab(importWithAlias("SingleItemsCannotBeQueriedByKey"))},
 ${tab(importWithAlias("ThisItemDoesNotHaveAKey"))},
 ${tab(importWithAlias("CollectionsCannotBeTraversed"))},

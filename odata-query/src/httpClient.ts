@@ -10,12 +10,12 @@ export type ODataResultMetadata = Partial<{
 }>
 
 // TODO: rename ODataCollectionResult
-export type ODataMultiResult<T> = ODataResultMetadata & {
+export type ODataAnnotatedResult<T> = ODataResultMetadata & {
 
     value: T[]
 }
 
-export type ODataSingleResult<T> = ODataResultMetadata & T
+export type ODataResult<T> = ODataResultMetadata & T
 
 export type Dictionary<T> = { [key: string]: T }
 
@@ -266,7 +266,7 @@ const defaultRequestTools: Partial<RequestTools> = {
     requestInterceptor: (_, x) => x,
 
     // NOTE: defaultProcessor will always be null
-    responseInterceptor: <TEntity>(response: Response, uri: any, reqValues: any, defaultProcessor: any): Promise<ODataMultiResult<TEntity>> => {
+    responseInterceptor: <TEntity>(response: Response, uri: any, reqValues: any, defaultProcessor: any): Promise<ODataAnnotatedResult<TEntity>> => {
         // TODO: error handling
         if (!response.ok) {
             return new Promise<any>((_, rej) => rej(response));
@@ -376,7 +376,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
                 keyPath.value
             ]
 
-        return new EntityQuery<TEntity, never, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataSingleResult<TEntity>>(
+        return new EntityQuery<TEntity, never, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataResult<TEntity>>(
             this.requestTools,
             this.type.collectionType,
             this.entitySet,

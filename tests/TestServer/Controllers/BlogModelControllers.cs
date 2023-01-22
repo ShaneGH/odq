@@ -148,18 +148,15 @@ public class UsersController : ODataControllerBase<User>
         this._inMemoryDb = inMemoryDb;
     }
 
-    // [HttpGet("User({key})/User/NonEF_BlogPostTitles")]
-    // [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    // public IQueryable<IQueryable<string>> GetBlogUser([FromRoute] string key)
-    // {
-    //     return _inMemoryDb.Users
-    //         .Where(x => x.Id == key)
-    //         .SelectMany(u => u.Blogs)
-    //         .Include(x => x.Posts)
-    //         .ToList()
-    //         .Select(b => b.Posts.Select(p => p.Name).AsQueryable())
-    //         .AsQueryable();
-    // }
+    [HttpGet("Users({key})/Name")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<string> GetBlogUser([FromRoute] string key)
+    {
+        return _inMemoryDb.Users
+            .Where(x => x.Id == key)
+            .Select(u => u.Name)
+            .AsSingleResult();
+    }
 
     protected override void AddEntity(EntityDbContext db, User entity) => db.Users.Add(entity);
 

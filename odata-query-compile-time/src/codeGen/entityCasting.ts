@@ -88,7 +88,7 @@ ${tab(collection(type))}
     }
 
     function single(type: ODataComplexType) {
-        const props = getCasterProps(type, "ODataSingleResult", true)
+        const props = getCasterProps(type, "ODataResult", true)
         return !props.length
             ? "export type Single = { }"
             : `export type Single = {
@@ -97,7 +97,7 @@ ${tab(props.join("\n\n"))}
     }
 
     function collection(type: ODataComplexType) {
-        const props = getCasterProps(type, "ODataMultiResult", false)
+        const props = getCasterProps(type, "ODataAnnotatedResult", false)
         return !props.length
             ? "export type Collection = { }"
             : `export type Collection = {

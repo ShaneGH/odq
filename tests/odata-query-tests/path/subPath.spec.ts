@@ -55,6 +55,26 @@ describe("SubPath", function () {
 
     describe("Singleton", () => {
 
+        it.only("Should retrieve primitive item in the path, 1 level", async () => {
+            const user = await addFullUserChain();
+            const userName = await client.My.Odata.Container.Users
+                .withKey(user.blogUser.Id!)
+                .subPath(x => x.Name)
+                .get();
+
+            expect(userName).toBe(user.blogUser.Name);
+        });
+
+        it("Should retrieve primitive items in the path, 1 level", async () => {
+            const user = await addFullUserChain();
+            const blogWords = await client.My.Odata.Container.BlogPosts
+                .withKey(user.blogPost.Id!)
+                .subPath(x => x.Words)
+                .get();
+
+            expect(blogWords.value.join(" ")).toBe(user.blogPost.Content);
+        });
+
         it("Should retrieve items in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const blog = await client.My.Odata.Container.BlogPosts
