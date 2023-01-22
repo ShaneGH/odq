@@ -1,5 +1,5 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes } from "odata-query-shared";
-import { IQueryBulder, QueryBuilder } from "./queryBuilder.js";
+import { IQueryBulder, PrimitiveQueryBuilder, QueryBuilder } from "./queryBuilder.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -112,23 +112,51 @@ export type SubPathSelection<TNewEntityQuery> = {
     propertyName: string
 }
 
+type ComplexLookupResult = {
+    isComplex: true
+    result: ODataComplexType
+}
+
+type PrimitiveLookupResult = {
+    isComplex: false
+    result: ODataTypeName
+}
+
+type LookupResult = ComplexLookupResult | PrimitiveLookupResult
+
 function lookup(
     type: ODataTypeName,
-    root: ODataServiceTypes) {
+    root: ODataServiceTypes): LookupResult {
 
-    const t = root[type.namespace] && root[type.namespace][type.name];
-    if (!t) {
+    if (type.namespace === "Edm") {
+        return { isComplex: false, result: type }
+    }
+
+    const result = root[type.namespace] && root[type.namespace][type.name];
+    if (!result) {
         throw new Error(`Could not find type ${type.namespace && `${type.namespace}.`}${type.name}`)
     }
 
-    return t;
+    return { isComplex: true, result };
+}
+
+function lookupComplex(
+    type: ODataTypeName,
+    root: ODataServiceTypes) {
+
+    const result = lookup(type, root);
+    if (!result.isComplex) {
+        throw new Error(`Could not find complex type ${type.namespace && `${type.namespace}.`}${type.name}`)
+    }
+
+    return result.result;
 }
 
 function tryFindKeyName(
     type: ODataTypeName,
     root: ODataServiceTypes): string | null {
 
-    const t = lookup(type, root);
+    const t = lookupComplex(type, root);
     if (t.keyProp) return t.keyProp;
 
     const parent = tryFindBaseType(t, root);
@@ -140,7 +168,7 @@ function tryFindKeyType(
     type: ODataTypeName,
     root: ODataServiceTypes): ODataTypeRef | null {
 
-    const t = lookup(type, root);
+    const t = lookupComplex(type, root);
     const key = tryFindKeyName(t, root);
     return (key && tryFindPropertyType(t, key, root)) || null;
 }
@@ -167,7 +195,7 @@ function tryFindPropertyType(
     propertyName: string,
     root: ODataServiceTypes): ODataTypeRef | null {
 
-    const t = lookup(type, root);
+    const t = lookupComplex(type, root);
     if (t.properties[propertyName]) return t.properties[propertyName].type;
 
     const parent = tryFindBaseType(t, root);
@@ -395,7 +423,11 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
         // TODO: this is a temp hack
         const { name, namespace } = getCastingTypeRef(this.type);
 
-        const query = queryBuilder(new QueryBuilder<TQuery>(lookup({ name, namespace }, this.root.types), this.root.types)).toQueryParts(true)
+        const t = lookup({ name, namespace }, this.root.types)
+        const query = t.isComplex
+            ? queryBuilder(new QueryBuilder<TQuery>(t.result, this.root.types)).toQueryParts(true)
+            : queryBuilder(new PrimitiveQueryBuilder<TQuery>()).toQueryParts(true);
+
         return new EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
@@ -507,7 +539,7 @@ export class EntityQuery<TEntity, TKey, TQuery, TCaster, TSingleCaster, TSubPath
 
     private buildSubPath(type: ODataTypeName): TSubPath {
 
-        return listAllProperties(lookup(type, this.root.types), this.root.types, true)
+        return listAllProperties(lookupComplex(type, this.root.types), this.root.types, true)
             // TODO: any
             .reduce((s, x) => ({ ...s, [x]: { propertyName: x } }), {} as any);
     }
