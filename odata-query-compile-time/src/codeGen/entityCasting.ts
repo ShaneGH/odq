@@ -48,7 +48,7 @@ function buildGetCasterProps(
 
                 const generics = {
                     tEntity: resultType,
-                    tKey: getKeyType(t, true) || keywords.SingleItemsCannotBeQueriedByKey,
+                    tKey: getKeyType(t, true),
                     tQuery: {
                         isPrimitive: t.namespace === "Edm",
                         fullyQualifiedQueryableName: fullyQualifiedTsType(typeRef, getQueryableName)
@@ -74,7 +74,7 @@ export const buildEntityCasting = (tab: Tab, settings: CodeGenConfig | null | un
     const getSubPathName = buildGetSubPathName(settings);
     const getQueryableName = buildGetQueryableName(settings);
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
-    const getKeyType = buildGetKeyType(settings, serviceConfig);
+    const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
     const getCasterProps = buildGetCasterProps(serviceConfig.types, fullyQualifiedTsType, getKeyType, getQueryableName, getCasterName, getSubPathName, keywords, tab);
 
     return (type: ODataComplexType) => {

@@ -195,7 +195,7 @@ export const buildEntitySubPath = (tab: Tab, settings: CodeGenConfig | null | un
     const getCasterName = buildGetCasterName(settings);
     const getSubPathName = buildGetSubPathName(settings);
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
-    const getKeyType = buildGetKeyType(settings, serviceConfig);
+    const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
     const getQueryableName = buildGetQueryableName(settings);
     const getSubPathProps = buildGetSubPathProps(serviceConfig.types, fullyQualifiedTsType, getKeyType, getQueryableName, getCasterName, getSubPathName, keywords, tab);
 

@@ -12,7 +12,7 @@ export function httpClient(
 
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
     const sanitizeNamespace = buildSanitizeNamespace(settings);
-    const getKeyType = buildGetKeyType(settings, serviceConfig);
+    const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
     const lookupType = buildLookupType(serviceConfig);
 
     const getQueryableName = buildGetQueryableName(settings);
@@ -109,7 +109,7 @@ ${methods}
         const idType = getKeyType(type, true);
         const generics = {
             tEntity: resultType,
-            tKey: idType || keywords.SingleItemsCannotBeQueriedByKey,
+            tKey: idType,
             tQuery: {
                 isPrimitive: false,
                 fullyQualifiedQueryableName: queryableType

@@ -72,3 +72,11 @@ export type CastingOnCollectionsOfCollectionsIsNotSupported = never
  * This is a type designed not to be used
  */
 export type QueryingOnCollectionsOfCollectionsIsNotSupported = never
+
+/*
+ * The item you are attmpting to query does not have a key property
+ * This might be because it is not an entity type, or becauese the OData service is misconfigured
+ * 
+ * This is a type designed not to be used
+ */
+export type ThisItemDoesNotHaveAKey = never

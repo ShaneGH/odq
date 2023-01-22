@@ -25,6 +25,7 @@ export type Keywords = {
     PrimitiveTypesCannotBeTraversed: string
     CastingOnCollectionsOfCollectionsIsNotSupported: string
     QueryingOnCollectionsOfCollectionsIsNotSupported: string
+    ThisItemDoesNotHaveAKey: string
     QueryBuilder: string
     PrimitiveQueryBuilder: string
 };
@@ -70,6 +71,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         PrimitiveTypesCannotBeTraversed: getKeyword("PrimitiveTypesCannotBeTraversed"),
         CastingOnCollectionsOfCollectionsIsNotSupported: getKeyword("CastingOnCollectionsOfCollectionsIsNotSupported"),
         QueryingOnCollectionsOfCollectionsIsNotSupported: getKeyword("QueryingOnCollectionsOfCollectionsIsNotSupported"),
+        ThisItemDoesNotHaveAKey: getKeyword("ThisItemDoesNotHaveAKey"),
         Internal: getKeyword("Internal")
     }
 
@@ -105,6 +107,7 @@ ${tab(importWithAlias("QueryComplexObject"))},
 ${tab(importWithAlias("ODataMultiResult"))},
 ${tab(importWithAlias("ODataSingleResult"))},
 ${tab(importWithAlias("SingleItemsCannotBeQueriedByKey"))},
+${tab(importWithAlias("ThisItemDoesNotHaveAKey"))},
 ${tab(importWithAlias("CollectionsCannotBeTraversed"))},
 ${tab(importWithAlias("PrimitiveTypesCannotBeTraversed"))},
 ${tab(importWithAlias("CastingOnCollectionsOfCollectionsIsNotSupported"))},

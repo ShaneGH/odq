@@ -126,13 +126,13 @@ function getKeyPropertiesType(props: KeyPropDescriptor[], fullyQualifiedTsType: 
     return `{ ${kvp} }`
 }
 
-export type GetKeyType = (t: ODataComplexType, lookupParent: boolean) => string | undefined
-export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serviceConfig: ODataServiceConfig): GetKeyType => {
+export type GetKeyType = (t: ODataComplexType, lookupParent: boolean) => string
+export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serviceConfig: ODataServiceConfig, keywords: Keywords): GetKeyType => {
 
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings)
     const lookupType = buildLookupType(serviceConfig)
 
-    const getKeyType: GetKeyType = (t: ODataComplexType, lookupParent = true): string | undefined => {
+    const getKeyType: GetKeyType = (t: ODataComplexType, lookupParent = true): string => {
         if (!t.keyProps) {
             if (t.baseType && lookupParent) {
                 const baseType = lookupType({ isCollection: false, namespace: t.baseType.namespace, name: t.baseType.name })
@@ -144,7 +144,7 @@ export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serv
                 return getKeyType(baseType, lookupParent)
             }
 
-            return undefined;
+            return keywords.ThisItemDoesNotHaveAKey;
         }
 
         const propTypes = t.keyProps.map(name => {
