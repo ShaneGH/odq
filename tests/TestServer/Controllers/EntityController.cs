@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Results;
 using Microsoft.AspNetCore.OData.Routing.Controllers;
+using Microsoft.EntityFrameworkCore;
 using TestServer.Model;
 
 namespace TestServer.Controllers;
@@ -136,6 +137,19 @@ public class UsersController : ODataControllerBase<User>
     {
         this._inMemoryDb = inMemoryDb;
     }
+
+    // [HttpGet("User({key})/User/NonEF_BlogPostTitles")]
+    // [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    // public IQueryable<IQueryable<string>> GetBlogUser([FromRoute] string key)
+    // {
+    //     return _inMemoryDb.Users
+    //         .Where(x => x.Id == key)
+    //         .SelectMany(u => u.Blogs)
+    //         .Include(x => x.Posts)
+    //         .ToList()
+    //         .Select(b => b.Posts.Select(p => p.Name).AsQueryable())
+    //         .AsQueryable();
+    // }
 
     protected override void AddEntity(EntityDbContext db, User entity) => db.Users.Add(entity);
 
