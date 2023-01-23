@@ -66,6 +66,7 @@ Evaluated: v1
  * Expose query builder objects again (try to support non standard odata)
      * confusing. Think it is done (except for the 204)
  * Make dev env linux friendly
+ * Cast enums
 
 Evaluated: vNext
  

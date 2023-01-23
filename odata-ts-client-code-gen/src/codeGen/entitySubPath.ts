@@ -95,7 +95,6 @@ function buildGetSubPathProps(
     function getTCaster(info: EntityTypeInfo, forceSingle = false) {
 
         // TODO: is is possible to cast a primitive? (e.g. int -> string)
-        // TODO: is is possible to cast an enum? (e.g. enum -> int)
         if (info.type.objectType !== ObjectType.ComplexType || info.collectionDepth > 1) {
             return keywords.CastingOnCollectionsOfCollectionsIsNotSupported;
         }

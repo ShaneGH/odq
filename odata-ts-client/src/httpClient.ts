@@ -421,7 +421,6 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         const t = lookup(typeRef, this.root.types)
         const queryObjBuilder = t.flag === "Complex"
             ? this.executeComplexQueryBuilder(t.type, queryBuilder as any)
-            // TODO: this was built for primitives. But is now being used by enums
             : this.executePrimitiveQueryBuilder(queryBuilder as any);
 
         return new EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
@@ -500,7 +499,6 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             .then(x => tools.responseInterceptor!(x, uri, init, x => defaultRequestTools.responseInterceptor!(x, uri, init, null as any)));
     }
 
-    // TODO: cast enums
     // TODO: duplicate_logic_key: caster
     private buildCaster(): TCaster {
 

@@ -15,8 +15,6 @@ function buildGetComplexCasterProps(
     keywords: Keywords,
     tab: Tab) {
 
-    // TODO: casting strings/enums?
-
     const allComplexTypeFlatList = Object
         .keys(allTypes)
         .map(ns => Object

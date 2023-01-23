@@ -161,6 +161,16 @@ public class UsersController : ODataControllerBase<User>
             .AsSingleResult();
     }
 
+    [HttpGet("Users({key})/UserType")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<UserType> GetUserType([FromRoute] string key)
+    {
+        return _inMemoryDb.Users
+            .Where(x => x.Id == key)
+            .Select(u => u.UserType)
+            .AsSingleResult();
+    }
+
     protected override void AddEntity(EntityDbContext db, User entity) => db.Users.Add(entity);
 
     protected override IQueryable<User> AllEntities(EntityDbContext db) => db.Users;
