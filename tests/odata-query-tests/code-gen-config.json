@@ -6,7 +6,8 @@
     "outputFileLocation": "./generatedCode.ts",
     "codeGenSettings": {
         "prettyPrintJsonConfig": false,
-        "exportTypeDefinitionJsObject": true
+        "exportTypeDefinitionJsObject": true,
+        "enumType": "String"
     },
     "printODataConfig": false,
     "warningSettings": {}

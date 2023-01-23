@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataSingleTypeRef } from "odata-ts-client-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataSingleTypeRef, ComplexTypeOrEnum } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 
@@ -71,11 +71,24 @@ export const buildSanitizeNamespace = (settings: CodeGenConfig | null | undefine
     return namespace.replace(/[^a-zA-Z0-9$._]/, settings?.namespaceSpecialCharacter || ".");
 }
 
-export type LookupType = (t: ODataSingleTypeRef) => ODataComplexType | undefined
+export type LookupType = (t: ODataSingleTypeRef) => ComplexTypeOrEnum | undefined
 
 // TODO: if the key type is a collection, I think this function will fall over
 export const buildLookupType = (serviceConfig: ODataServiceConfig): LookupType => (t: ODataSingleTypeRef) => {
     return (serviceConfig.types[t.namespace] && serviceConfig.types[t.namespace][t.name]) || undefined
+}
+
+export type LookupComplexType = (t: ODataSingleTypeRef) => ODataComplexType | undefined
+
+// TODO: if the key type is a collection, I think this function will fall over
+export const buildLookupComplexType = (serviceConfig: ODataServiceConfig): LookupComplexType => {
+    const lt = buildLookupType(serviceConfig);
+    return (t: ODataSingleTypeRef) => {
+        const result = lt(t);
+        if (!result || result.containerType === "ComplexType") return result?.type;
+
+        throw new Error(`${t.namespace && `${t.namespace}.`}${t.name} is not a complex type`);
+    }
 }
 
 function id<T>(x: T) { return x }
@@ -130,12 +143,12 @@ export type GetKeyType = (t: ODataComplexType, lookupParent: boolean) => string
 export const buildGetKeyType = (settings: CodeGenConfig | null | undefined, serviceConfig: ODataServiceConfig, keywords: Keywords): GetKeyType => {
 
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings)
-    const lookupType = buildLookupType(serviceConfig)
+    const lookupComplexType = buildLookupComplexType(serviceConfig)
 
     const getKeyType: GetKeyType = (t: ODataComplexType, lookupParent = true): string => {
         if (!t.keyProps) {
             if (t.baseType && lookupParent) {
-                const baseType = lookupType({ isCollection: false, namespace: t.baseType.namespace, name: t.baseType.name })
+                const baseType = lookupComplexType({ isCollection: false, namespace: t.baseType.namespace, name: t.baseType.name })
                 if (!baseType) {
                     const ns = t.baseType.namespace && `${t.baseType.namespace}.`
                     throw new Error(`Could not find base type: ${ns}${t.baseType.name}`);
@@ -184,7 +197,7 @@ export type HttpClientGenerics = {
     tKey: string,
     tQuery: {
         fullyQualifiedQueryableName: string
-        isPrimitive: boolean
+        isComplex: boolean
     },
     tCaster: string,
     tSingleCaster: string,
@@ -204,9 +217,9 @@ export function httpClientType(keywords: Keywords, generics: HttpClientGenerics,
     const gs = [
         generics.tEntity,
         generics.tKey,
-        generics.tQuery.isPrimitive
-            ? `${keywords.PrimitiveQueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`
-            : `${keywords.QueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`,
+        generics.tQuery.isComplex
+            ? `${keywords.QueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`
+            : `${keywords.PrimitiveQueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,

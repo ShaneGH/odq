@@ -1,6 +1,6 @@
 
 import { useNamespaces } from 'xpath'
-import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet, ODataEnum, ODataEnums } from 'odata-ts-client-shared'
+import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet, ODataEnum, ODataEnums, ComplexTypeOrEnum } from 'odata-ts-client-shared'
 import { SupressWarnings } from './config.js';
 
 const ns = {
@@ -18,16 +18,29 @@ export function processConfig(warningConfig: SupressWarnings, config: Document):
 
     return {
         types: processTypes(warningConfig, config),
-        entitySets: processEntitySets(config),
-        enums: processEnums(warningConfig, config)
+        entitySets: processEntitySets(config)
     };
 }
 
 function processTypes(warningConfig: SupressWarnings, config: Document): ODataServiceTypes {
 
-    return nsLookup(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:EntityType")
-        .concat(nsLookup(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:ComplexType"))
-        .map(x => mapEntityType(warningConfig, x as Node))
+    const complexTypes = nsLookup<Node>(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:EntityType")
+        .concat(nsLookup<Node>(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:ComplexType"))
+        .map((x: Node): ComplexTypeOrEnum => ({
+            containerType: "ComplexType",
+            type: mapEntityType(warningConfig, x)
+        }));
+
+    const enumTypes = nsLookup(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:EnumType")
+        .map(x => mapEnumType(warningConfig, x as Node))
+        .filter(x => !!x)
+        .map((x: ODataEnum | null): ComplexTypeOrEnum => ({
+            containerType: "Enum",
+            type: x!
+        }));
+
+    return complexTypes
+        .concat(enumTypes)
         .reduce(sortComplexTypesIntoNamespace, {});
 }
 
@@ -37,13 +50,6 @@ function processEntitySets(config: Document): ODataEntitySetNamespaces {
         .map(x => mapEntityContainer(x as Node))
         .reduce((s, x) => [...s, ...x], [])
         .reduce(sortEntitySetsIntoNamespace, {});
-}
-
-function processEnums(warningConfig: SupressWarnings, config: Document): ODataEnums {
-
-    return nsLookup(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:EnumType")
-        .map(x => mapEnumType(warningConfig, x as Node))
-        .reduce(sortEnumsIntoNamespace, {});
 }
 
 function mapEntityContainer(entityContainer: Node): ODataEntitySet[] {
@@ -122,28 +128,14 @@ function checkVersion(warningConfig: SupressWarnings, config: Document) {
     }
 }
 
-function sortComplexTypesIntoNamespace(root: ODataServiceTypes, type: ODataComplexType): ODataServiceTypes {
-    const ns = root[type.namespace] || {};
+function sortComplexTypesIntoNamespace(root: ODataServiceTypes, type: ComplexTypeOrEnum): ODataServiceTypes {
+    const ns = root[type.type.namespace] || {};
 
     return {
         ...root,
-        [type.namespace]: {
+        [type.type.namespace]: {
             ...ns,
-            [type.name]: type
-        }
-    };
-}
-
-function sortEnumsIntoNamespace(root: ODataEnums, type: ODataEnum | null): ODataEnums {
-    if (!type) return root;
-
-    const ns = root[type.namespace] || {};
-
-    return {
-        ...root,
-        [type.namespace]: {
-            ...ns,
-            [type.name]: type
+            [type.type.name]: type
         }
     };
 }
@@ -162,6 +154,7 @@ function sortEntitySetsIntoNamespace(root: ODataEntitySetNamespaces, type: OData
 
 const suppressEnumIssuesValueMessage = "To supress this warning, set warningSettings.suppressEnumIssuesValue to false"
 function getEnumValue(warningConfig: SupressWarnings, attr?: Attr) {
+
     if (!attr) {
         if (!warningConfig?.suppressEnumIssuesValue) {
             console.warn(`Found enum member with no value. Ignoring. ` + suppressEnumIssuesValueMessage);
@@ -183,6 +176,7 @@ function getEnumValue(warningConfig: SupressWarnings, attr?: Attr) {
 }
 
 function getEnumMember(warningConfig: SupressWarnings, attr?: Attr) {
+
     if (!attr) {
         if (!warningConfig?.suppressEnumIssuesValue) {
             console.warn(`Found enum member with no name. Ignoring. ` + suppressEnumIssuesValueMessage);
@@ -195,16 +189,17 @@ function getEnumMember(warningConfig: SupressWarnings, attr?: Attr) {
 }
 
 function mapEnumType(warningConfig: SupressWarnings, node: Node): ODataEnum | null {
-    const members = (nsLookup(node, "edm:Member") as Node[])
+
+    const members = nsLookup<Node>(node, "edm:Member")
         .map(n => ({
             name: getEnumMember(warningConfig, nsLookup<Attr>(n, "@Name")[0]),
             value: getEnumValue(warningConfig, nsLookup<Attr>(n, "@Value")[0]),
         }))
-        .reduce((s, x) => x.name !== null || x.value !== null
+        .reduce((s, x) => x.name === null || x.value === null
             ? s
             : {
                 ...s,
-                [x.name!]: x.value!
+                [x.name]: x.value
             }, {} as { [key: string]: number });
 
     const name = nsLookup<Attr>(node, "@Name");

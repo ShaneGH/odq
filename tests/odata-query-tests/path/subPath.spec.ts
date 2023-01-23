@@ -55,7 +55,7 @@ describe("SubPath", function () {
 
     describe("Singleton", () => {
 
-        it.only("Should retrieve primitive item in the path, 1 level", async () => {
+        it("Should retrieve primitive item in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const userName = await client.My.Odata.Container.Users
                 .withKey(user.blogUser.Id!)

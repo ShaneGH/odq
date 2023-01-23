@@ -163,6 +163,35 @@ describe("Query.Filter", function () {
         }
     });
 
+    // TODO enum: this test will fail if enumType is set to Number in config
+    // User, UserType
+    testCase("Complex -> Enum", function () {
+
+        it("Should filter (success)", execute.bind(null, true));
+        it("Should filter (failure)", execute.bind(null, false))
+
+        async function execute(success: boolean) {
+
+            const user = await addFullUserChain({ userType: My.Odata.Entities.UserType.Admin });
+            const userType = success
+                ? My.Odata.Entities.UserType.Admin
+                : My.Odata.Entities.UserType.User;
+
+            const result = await client.My.Odata.Container.Users.withQuery(q => q
+                .filter(u => F.and(
+                    F.eq(u.Id, user.blogUser.Id),
+                    F.eq(u.UserType, userType))))
+                .get();
+
+            if (success) {
+                expect(result.value.length).toBe(1);
+                expect(result.value[0].Name).toBe(user.blogUser.Name);
+            } else {
+                expect(result.value.length).toBe(0);
+            }
+        }
+    });
+
     // User -> Blogs -> Count
     testCase("Complex -> Array<Complex> -> Count", function () {
 
@@ -339,11 +368,11 @@ describe("Query.Filter", function () {
         const namespace = dot === -1 ? "" : fullName.substring(0, dot)
         const name = dot === -1 ? fullName : fullName.substring(dot + 1)
         const type = rootConfig.types[namespace] && rootConfig.types[namespace][name]
-        if (!type) {
+        if (!type || type.containerType !== "ComplexType") {
             throw new Error(fullName);
         }
 
-        return new QueryBuilder<T>(type, rootConfig.types);
+        return new QueryBuilder<T>(type.type, rootConfig.types);
     }
 
     // TODO: not sure if HasSubset is a real thing

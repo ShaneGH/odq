@@ -150,4 +150,10 @@ export type CodeGenConfig = Partial<{
      * Default false
      */
     makeAllPropsOptional: boolean
+
+    /* 
+     * Specifies whether enums should be represented by their name or their value
+     * Default String
+     */
+    enumType: "String" | "Number"
 }>

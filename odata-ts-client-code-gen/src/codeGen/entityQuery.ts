@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceConfig } from "odata-ts-client-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataEnum, ComplexTypeOrEnum } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetQueryableName, buildSanitizeNamespace, FullyQualifiedTsType, GetQueryableName, Tab } from "./utils.js";
@@ -42,22 +42,27 @@ function getQueryableType(type: ODataTypeRef, keywords: Keywords,
         throw new Error(`Unknown type: ${ns}${type.name}`);
     }
 
+    const isEnum = serviceConfig.types[type.namespace][type.name].containerType === "Enum"
     const t = fullyQualifiedTsType(type, getQueryableName);
 
     return {
-        wrapper: keywords.QueryComplexObject,
+        wrapper: isEnum ? keywords.QueryPrimitive : keywords.QueryComplexObject,
         generics: [t]
     };
 }
 
-export type EntityQuery = (type: ODataComplexType) => string
+export type EntityQuery = (type: ComplexTypeOrEnum) => string
 export const buildEntityQuery = (settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig): EntityQuery => {
 
     const sanitizeNamespace = buildSanitizeNamespace(settings);
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
     const getQueryableName = buildGetQueryableName(settings);
 
-    return (type: ODataComplexType) => {
+    return (type: ComplexTypeOrEnum) => type.containerType === "ComplexType"
+        ? complexType(type.type)
+        : enumType(type.type);
+
+    function complexType(type: ODataComplexType) {
         const qtName = getQueryableName(type.name)
         const baseTypeNs = type.baseType?.namespace ? `${sanitizeNamespace(type.baseType?.namespace)}.` : ""
         const baseQType = type.baseType ? `${baseTypeNs}${getQueryableName(type.baseType.name)} & ` : "";
@@ -74,5 +79,11 @@ export const buildEntityQuery = (settings: CodeGenConfig | null | undefined, tab
         return `export type ${qtName} = ${baseQType}{
 ${tab(queryableProps)}
 }`
+
+    }
+
+    function enumType(type: ODataEnum) {
+        const qtName = getQueryableName(type.name)
+        return `export type ${qtName} = { /*TODO*/ }`
     }
 }

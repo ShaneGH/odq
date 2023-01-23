@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes } from "odata-ts-client-shared";
+import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
 import { IQueryBulder, PrimitiveQueryBuilder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
 import { ODataUriParts, RequestTools } from "./requestTools.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
@@ -43,24 +43,19 @@ export type SubPathSelection<TNewEntityQuery> = {
     propertyName: string
 }
 
-type ComplexLookupResult = {
-    isComplex: true
-    result: ODataComplexType
+type LookupResult<TFlag extends string, T> = {
+    flag: TFlag
+    type: T
 }
 
-type PrimitiveLookupResult = {
-    isComplex: false
-    result: ODataTypeName
-}
-
-type LookupResult = ComplexLookupResult | PrimitiveLookupResult
+type LookupResults = LookupResult<"Complex", ODataComplexType> | LookupResult<"Primitive", ODataTypeName> | LookupResult<"Enum", ODataEnum>
 
 function lookup(
     type: ODataTypeName,
-    root: ODataServiceTypes): LookupResult {
+    root: ODataServiceTypes): LookupResults {
 
     if (type.namespace === "Edm") {
-        return { isComplex: false, result: type }
+        return { flag: "Primitive", type }
     }
 
     const result = root[type.namespace] && root[type.namespace][type.name];
@@ -68,7 +63,9 @@ function lookup(
         throw new Error(`Could not find type ${type.namespace && `${type.namespace}.`}${type.name}`)
     }
 
-    return { isComplex: true, result };
+    return result.containerType === "ComplexType"
+        ? { flag: "Complex", type: result.type }
+        : { flag: "Enum", type: result.type };
 }
 
 function lookupComplex(
@@ -76,11 +73,11 @@ function lookupComplex(
     root: ODataServiceTypes) {
 
     const result = lookup(type, root);
-    if (!result.isComplex) {
+    if (result.flag !== "Complex") {
         throw new Error(`Could not find complex type ${type.namespace && `${type.namespace}.`}${type.name}`)
     }
 
-    return result.result;
+    return result.type;
 }
 
 function tryFindKeyNames(
@@ -112,13 +109,18 @@ function tryFindBaseType(
         return null;
     }
 
-    return (root[type.baseType.namespace] && root[type.baseType.namespace][type.baseType.name])
-        || err(type.baseType);
-
-    function err(type: ODataTypeName): null {
+    const result = root[type.baseType.namespace] && root[type.baseType.namespace][type.baseType.name]
+    if (!result) {
         const ns = type.namespace && `${type.namespace}.`
         throw new Error(`Base type ${ns}${type.name} does not exist`);
     }
+
+    if (result.containerType !== "ComplexType") {
+        const ns = type.namespace && `${type.namespace}.`
+        throw new Error(`Base type ${ns}${type.name} es an enum. Expected an entity or complex type`);
+    }
+
+    return result.type
 }
 
 function tryFindPropertyType(
@@ -417,8 +419,9 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         }
 
         const t = lookup(typeRef, this.root.types)
-        const queryObjBuilder = t.isComplex
-            ? this.executeComplexQueryBuilder(t, queryBuilder as any)
+        const queryObjBuilder = t.flag === "Complex"
+            ? this.executeComplexQueryBuilder(t.type, queryBuilder as any)
+            // TODO: this was built for primitives. But is now being used by enums
             : this.executePrimitiveQueryBuilder(queryBuilder as any);
 
         return new EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
@@ -436,10 +439,10 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
     }
 
     private executeComplexQueryBuilder(
-        type: ComplexLookupResult,
+        type: ODataComplexType,
         queryBuilder: (q: QueryBuilder<TEntity>) => QueryBuilder<TEntity>): QueryStringBuilder {
 
-        return queryBuilder(new QueryBuilder<TEntity>(type.result, this.root.types));
+        return queryBuilder(new QueryBuilder<TEntity>(type, this.root.types));
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
@@ -497,6 +500,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             .then(x => tools.responseInterceptor!(x, uri, init, x => defaultRequestTools.responseInterceptor!(x, uri, init, null as any)));
     }
 
+    // TODO: cast enums
     // TODO: duplicate_logic_key: caster
     private buildCaster(): TCaster {
 
@@ -508,9 +512,10 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
                 .keys(this.root.types[ns])
                 .map(t => this.root.types[ns][t]))
             .reduce((s, x) => [...s, ...x], [])
-            .filter(x => x.baseType
-                && x.baseType.namespace === namespace
-                && x.baseType.name === name)
+            .filter(x => x.containerType === "ComplexType" && x.type.baseType
+                && x.type.baseType.namespace === namespace
+                && x.type.baseType.name === name)
+            .map(x => x.type as ODataComplexType)
             .map((x: ODataComplexType): ODataSingleTypeRef => ({
                 isCollection: false,
                 name: x.name,

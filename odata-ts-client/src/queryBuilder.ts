@@ -90,7 +90,7 @@ export class QueryStringBuilder implements IQueryBulder {
     }
 }
 
-// TODO: refactor: rry to roll all of this functionality into QueryBuilder<T>
+// TODO: refactor: try to roll all of this functionality into QueryBuilder<T>
 export class PrimitiveQueryBuilder<T> extends QueryStringBuilder {
     private typeRef: QueryPrimitive<T>
 

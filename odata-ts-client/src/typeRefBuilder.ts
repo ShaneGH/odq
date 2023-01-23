@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef } from "odata-ts-client-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef, ODataTypeName } from "odata-ts-client-shared";
 
 type Dict<T> = { [key: string]: T }
 
@@ -111,12 +111,23 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         };
     }
 
-    const complexType = root[type.namespace || ""] && root[type.namespace || ""][type.name];
-    if (!complexType) {
+    const tLookup = root[type.namespace || ""] && root[type.namespace || ""][type.name];
+    if (!tLookup) {
         const ns = type.namespace ? `${type.namespace}.` : "";
         throw new Error(`Could not find type ${ns}${type.name}`);
     }
 
+    if (tLookup.containerType === "Enum") {
+        return {
+            $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
+            $$oDataQueryMetadata: {
+                type: QueryObjectType.QueryPrimitive,
+                path: path
+            }
+        };
+    }
+
+    const complexType = tLookup.type
     const base: HasQueryObjectMetadata<QueryObjectType.QueryObject> = {
         $$oDataQueryObjectType: QueryObjectType.QueryObject,
         $$oDataQueryMetadata: {
@@ -125,18 +136,24 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         }
     }
 
-    const baseType = complexType.baseType
+    const bLookup = complexType.baseType
         && root[complexType.baseType.namespace]
         && root[complexType.baseType.namespace][complexType.baseType.name];
 
-    if (complexType.baseType && !baseType) {
+    if (complexType.baseType && !bLookup) {
         const ns = complexType.baseType.namespace && `${complexType.baseType.namespace}.`
         throw new Error(`Could not find base type ${ns}${complexType.baseType.name}`);
+    }
+
+    if (bLookup && bLookup.containerType !== "ComplexType") {
+        const ns = bLookup.type.namespace && `${bLookup.type.namespace}.`
+        throw new Error(`Base type ${ns}${bLookup.type.name} is an enum. Expecting a complex type`);
     }
 
     // This is a bit hacky. 
     //   1. I can't get the type system to behave correctly here (Mixin between regular obj and dictionary)
     //   2. Spread won't work on getters. Need to mutate objects
+    const baseType = bLookup?.type;
     return Object
         .keys(baseType?.properties || {})
         .map(key => ({ key, value: baseType!.properties[key] }))

@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataServiceConfig } from "odata-ts-client-shared"
+import { ODataComplexType, ODataServiceConfig, ComplexTypeOrEnum } from "odata-ts-client-shared"
 import { CodeGenConfig, SupressWarnings } from "../config.js"
 import { buildEntityCasting } from "./entityCasting.js"
 import { buildEntityData } from "./entityData.js"
@@ -14,7 +14,7 @@ export type EntityParts = {
     query: string | null
 }
 
-type EntityBuilder = (type: ODataComplexType) => EntityParts
+type EntityBuilder = (type: ComplexTypeOrEnum) => EntityParts
 const buildEntityBuilder = (settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig): EntityBuilder => {
 
     const entityData = buildEntityData(settings, tab);
@@ -22,20 +22,20 @@ const buildEntityBuilder = (settings: CodeGenConfig | null | undefined, tab: Tab
     const entityCastings = buildEntityCasting(tab, settings, serviceConfig, keywords);
     const entitySubPathProps = buildEntitySubPath(tab, settings, serviceConfig, keywords);
 
-    return (type: ODataComplexType) => ({
+    return (type: ComplexTypeOrEnum) => ({
         data: entityData(type),
         query: entityDataBuilder(type),
         caster: entityCastings(type),
-        subPath: entitySubPathProps(type)
+        subPath: type.containerType === "ComplexType" ? entitySubPathProps(type.type) : null
     })
 }
 
 export type ProcessedNamespace = { [name: string]: EntityParts }
-type NamespaceBuilder = (types: { [typeName: string]: ODataComplexType }) => ProcessedNamespace
+type NamespaceBuilder = (types: { [typeName: string]: ComplexTypeOrEnum }) => ProcessedNamespace
 const buildNamespaceBuilder = (settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig): NamespaceBuilder => {
 
     const entityBuilder = buildEntityBuilder(settings, tab, keywords, serviceConfig);
-    return (namespace: { [typeName: string]: ODataComplexType }) => Object
+    return (namespace: { [typeName: string]: ComplexTypeOrEnum }) => Object
         .keys(namespace)
         .reduce((s, x) => ({
             ...s,
@@ -45,15 +45,6 @@ const buildNamespaceBuilder = (settings: CodeGenConfig | null | undefined, tab: 
 
 export type ProcessedServiceConfig = { [name: string]: ProcessedNamespace }
 export function processServiceConfig(settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig,
-    warnings: SupressWarnings | null | undefined) {
-
-    const types = processTypesConfig(settings, tab, keywords, serviceConfig, warnings);
-    const enums = processEnumsConfig(settings, tab, keywords, serviceConfig, warnings);
-
-    return { ...types, ...enums }
-}
-
-function processTypesConfig(settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig,
     warnings: SupressWarnings | null | undefined) {
     const namespaceBuilder = buildNamespaceBuilder(settings, tab, keywords, serviceConfig);
     const sanitizeNamespace = buildSanitizeNamespace(settings);

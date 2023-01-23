@@ -28,6 +28,7 @@ export async function drain() {
 
 export type AddFullUserChainArgs = Partial<{
     userName: string
+    userType: My.Odata.Entities.UserType
     blogPostContent: string
     commentTags: CommentTag[]
     addFullChainToCommentUser: AddFullUserChainArgs
@@ -56,7 +57,7 @@ export async function addFullUserChain(settings?: AddFullUserChainArgs): Promise
         commentUserP = addUser();
     }
 
-    const blogUser = await addUser();
+    const blogUser = await addUser({ UserType: settings?.userType });
     const blog = await addBlog(blogUser.Id!);
     const blogPost = await addBlogPost(blog.Id!, settings?.blogPostContent);
 
@@ -79,7 +80,12 @@ export function postUser(val: User) {
 
 export async function addUser(user?: Partial<User>) {
 
-    const blogUser: Partial<User> = { Name: user?.Name ?? uniqueString("User Name ") };
+    const blogUser: Partial<User> = {
+        Name: uniqueString("User Name "),
+        UserType: My.Odata.Entities.UserType.User,
+        ...user || {}
+    };
+
     return await postUser(blogUser as User);
 }
 

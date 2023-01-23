@@ -1,11 +1,11 @@
-import { ODataComplexType, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef } from "odata-ts-client-shared";
+import { ComplexTypeOrEnum, ODataComplexType, ODataEnum, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
 
 // TODO: duplicate_logic_key: caster
 // TODO: this is a fairly heavy method to be called quite a bit. Optisation?
-function buildGetCasterProps(
+function buildGetComplexCasterProps(
     allTypes: ODataServiceTypes,
     fullyQualifiedTsType: FullyQualifiedTsType,
     getKeyType: GetKeyType,
@@ -15,31 +15,36 @@ function buildGetCasterProps(
     keywords: Keywords,
     tab: Tab) {
 
-    const allTypeFlatList = Object
+    // TODO: casting strings/enums?
+
+    const allComplexTypeFlatList = Object
         .keys(allTypes)
         .map(ns => Object
             .keys(allTypes[ns])
-            .map(t => allTypes[ns][t]))
+            .map(t => allTypes[ns][t])
+            .map(t => t.containerType === "ComplexType" ? t.type : null)
+            .filter(x => !!x)
+            .map(x => x!))
         .reduce((s, x) => [...s, ...x], [])
 
     return (type: ODataComplexType, annotatedResult: boolean, singleCasterType: boolean) => {
 
         const casterType = singleCasterType ? "Single" : "Collection"
-        const inherits = allTypeFlatList
+        const complexInherits = allComplexTypeFlatList
             .filter(x => x.baseType
                 && x.baseType.namespace === type.namespace
                 && x.baseType.name === type.name);
 
-        const distinctNames = Object.keys(inherits
+        const distinctNames = Object.keys(complexInherits
             .reduce((s, x) => ({ ...s, [x.name]: true }), {} as { [key: string]: boolean }))
 
-        const name = inherits.length === distinctNames.length
+        const name = complexInherits.length === distinctNames.length
             ? (x: ODataComplexType) => x.name
             // TODO: test
             // TODO: this logic will be duplicated in the code gen project. Possible to merge?
             : (x: ODataComplexType) => `${x.namespace}.${x.name}`.replace(/[^\w]/g, "_")
 
-        return inherits
+        return complexInherits
             .map(t => {
                 const typeRef: ODataSingleTypeRef = { namespace: t.namespace, name: t.name, isCollection: false };
                 const resultType = fullyQualifiedTsType(typeRef)
@@ -50,7 +55,7 @@ function buildGetCasterProps(
                     tEntity: resultType,
                     tKey: getKeyType(t, true),
                     tQuery: {
-                        isPrimitive: t.namespace === "Edm",
+                        isComplex: true,
                         fullyQualifiedQueryableName: fullyQualifiedTsType(typeRef, getQueryableName)
                     },
                     tCaster: `${caster}.${casterType}`,
@@ -69,7 +74,7 @@ function buildGetCasterProps(
     }
 }
 
-export type EntityCasting = (type: ODataComplexType) => string
+export type EntityCasting = (type: ComplexTypeOrEnum) => string
 export const buildEntityCasting = (tab: Tab, settings: CodeGenConfig | null | undefined, serviceConfig: ODataServiceConfig,
     keywords: Keywords) => {
 
@@ -78,9 +83,13 @@ export const buildEntityCasting = (tab: Tab, settings: CodeGenConfig | null | un
     const getQueryableName = buildGetQueryableName(settings);
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
     const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
-    const getCasterProps = buildGetCasterProps(serviceConfig.types, fullyQualifiedTsType, getKeyType, getQueryableName, getCasterName, getSubPathName, keywords, tab);
+    const getComplexCasterProps = buildGetComplexCasterProps(serviceConfig.types, fullyQualifiedTsType, getKeyType, getQueryableName, getCasterName, getSubPathName, keywords, tab);
 
-    return (type: ODataComplexType) => {
+    return (type: ComplexTypeOrEnum) => type.containerType === "ComplexType"
+        ? complexType(type.type)
+        : enumType(type.type);
+
+    function complexType(type: ODataComplexType) {
         const casterName = getCasterName(type.name)
 
         return `export module ${casterName} {
@@ -90,8 +99,14 @@ ${tab(collection(type))}
 }`
     }
 
+    function enumType(type: ODataEnum) {
+        const casterName = getCasterName(type.name)
+
+        return `export module ${casterName} { /* TODO */ }`
+    }
+
     function single(type: ODataComplexType) {
-        const props = getCasterProps(type, false, true)
+        const props = getComplexCasterProps(type, false, true)
         return !props.length
             ? "export type Single = { }"
             : `export type Single = {
@@ -100,7 +115,7 @@ ${tab(props.join("\n\n"))}
     }
 
     function collection(type: ODataComplexType) {
-        const props = getCasterProps(type, true, false)
+        const props = getComplexCasterProps(type, true, false)
         return !props.length
             ? "export type Collection = { }"
             : `export type Collection = {

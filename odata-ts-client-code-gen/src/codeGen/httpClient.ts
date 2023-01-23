@@ -1,7 +1,7 @@
 import { ODataEntitySet, ODataServiceConfig } from "odata-ts-client-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { Keywords } from "./keywords.js";
-import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";
+import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupComplexType, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";
 
 export function httpClient(
     serviceConfig: ODataServiceConfig,
@@ -13,7 +13,7 @@ export function httpClient(
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
     const sanitizeNamespace = buildSanitizeNamespace(settings);
     const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
-    const lookupType = buildLookupType(serviceConfig);
+    const lookupComplexType = buildLookupComplexType(serviceConfig);
 
     const getQueryableName = buildGetQueryableName(settings);
     const getCasterName = buildGetCasterName(settings)
@@ -89,7 +89,7 @@ ${methods}
 
     function methodForEntitySet(entitySet: ODataEntitySet): string | undefined {
 
-        const type = lookupType(entitySet.forType);
+        const type = lookupComplexType(entitySet.forType);
         if (!type) {
             if (!warnings?.suppressAll && !warnings?.suppressUnableToFindTypeForEntitySet) {
                 const ns = entitySet.namespace && `${entitySet.namespace}.`
@@ -111,7 +111,7 @@ ${methods}
             tEntity: resultType,
             tKey: idType,
             tQuery: {
-                isPrimitive: false,
+                isComplex: true,
                 fullyQualifiedQueryableName: queryableType
             },
             tCaster: `${casterType}.Collection`,

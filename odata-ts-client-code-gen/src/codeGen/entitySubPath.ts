@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef } from "odata-ts-client-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef, ODataEnum } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildSanitizeNamespace, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
@@ -6,7 +6,8 @@ import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGe
 // TODO: duplicate_logic_key: subPath
 enum ObjectType {
     ComplexType = "ComplexType",
-    PrimitiveType = "PrimitiveType"
+    PrimitiveType = "PrimitiveType",
+    EnumType = "EnumType"
 }
 
 type IsObjectDescription<T extends ObjectType> = {
@@ -21,11 +22,14 @@ type IsPrimitiveType = IsObjectDescription<ObjectType.PrimitiveType> & {
     primitiveType: ODataSingleTypeRef
 }
 
+type IsEnumType = IsObjectDescription<ObjectType.EnumType> & {
+    enumType: ODataEnum
+}
+
 type EntityTypeInfo = {
     // the number of collection in this type info. e.g. MyType[][][] === 3
     collectionDepth: number
-    // if null, this is a primitive object
-    type: IsComplexType | IsPrimitiveType
+    type: IsComplexType | IsPrimitiveType | IsEnumType
 }
 
 // TODO: allow multiple paths in a single call... e.g. x => x.BlogPost.Blog.User
@@ -60,7 +64,7 @@ function buildGetSubPathProps(
                     tSubPath: entityInfo.collectionDepth ? keywords.CollectionsCannotBeTraversed : getTSubPath(entityInfo, false),
                     tSingleSubPath: entityInfo.collectionDepth ? getTSubPath(entityInfo, true) : keywords.CollectionsCannotBeTraversed,
                     tResult: {
-                        annotated: entityInfo.type.objectType === ObjectType.PrimitiveType || !!entityInfo.collectionDepth,
+                        annotated: entityInfo.type.objectType !== ObjectType.ComplexType || !!entityInfo.collectionDepth,
                         resultType: tEntity + (entityInfo.collectionDepth ? "[]" : "")
                     }
                 }
@@ -91,6 +95,7 @@ function buildGetSubPathProps(
     function getTCaster(info: EntityTypeInfo, forceSingle = false) {
 
         // TODO: is is possible to cast a primitive? (e.g. int -> string)
+        // TODO: is is possible to cast an enum? (e.g. enum -> int)
         if (info.type.objectType !== ObjectType.ComplexType || info.collectionDepth > 1) {
             return keywords.CastingOnCollectionsOfCollectionsIsNotSupported;
         }
@@ -110,20 +115,27 @@ function buildGetSubPathProps(
 
         if (info.collectionDepth > 1) {
             return {
-                isPrimitive: info.type.objectType === ObjectType.PrimitiveType,
+                isComplex: info.type.objectType === ObjectType.ComplexType,
                 fullyQualifiedQueryableName: keywords.QueryingOnCollectionsOfCollectionsIsNotSupported
             };
         }
 
         if (info.type.objectType === ObjectType.PrimitiveType) {
             return {
-                isPrimitive: true,
+                isComplex: false,
                 fullyQualifiedQueryableName: `${info.type.primitiveType.namespace && `${info.type.primitiveType.namespace}.`}${info.type.primitiveType.name}`
             };
         }
 
+        if (info.type.objectType === ObjectType.EnumType) {
+            return {
+                isComplex: false,
+                fullyQualifiedQueryableName: `${info.type.enumType.namespace && `${info.type.enumType.namespace}.`}${info.type.enumType.name}`
+            };
+        }
+
         return {
-            isPrimitive: false,
+            isComplex: true,
             fullyQualifiedQueryableName: fullyQualifiedTsType({
                 isCollection: false,
                 namespace: info.type.complexType.namespace,
@@ -146,13 +158,21 @@ function buildGetSubPathProps(
             .map(_ => "[]")
             .join("")
 
-        return info.type.objectType === ObjectType.PrimitiveType
-            ? fullyQualifiedTsType(info.type.primitiveType) + collectionStr
-            : fullyQualifiedTsType({
-                isCollection: false,
-                namespace: info.type.complexType.namespace,
-                name: info.type.complexType.name
-            }) + collectionStr;
+        const resultStr = info.type.objectType === ObjectType.PrimitiveType
+            ? fullyQualifiedTsType(info.type.primitiveType)
+            : info.type.objectType === ObjectType.EnumType
+                ? fullyQualifiedTsType({
+                    isCollection: false,
+                    namespace: info.type.enumType.namespace,
+                    name: info.type.enumType.name
+                })
+                : fullyQualifiedTsType({
+                    isCollection: false,
+                    namespace: info.type.complexType.namespace,
+                    name: info.type.complexType.name
+                });
+
+        return resultStr + collectionStr
     }
 
     function getEntityTypeInfo(propertyType: ODataTypeRef): EntityTypeInfo {
@@ -180,11 +200,21 @@ function buildGetSubPathProps(
             throw new Error(`Could not find key for type ${ns}${propertyType.name}`);
         }
 
+        if (type.containerType === "ComplexType") {
+            return {
+                collectionDepth: 0,
+                type: {
+                    objectType: ObjectType.ComplexType,
+                    complexType: type.type
+                }
+            };
+        }
+
         return {
             collectionDepth: 0,
             type: {
-                objectType: ObjectType.ComplexType,
-                complexType: type
+                objectType: ObjectType.EnumType,
+                enumType: type.type
             }
         };
     }

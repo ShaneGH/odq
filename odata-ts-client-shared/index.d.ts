@@ -33,9 +33,12 @@ export type TypeContainer<TCT extends string, T> = {
     type: T
 }
 
+// TODO: can I expand this to primitives?
+export type ComplexTypeOrEnum = TypeContainer<"ComplexType", ODataComplexType> | TypeContainer<"Enum", ODataEnum>
+
 export type ODataServiceTypes = {
     [namespace: string]: {
-        [typeName: string]: TypeContainer<"ComplexType", ODataComplexType> | TypeContainer<"Enum", ODataEnum>
+        [typeName: string]: ComplexTypeOrEnum
     }
 }
 
@@ -52,7 +55,6 @@ export type ODataEnum = ODataTypeName & {
 export type ODataServiceConfig = {
     entitySets: ODataEntitySetNamespaces
     types: ODataServiceTypes
-    enums: ODataEnums
 }
 
 export type ODataEntitySet = {
