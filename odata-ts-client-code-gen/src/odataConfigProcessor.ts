@@ -1,6 +1,6 @@
 
 import { useNamespaces } from 'xpath'
-import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet } from 'odata-ts-client-shared'
+import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet, ODataEnum, ODataEnums } from 'odata-ts-client-shared'
 import { SupressWarnings } from './config.js';
 
 const ns = {
@@ -8,8 +8,8 @@ const ns = {
     edm: "http://docs.oasis-open.org/odata/ns/edm"
 };
 
-function nsLookup(rootNode: Node, xpath: string) {
-    return useNamespaces(ns)(xpath, rootNode)
+function nsLookup<T>(rootNode: Node, xpath: string) {
+    return useNamespaces(ns)(xpath, rootNode) as T[]
 }
 
 export function processConfig(warningConfig: SupressWarnings, config: Document): ODataServiceConfig {
@@ -18,7 +18,8 @@ export function processConfig(warningConfig: SupressWarnings, config: Document):
 
     return {
         types: processTypes(warningConfig, config),
-        entitySets: processEntitySets(config)
+        entitySets: processEntitySets(config),
+        enums: processEnums(warningConfig, config)
     };
 }
 
@@ -36,6 +37,13 @@ function processEntitySets(config: Document): ODataEntitySetNamespaces {
         .map(x => mapEntityContainer(x as Node))
         .reduce((s, x) => [...s, ...x], [])
         .reduce(sortEntitySetsIntoNamespace, {});
+}
+
+function processEnums(warningConfig: SupressWarnings, config: Document): ODataEnums {
+
+    return nsLookup(config, "edmx:Edmx/edmx:DataServices/edm:Schema/edm:EnumType")
+        .map(x => mapEnumType(warningConfig, x as Node))
+        .reduce(sortEnumsIntoNamespace, {});
 }
 
 function mapEntityContainer(entityContainer: Node): ODataEntitySet[] {
@@ -126,6 +134,20 @@ function sortComplexTypesIntoNamespace(root: ODataServiceTypes, type: ODataCompl
     };
 }
 
+function sortEnumsIntoNamespace(root: ODataEnums, type: ODataEnum | null): ODataEnums {
+    if (!type) return root;
+
+    const ns = root[type.namespace] || {};
+
+    return {
+        ...root,
+        [type.namespace]: {
+            ...ns,
+            [type.name]: type
+        }
+    };
+}
+
 function sortEntitySetsIntoNamespace(root: ODataEntitySetNamespaces, type: ODataEntitySet): ODataEntitySetNamespaces {
     const ns = root[type.namespace] || {};
 
@@ -136,6 +158,73 @@ function sortEntitySetsIntoNamespace(root: ODataEntitySetNamespaces, type: OData
             [type.name]: type
         }
     };
+}
+
+const suppressEnumIssuesValueMessage = "To supress this warning, set warningSettings.suppressEnumIssuesValue to false"
+function getEnumValue(warningConfig: SupressWarnings, attr?: Attr) {
+    if (!attr) {
+        if (!warningConfig?.suppressEnumIssuesValue) {
+            console.warn(`Found enum member with no value. Ignoring. ` + suppressEnumIssuesValueMessage);
+        }
+
+        return null;
+    }
+
+    const value = parseInt(attr.value || "");
+    if (isNaN(value)) {
+        if (!warningConfig?.suppressEnumIssuesValue) {
+            console.warn(`Found enum member with invalid value: ${attr.value}. Ignoring. ` + suppressEnumIssuesValueMessage);
+        }
+
+        return null;
+    }
+
+    return value;
+}
+
+function getEnumMember(warningConfig: SupressWarnings, attr?: Attr) {
+    if (!attr) {
+        if (!warningConfig?.suppressEnumIssuesValue) {
+            console.warn(`Found enum member with no name. Ignoring. ` + suppressEnumIssuesValueMessage);
+        }
+
+        return null;
+    }
+
+    return attr.value;
+}
+
+function mapEnumType(warningConfig: SupressWarnings, node: Node): ODataEnum | null {
+    const members = (nsLookup(node, "edm:Member") as Node[])
+        .map(n => ({
+            name: getEnumMember(warningConfig, nsLookup<Attr>(n, "@Name")[0]),
+            value: getEnumValue(warningConfig, nsLookup<Attr>(n, "@Value")[0]),
+        }))
+        .reduce((s, x) => x.name !== null || x.value !== null
+            ? s
+            : {
+                ...s,
+                [x.name!]: x.value!
+            }, {} as { [key: string]: number });
+
+    const name = nsLookup<Attr>(node, "@Name");
+    if (!name.length) {
+        if (!warningConfig?.suppressEnumIssuesValue) {
+            console.warn(`Found enum with no name. Ignoring. ` + suppressEnumIssuesValueMessage);
+        }
+
+        return null;
+    }
+
+    if (name.length !== 1 && !warningConfig?.suppressEnumIssuesValue) {
+        console.warn(`Found enum with no multiple names. Using first. ` + suppressEnumIssuesValueMessage);
+    }
+
+    return {
+        namespace: (nsLookup(node.parentNode!, "@Namespace")[0] as Attr)?.value || "",
+        name: name[0].value,
+        members
+    }
 }
 
 function mapEntityType(warningConfig: SupressWarnings, node: Node): ODataComplexType {

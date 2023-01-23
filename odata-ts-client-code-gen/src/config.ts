@@ -39,6 +39,7 @@ export type Config = {
     warningSettings?: SupressWarnings
 }
 
+// TODO: double check that the "to supress this warning, set.... " messages are correct
 /*
  * Structure of settings to supress warnings
  */
@@ -67,6 +68,11 @@ export type SupressWarnings = Partial<{
      * Default false
      */
     suppressTypeNameOverlap: boolean
+
+    /* 
+     * Default false
+     */
+    suppressEnumIssuesValue: boolean
 }>
 
 // TODO: settings from cmd

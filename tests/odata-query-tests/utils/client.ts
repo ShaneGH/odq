@@ -2,7 +2,11 @@ import fetch, { Response } from 'node-fetch'
 import { My } from '../generatedCode.js'
 import { uniqueNumber, uniqueString } from './utils.js'
 
+type User = My.Odata.Entities.User
+type Blog = My.Odata.Entities.Blog
 type BlogPost = My.Odata.Entities.BlogPost
+type Comment = My.Odata.Entities.Comment
+type CommentTag = My.Odata.Entities.CommentTag
 
 // for debug
 export async function drain() {
@@ -34,7 +38,7 @@ export type FullUserChain = {
     commentUser: User,
     blog: Blog,
     blogPost: BlogPost,
-    comment: BlogComment,
+    comment: Comment,
     commentUserChain?: FullUserChain
 }
 
@@ -69,34 +73,14 @@ export async function addFullUserChain(settings?: AddFullUserChainArgs): Promise
     }
 }
 
-export type User = {
-    Id?: string
-    Name?: string
-    Blogs?: Blog[]
-    BlogPostComments?: Comment[]
-}
-
 export function postUser(val: User) {
     return post("Users", val);
 }
 
 export async function addUser(user?: Partial<User>) {
 
-    const blogUser: User = { Name: user?.Name ?? uniqueString("User Name ") };
-    blogUser.Id = (await postUser(blogUser)).Id;
-
-    return blogUser;
-}
-
-export type Blog = {
-    Id?: string
-    Name?: string
-    UserId?: string
-    User?: User
-    Posts?: BlogPost[]
-    BlogPostNames?: string[]
-    Comments?: Comment[][]
-    CommentTitles?: string[][]
+    const blogUser: Partial<User> = { Name: user?.Name ?? uniqueString("User Name ") };
+    return await postUser(blogUser as User);
 }
 
 export function postBlog(val: Blog) {
@@ -105,10 +89,8 @@ export function postBlog(val: Blog) {
 
 export async function addBlog(userId: string) {
 
-    const blog: Blog = { Name: uniqueString("Blog Name "), UserId: userId }
-    blog.Id = (await postBlog(blog)).Id;
-
-    return blog;
+    const blog: Partial<Blog> = { Name: uniqueString("Blog Name "), UserId: userId }
+    return await postBlog(blog as Blog);
 }
 
 export function postBlogPost(val: Partial<BlogPost>) {
@@ -128,32 +110,14 @@ export async function addBlogPost(blogId: string, content?: string) {
     return await postBlogPost(blogPost);
 }
 
-export type BlogComment = {
-    Id?: string
-    Title?: string
-    Text?: string
-    BlogPostId?: string
-    BlogPost?: BlogPost
-    UserId?: string
-    User?: User
-    Words?: string[]
-    Tags?: CommentTag[]
-}
-
-export function postComment(val: BlogComment) {
-    return post<BlogComment>("Comments", val);
+export function postComment(val: Partial<Comment>) {
+    return post<Comment>("Comments", val as Comment);
 }
 
 export async function addComment(blogPostId: string, userId: string, tags: CommentTag[]) {
 
-    const blogComment: BlogComment = { Title: uniqueString("Comment Title "), Text: uniqueString("Comment text "), BlogPostId: blogPostId, UserId: userId, Tags: tags }
-    blogComment.Id = (await postComment(blogComment)).Id;
-    return blogComment;
-}
-
-export type CommentTag = {
-    Tag?: string
-    Comments?: BlogComment[]
+    const blogComment: Partial<Comment> = { Title: uniqueString("Comment Title "), Text: uniqueString("Comment text "), BlogPostId: blogPostId, UserId: userId, Tags: tags }
+    return await postComment(blogComment)
 }
 
 export async function postTag(val: CommentTag) {

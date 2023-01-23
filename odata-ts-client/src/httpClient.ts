@@ -511,10 +511,11 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             .filter(x => x.baseType
                 && x.baseType.namespace === namespace
                 && x.baseType.name === name)
-            .map(x => {
-                const o: ODataSingleTypeRef = { isCollection: false, name: x.name, namespace: x.namespace }
-                return o
-            });
+            .map((x: ODataComplexType): ODataSingleTypeRef => ({
+                isCollection: false,
+                name: x.name,
+                namespace: x.namespace
+            }));
 
         const distinctNames = Object.keys(inherits
             .reduce((s, x) => ({ ...s, [x.name]: true }), {} as { [key: string]: boolean }))

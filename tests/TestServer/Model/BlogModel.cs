@@ -32,10 +32,19 @@ public class HasId : IHasMutableId
     public string Id { get; set; }
 }
 
+public enum UserType
+{
+    User,
+    Admin
+}
+
 public class User : HasId
 {
     [Required]
     public string Name { get; set; }
+
+    [Required]
+    public UserType UserType { get; set; }
 
     public IList<Blog> Blogs { get; set; }
     public IList<Comment> BlogPostComments { get; set; }

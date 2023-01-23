@@ -18,7 +18,6 @@ TODO: evaluate
 Evaluated: v0
 
  * Enums
- * Expose query builder objects again (try to support non standard odata)
  * What is the default value of Nullable for properties in $metadata
  * What is a singleton? + http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_Singleton
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_HeaderFields
@@ -63,7 +62,9 @@ Evaluated: v1
  * Errors http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ErrorResponseBody
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_CommonResponseStatusCodes
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingRelatedEntities
+ * Expose query builder objects again (try to support non standard odata)
      * confusing. Think it is done (except for the 204)
+ * Make dev env linux friendly
 
 Evaluated: vNext
  

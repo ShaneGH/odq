@@ -28,7 +28,7 @@ export type ODataUriParts = {
     query: { [key: string]: string }
 }
 
-// TODO: document: 2. Add article
+// TODO: document: Add article
 // TODO: test all of these
 /*
  * Input args to an ODataHttpClient

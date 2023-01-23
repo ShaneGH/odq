@@ -28,14 +28,31 @@ export type ODataCollectionTypeRef = {
 
 export type ODataTypeRef = ODataCollectionTypeRef | ODataSingleTypeRef
 
+export type TypeContainer<TCT extends string, T> = {
+    containerType: TCT,
+    type: T
+}
+
 export type ODataServiceTypes = {
     [namespace: string]: {
-        [typeName: string]: ODataComplexType
+        [typeName: string]: TypeContainer<"ComplexType", ODataComplexType> | TypeContainer<"Enum", ODataEnum>
     }
 }
+
+export type ODataEnums = {
+    [namespace: string]: {
+        [enumName: string]: ODataEnum
+    }
+}
+
+export type ODataEnum = ODataTypeName & {
+    members: { [key: string]: number }
+}
+
 export type ODataServiceConfig = {
     entitySets: ODataEntitySetNamespaces
     types: ODataServiceTypes
+    enums: ODataEnums
 }
 
 export type ODataEntitySet = {

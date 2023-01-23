@@ -46,6 +46,15 @@ const buildNamespaceBuilder = (settings: CodeGenConfig | null | undefined, tab: 
 export type ProcessedServiceConfig = { [name: string]: ProcessedNamespace }
 export function processServiceConfig(settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig,
     warnings: SupressWarnings | null | undefined) {
+
+    const types = processTypesConfig(settings, tab, keywords, serviceConfig, warnings);
+    const enums = processEnumsConfig(settings, tab, keywords, serviceConfig, warnings);
+
+    return { ...types, ...enums }
+}
+
+function processTypesConfig(settings: CodeGenConfig | null | undefined, tab: Tab, keywords: Keywords, serviceConfig: ODataServiceConfig,
+    warnings: SupressWarnings | null | undefined) {
     const namespaceBuilder = buildNamespaceBuilder(settings, tab, keywords, serviceConfig);
     const sanitizeNamespace = buildSanitizeNamespace(settings);
 
