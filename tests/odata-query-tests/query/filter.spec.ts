@@ -1,9 +1,10 @@
 
 import { addFullUserChain } from "../utils/client.js";
 import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
-import { FilterUtils as F, QueryBuilder } from "odata-ts-client";
+import { FilterUtils as F, QueryBuilder, QueryComplexObject } from "odata-ts-client";
 import { uniqueString } from "../utils/utils.js";
 import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
+import { bulidTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
 
 const rootConfig = rootConfigExporter();
 
@@ -372,7 +373,8 @@ describe("Query.Filter", function () {
             throw new Error(fullName);
         }
 
-        return new QueryBuilder<T>(type.type, rootConfig.types);
+        const typeRef: QueryComplexObject<T> = bulidTypeRef(type.type, rootConfig.types);
+        return new QueryBuilder<T, QueryComplexObject<T>>(typeRef, type.type, rootConfig.types);
     }
 
     // TODO: not sure if HasSubset is a real thing

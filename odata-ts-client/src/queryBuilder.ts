@@ -90,26 +90,13 @@ export class QueryStringBuilder implements IQueryBulder {
     }
 }
 
-// TODO: refactor: try to roll all of this functionality into QueryBuilder<T>
-export class PrimitiveQueryBuilder<T> extends QueryStringBuilder {
-    private typeRef: QueryPrimitive<T>
+export class PrimitiveQueryBuilder<T, TQInput> extends QueryStringBuilder {
 
-    constructor(state?: QueryParts | undefined) {
+    constructor(private typeRef: TQInput, state?: QueryParts | undefined) {
         super(state || {});
-
-        this.typeRef = {
-            $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
-            $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryPrimitive,
-                path: [{
-                    path: "$it",
-                    navigationProperty: false
-                }]
-            }
-        };
     }
 
-    filter(q: Filter | ((t: QueryPrimitive<T>) => Filter)): PrimitiveQueryBuilder<T> {
+    filter(q: Filter | ((t: TQInput) => Filter)): PrimitiveQueryBuilder<T, TQInput> {
         if (this.state.filter) {
             throw new Error("This query is alread filtered");
         }
@@ -118,13 +105,13 @@ export class PrimitiveQueryBuilder<T> extends QueryStringBuilder {
             return this.filter(() => q);
         }
 
-        return new PrimitiveQueryBuilder<T>({
+        return new PrimitiveQueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
             filter: q(this.typeRef)
         });
     }
 
-    expand(q: Expand | ((t: QueryPrimitive<T>) => QueryPath)): PrimitiveQueryBuilder<T> {
+    expand(q: Expand | ((t: TQInput) => QueryPath)): PrimitiveQueryBuilder<T, TQInput> {
         if (this.state.expand) {
             throw new Error("This query is alread expanded");
         }
@@ -133,63 +120,62 @@ export class PrimitiveQueryBuilder<T> extends QueryStringBuilder {
             return this.expand(() => ({ path: q.expand }));
         }
 
-        return new PrimitiveQueryBuilder<T>({
+        return new PrimitiveQueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
             expand: { expand: q(this.typeRef).path }
         });
 
     }
 
-    count(): PrimitiveQueryBuilder<T> {
+    count(): PrimitiveQueryBuilder<T, TQInput> {
 
         if (this.state.count != null) {
             throw new Error("This query already has a count");
         }
 
-        return new PrimitiveQueryBuilder<T>({
+        return new PrimitiveQueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
             count: true
         });
     }
 
-    top(top: number): PrimitiveQueryBuilder<T> {
+    top(top: number): PrimitiveQueryBuilder<T, TQInput> {
 
         if (this.state.top != null) {
             throw new Error("This query already has a top");
         }
 
-        return new PrimitiveQueryBuilder<T>({
+        return new PrimitiveQueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
             top
         });
     }
 
-    skip(skip: number): PrimitiveQueryBuilder<T> {
+    skip(skip: number): PrimitiveQueryBuilder<T, TQInput> {
 
         if (this.state.skip != null) {
             throw new Error("This query already has a skip");
         }
 
-        return new PrimitiveQueryBuilder<T>({
+        return new PrimitiveQueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
             skip
         });
     }
 }
 
-export class QueryBuilder<T> extends QueryStringBuilder implements ISingletonQueryBulder<T>, ICollectionQueryBulder<T> {
-    private typeRef: QueryComplexObject<T>
+export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
 
     constructor(
+        private typeRef: TQInput,
         private type: ODataComplexType,
         private root: ODataServiceTypes,
         state?: QueryParts | undefined) {
 
         super(state || {});
-        this.typeRef = bulidTypeRef(type, root);
     }
 
-    filter(q: Filter | ((t: T) => Filter)): QueryBuilder<T> {
+    filter(q: Filter | ((t: TQInput) => Filter)): QueryBuilder<T, TQInput> {
         if (this.state.filter) {
             throw new Error("This query is alread filtered");
         }
@@ -198,13 +184,13 @@ export class QueryBuilder<T> extends QueryStringBuilder implements ISingletonQue
             return this.filter(() => q);
         }
 
-        return new QueryBuilder<T>(this.type, this.root, {
+        return new QueryBuilder<T, TQInput>(this.typeRef, this.type, this.root, {
             ...this.state,
             filter: q(this.typeRef)
         });
     }
 
-    expand(q: Expand | ((t: T) => QueryPath)): QueryBuilder<T> {
+    expand(q: Expand | ((t: TQInput) => QueryPath)): QueryBuilder<T, TQInput> {
         if (this.state.expand) {
             throw new Error("This query is alread expanded");
         }
@@ -213,44 +199,44 @@ export class QueryBuilder<T> extends QueryStringBuilder implements ISingletonQue
             return this.expand(() => ({ path: q.expand }));
         }
 
-        return new QueryBuilder<T>(this.type, this.root, {
+        return new QueryBuilder<T, TQInput>(this.typeRef, this.type, this.root, {
             ...this.state,
             expand: { expand: q(this.typeRef).path }
         });
 
     }
 
-    count(): QueryBuilder<T> {
+    count(): QueryBuilder<T, TQInput> {
 
         if (this.state.count != null) {
             throw new Error("This query already has a count");
         }
 
-        return new QueryBuilder<T>(this.type, this.root, {
+        return new QueryBuilder<T, TQInput>(this.typeRef, this.type, this.root, {
             ...this.state,
             count: true
         });
     }
 
-    top(top: number): QueryBuilder<T> {
+    top(top: number): QueryBuilder<T, TQInput> {
 
         if (this.state.top != null) {
             throw new Error("This query already has a top");
         }
 
-        return new QueryBuilder<T>(this.type, this.root, {
+        return new QueryBuilder<T, TQInput>(this.typeRef, this.type, this.root, {
             ...this.state,
             top
         });
     }
 
-    skip(skip: number): QueryBuilder<T> {
+    skip(skip: number): QueryBuilder<T, TQInput> {
 
         if (this.state.skip != null) {
             throw new Error("This query already has a skip");
         }
 
-        return new QueryBuilder<T>(this.type, this.root, {
+        return new QueryBuilder<T, TQInput>(this.typeRef, this.type, this.root, {
             ...this.state,
             skip
         });

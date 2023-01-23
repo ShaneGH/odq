@@ -214,12 +214,13 @@ const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x
 
 export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {
 
+    const tQueryType = generics.tQuery.fullyQualifiedQueryableName;
     const gs = [
         generics.tEntity,
         generics.tKey,
         generics.tQuery.isComplex
-            ? `${keywords.QueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`
-            : `${keywords.PrimitiveQueryBuilder}<${generics.tQuery.fullyQualifiedQueryableName}>`,
+            ? `${keywords.QueryBuilder}<${tQueryType}, ${keywords.QueryComplexObject}<${tQueryType}>>`
+            : `${keywords.PrimitiveQueryBuilder}<${tQueryType}, ${keywords.QueryPrimitive}<${tQueryType}>>`,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,
