@@ -42,12 +42,6 @@ export type ODataServiceTypes = {
     }
 }
 
-export type ODataEnums = {
-    [namespace: string]: {
-        [enumName: string]: ODataEnum
-    }
-}
-
 export type ODataEnum = ODataTypeName & {
     members: { [key: string]: number }
 }

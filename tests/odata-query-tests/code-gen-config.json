@@ -7,7 +7,12 @@
     "codeGenSettings": {
         "prettyPrintJsonConfig": false,
         "exportTypeDefinitionJsObject": true,
-        "enumType": "String"
+        "enumType": {
+            "default": "Number",
+            "stringEnums": [
+                "My.Odata.Entities.UserProfileType"
+            ]
+        }
     },
     "printODataConfig": false,
     "warningSettings": {}

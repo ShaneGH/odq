@@ -44,7 +44,7 @@ export interface QueryArray<TQueryObj extends QueryObject<TArrayType>, TArrayTyp
 
 export type QueryComplexObject<T> = HasQueryObjectMetadata<QueryObjectType.QueryObject> & T
 
-export type QueryObject<T> = QueryPrimitive<T> | QueryArray<QueryObject<T>, T> | QueryComplexObject<T>
+export type QueryObject<T> = QueryPrimitive<T> | QueryArray<QueryObject<T>, T> | QueryComplexObject<T> | QueryEnum<T>
 
 function buildAlias(forName: string) {
 
@@ -125,9 +125,10 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
 
     if (tLookup.containerType === "Enum") {
         return {
-            $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
+            $$oDataEnumType: tLookup.type,
+            $$oDataQueryObjectType: QueryObjectType.QueryEnum,
             $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryPrimitive,
+                type: QueryObjectType.QueryEnum,
                 path: path
             }
         };

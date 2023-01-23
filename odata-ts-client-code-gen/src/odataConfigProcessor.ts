@@ -1,6 +1,6 @@
 
 import { useNamespaces } from 'xpath'
-import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet, ODataEnum, ODataEnums, ComplexTypeOrEnum } from 'odata-ts-client-shared'
+import { ODataServiceTypes, ODataComplexType, ODataTypeRef, ODataSingleTypeRef, ODataServiceConfig, ODataEntitySetNamespaces, ODataEntitySet, ODataEnum, ComplexTypeOrEnum } from 'odata-ts-client-shared'
 import { SupressWarnings } from './config.js';
 
 const ns = {

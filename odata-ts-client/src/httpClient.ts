@@ -243,13 +243,13 @@ const defaultRequestTools: Partial<RequestTools> = {
     }
 }
 
-function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType) {
+function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType, serviceConfig: ODataServiceTypes) {
 
     if (keyTypes.length === 1) {
         const result = keyEmbedType === WithKeyType.FunctionCall
-            ? { appendToLatest: true, value: `(${serialize(key, keyTypes[0].type)})` }
+            ? { appendToLatest: true, value: `(${serialize(key, keyTypes[0].type, serviceConfig)})` }
             : keyEmbedType === WithKeyType.PathSegment
-                ? { appendToLatest: false, value: `${serialize(key, keyTypes[0].type)}` }
+                ? { appendToLatest: false, value: `${serialize(key, keyTypes[0].type, serviceConfig)}` }
                 : null;
 
         if (!result) {
@@ -261,7 +261,7 @@ function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType) {
 
     const kvp = keyTypes
         .map(t => Object.prototype.hasOwnProperty.call(key, t.name)
-            ? { key: t.name, value: serialize(key[t.name], t.type) }
+            ? { key: t.name, value: serialize(key[t.name], t.type, serviceConfig) }
             : t.name);
 
     const missingKeys = kvp.filter(x => typeof x === "string") as string[]
@@ -339,7 +339,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         }
 
         const keyTypes = tryFindKeyTypes(this.type.collectionType, this.root.types);
-        const keyPath = keyExpr(keyTypes, key, keyEmbedType);
+        const keyPath = keyExpr(keyTypes, key, keyEmbedType, this.root.types);
 
         const path = keyPath.appendToLatest
             ? [

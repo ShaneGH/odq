@@ -1,5 +1,6 @@
 import { Filter } from "./queryBuilder.js";
 import { PathSegment, QueryArray, QueryEnum, QueryObject, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
+import { enumMemberName } from "./valueSerializer.js";
 
 export function and(...conditions: Filter[]): Filter {
     if (conditions.length === 0) {
@@ -40,6 +41,7 @@ function toString(x: any) { return x.toString() };
 function toQuotedString(x: any) { return `'${x.toString().replace(/'/g, "''")}'`; };
 function addRoundBrackets(x: any) { return `(${x})`; };
 
+// TODO: should incorporate value serializer
 function defaultMapper(forValue: any) {
 
     return typeof forValue === "string"
@@ -86,19 +88,8 @@ export function eq<T>(obj: QueryPrimitive<T> | QueryEnum<T>, value: T, mapper?: 
 }
 
 function eqEnum<T>(obj: QueryEnum<T>, value: number): Filter {
-    const name = Object
-        .keys(obj.$$oDataEnumType.members)
-        .filter(k => obj.$$oDataEnumType.members[k] === value);
-
-    if (!name.length) {
-        throw new Error(`Cannot find name of enum for value: ${value}. Use the mapper arg to specify a custom value`);
-    } else if (name.length > 1) {
-        console.warn(`Found multiple members for enum value: ${value}`);
-    }
-
-    const c = infixFunction(obj.$$oDataQueryMetadata.path, name[0], "eq");
-    console.log(c);
-    return c
+    const name = enumMemberName(obj.$$oDataEnumType, value)
+    return infixFunction(obj.$$oDataQueryMetadata.path, name, "eq");
 }
 
 export function ne<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {

@@ -164,7 +164,6 @@ describe("Query.Filter", function () {
         }
     });
 
-    // TODO enum: this test will fail if enumType is set to Number in config
     // User, UserType
     testCase("Complex -> Enum", function () {
 
@@ -173,7 +172,7 @@ describe("Query.Filter", function () {
 
         async function execute(success: boolean) {
 
-            const user = await addFullUserChain({ userType: My.Odata.Entities.UserType.Admin });
+            const user = await addFullUserChain({ userType: "Admin" as any });
             const userType = success
                 ? My.Odata.Entities.UserType.Admin
                 : My.Odata.Entities.UserType.User;
@@ -182,6 +181,34 @@ describe("Query.Filter", function () {
                 .filter(u => F.and(
                     F.eq(u.Id, user.blogUser.Id),
                     F.eq(u.UserType, userType))))
+                .get();
+
+            if (success) {
+                expect(result.value.length).toBe(1);
+                expect(result.value[0].Name).toBe(user.blogUser.Name);
+            } else {
+                expect(result.value.length).toBe(0);
+            }
+        }
+    });
+
+    // User, UserType
+    testCase("Complex -> Enum", function () {
+
+        it("Should filter (success)", execute.bind(null, true));
+        it("Should filter (failure)", execute.bind(null, false))
+
+        async function execute(success: boolean) {
+
+            const user = await addFullUserChain({ userProfileType: My.Odata.Entities.UserProfileType.Advanced });
+            const userProfileType = success
+                ? My.Odata.Entities.UserProfileType.Advanced
+                : My.Odata.Entities.UserProfileType.Standard;
+
+            const result = await client.My.Odata.Container.Users.withQuery(q => q
+                .filter(u => F.and(
+                    F.eq(u.Id, user.blogUser.Id),
+                    F.eq(u.UserProfileType, userProfileType))))
                 .get();
 
             if (success) {

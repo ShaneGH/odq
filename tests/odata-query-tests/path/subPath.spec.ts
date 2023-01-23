@@ -65,16 +65,6 @@ describe("SubPath", function () {
             expect(userName.value).toBe(user.blogUser.Name);
         });
 
-        it("Should retrieve enum item in the path, 1 level", async () => {
-            const user = await addFullUserChain();
-            const userType = await client.My.Odata.Container.Users
-                .withKey(user.blogUser.Id!)
-                .subPath(x => x.UserType)
-                .get();
-
-            expect(userType.value).toBe(user.blogUser.UserType);
-        });
-
         it("Should retrieve primitive items in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const blogWords = await client.My.Odata.Container.BlogPosts
@@ -105,6 +95,40 @@ describe("SubPath", function () {
 
             expect(user.Name).toBe(context.blogUser.Name);
         });
+    });
+
+    describe("Enum", () => {
+
+        it("Should retrieve enum item in the path, 1 level", async () => {
+            const user = await addFullUserChain();
+            const userType = await client.My.Odata.Container.Users
+                .withKey(user.blogUser.Id!)
+                .subPath(x => x.UserType)
+                .get();
+
+            expect(userType.value).toBe(user.blogUser.UserType);
+        });
+
+        // TODO: enum as key not working with Microsoft odata
+        // TODO: also need the same test with enum as string
+        // it("Should retrieve item with enum as key", async () => {
+        //     const user = await addFullUserChain();
+        //     const role = await client.My.Odata.Container.UserRoles
+        //         .withKey(My.Odata.Entities.UserType.Admin)
+        //         .get();
+
+        //     expect(role.Description).toBe("Admin");
+        // });
+
+        // it("Should retrieve subpath of item with enum as key", async () => {
+        //     const user = await addFullUserChain();
+        //     const role = await client.My.Odata.Container.UserRoles
+        //         .withKey(My.Odata.Entities.UserType.User)
+        //         .subPath(x => x.Description)
+        //         .get();
+
+        //     expect(role.value).toBe("User");
+        // });
     });
 
     describe("Collection", () => {

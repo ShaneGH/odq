@@ -29,6 +29,50 @@ namespace TestServer.Controllers;
 //         return SingleResult.Create(Get().Where(p => p.Key == key));
 //     }
 // }
+[Route(Program.OdataRoot)]
+public class UserRolesController : ODataController
+{
+    private readonly EntityDbContext _inMemoryDb;
+
+    public UserRolesController(EntityDbContext inMemoryDb)
+    {
+        this._inMemoryDb = inMemoryDb;
+    }
+
+    [HttpGet("UserRoles({key})")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<UserRole> Get([FromODataUri] UserType key)
+    {
+        return _inMemoryDb.UserRoles
+            .AsQueryable()
+            .Where(x => x.Key == key)
+            .AsSingleResult();
+    }
+
+    [HttpGet("UserRoles({key})/Description")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<string> GetDescription([FromODataUri] string key)
+    {
+        var k = Enum.Parse<UserType>(key);
+        return _inMemoryDb.UserRoles
+            .AsQueryable()
+            .Where(x => x.Key == k)
+            .Select(x => x.Description)
+            .AsSingleResult();
+    }
+
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<UserRole> Get()
+    {
+        var es = _inMemoryDb.UserRoles.AsQueryable();
+        if (Request.Headers.ContainsKey("ToList"))
+        {
+            es = es.ToList().AsQueryable();
+        }
+
+        return es;
+    }
+}
 
 [Route(Program.OdataRoot)]
 public abstract class ODataControllerBase<T> : ODataController

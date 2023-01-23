@@ -153,7 +153,17 @@ export type CodeGenConfig = Partial<{
 
     /* 
      * Specifies whether enums should be represented by their name or their value
+     * Specify the value "String" or "Number" to apply this rule to all enums
+     * For more fine grained control, use an object with a default, and specify exceptions in the 
+     * "stringEnums" or "numberEnums" properties
      * Default String
      */
-    enumType: "String" | "Number"
+    enumType:
+    | "String"
+    | "Number"
+    | {
+        default: "String" | "Number",
+        stringEnums?: string[],
+        numberEnums?: string[]
+    }
 }>

@@ -43,6 +43,26 @@ public class Program
         // App.UseSwagger();
         // App.UseSwaggerUI();
 
+        using (var ctxt = App.Services.CreateScope())
+        {
+            var dbContext = ctxt.ServiceProvider.GetRequiredService<EntityDbContext>();
+            dbContext.UserRoles.AddRange(new[]
+            {
+                new UserRole
+                {
+                    Key = UserType.Admin,
+                    Description = "Admin"
+                },
+                new UserRole
+                {
+                    Key = UserType.User,
+                    Description = "Uesr"
+                }
+            });
+
+            dbContext.SaveChanges();
+        }
+
         App.Run();
     }
 
@@ -55,6 +75,7 @@ public class Program
         builder.Namespace = "My.Odata.Entities";
         builder.ContainerName = "My/Odata.Container";
 
+        builder.EntitySet<UserRole>("UserRoles");
         builder.EntitySet<HasId>("HasIds");
         builder.EntitySet<User>("Users");
         builder.EntitySet<Blog>("Blogs");

@@ -43,6 +43,7 @@ Evaluated: v0
      * https://learn.microsoft.com/en-us/aspnet/web-api/overview/odata-support-in-aspnet-web-api/odata-routing-conventions
      * casting root done. Need to cast somewhere in path
      * need to cast twice (e.g. ~/Cast.To.Child/Cast.To.GrandChild)
+ * $value endpoint (e.g. http://localhost:5432/odata/test-entities/Users('f27f6026-cbb9-4234-a8e5-82584eb276ae')/UserType/$value)
 
 Evaluated: v1
  * Dynamic properties (and open types)
@@ -67,6 +68,7 @@ Evaluated: v1
      * confusing. Think it is done (except for the 204)
  * Make dev env linux friendly
  * Cast enums
+ * IsFlags https://devblogs.microsoft.com/odata/tutorial-sample-use-enumeration-types-in-odata/
 
 Evaluated: vNext
  

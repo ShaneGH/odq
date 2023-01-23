@@ -1,7 +1,22 @@
-import { ODataTypeRef } from "odata-ts-client-shared";
+import { ODataEnum, ODataServiceTypes, ODataTypeRef } from "odata-ts-client-shared";
 
 
-export function serialize(value: any, type: ODataTypeRef): string {
+
+export function enumMemberName(enumDef: ODataEnum, value: number): string {
+    const name = Object
+        .keys(enumDef.members)
+        .filter(k => enumDef.members[k] === value);
+
+    if (!name.length) {
+        throw new Error(`Cannot find name of enum for value: ${value}. Use the mapper arg to specify a custom value`);
+    } else if (name.length > 1) {
+        console.warn(`Found multiple members for enum value: ${value}`);
+    }
+
+    return name[0]
+}
+
+export function serialize(value: any, type: ODataTypeRef, serviceConfig: ODataServiceTypes): string {
     if (type.isCollection) {
         throw new Error("TODO: not implemented")
         // if (!Array.isArray(value)) {
@@ -10,23 +25,36 @@ export function serialize(value: any, type: ODataTypeRef): string {
     }
 
     const t = type;
-    if (type.namespace !== "Edm") {
+    if (type.namespace === "Edm") {
+        // TODO: test each
+        switch (type.name) {
+            case "String": return `'${value}'`;
+            case "Guid":
+            case "Boolean":
+            case "Int16":
+            case "Int32":
+            case "Int64":
+            case "Decimal":
+            case "Double":
+            case "Single": return value.toString()
+            default: throw err()
+        }
+    }
+
+    const enumType = serviceConfig[type.namespace] && serviceConfig[type.namespace][type.name]
+    if (enumType.containerType !== "Enum") {
         throw err();
     }
 
-    // TODO: test each
-    switch (type.name) {
-        case "String": return `'${value}'`;
-        case "Guid":
-        case "Boolean":
-        case "Int16":
-        case "Int32":
-        case "Int64":
-        case "Decimal":
-        case "Double":
-        case "Single": return value.toString()
-        default: throw err()
+    if (typeof value === "string") {
+        return `${value}`
     }
+
+    if (typeof value !== "number") {
+        throw err();
+    }
+
+    return `'${enumMemberName(enumType.type, value)}'`
 
     function err() {
         return new Error(`Property type - namespace: ${t.namespace}, name: ${t.name} cannot be used as a key lookup`);

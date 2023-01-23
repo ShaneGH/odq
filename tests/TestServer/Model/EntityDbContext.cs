@@ -5,6 +5,7 @@ namespace TestServer.Model;
 
 public class EntityDbContext : DbContext
 {
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Blog> Blogs => Set<Blog>();
     public DbSet<BlogPost> BlogPosts => Set<BlogPost>();
@@ -33,6 +34,10 @@ public class EntityDbContext : DbContext
 
     private void MapBlogModel(ModelBuilder modelBuilder)
     {
+        modelBuilder
+            .Entity<UserRole>()
+            .HasKey(u => u.Key);
+
         modelBuilder
             .Entity<User>()
             .HasKey(u => u.Id);
