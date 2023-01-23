@@ -384,10 +384,6 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             throw new Error("You cannot navigate the subpath of a collection. Try to filter by key first");
         }
 
-        // console.log("##### 1", this.buildSubPath())
-        // console.log("##### 2", subPath.toString())
-        // console.log("##### 3", subPath(this.buildSubPath()))
-
         const newT = subPath(this.buildSubPath(this.type));
         const prop = tryFindPropertyType(this.type, newT.propertyName, this.root.types);
         if (!prop) {
