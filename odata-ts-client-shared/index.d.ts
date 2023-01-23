@@ -10,6 +10,7 @@ export type ODataComplexType = ODataTypeName & {
     baseType?: ODataTypeName
     properties: {
         [key: string]: {
+            nullable: boolean
             navigationProperty: boolean
             type: ODataTypeRef
         }

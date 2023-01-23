@@ -10,11 +10,11 @@ export const buildEntityData = (settings: CodeGenConfig | null | undefined, tab:
     const sanitizeNamespace = buildSanitizeNamespace(settings);
     return (type: ODataComplexType) => {
 
-        const q = settings?.makeAllPropsOptional === false ? "" : "?";
+        const q = (nullable: boolean) => nullable || settings?.makeAllPropsOptional === false ? "?" : "";
         const props = Object
             .keys(type.properties)
-            .map(key => ({ key, type: getTypeString(type.properties[key].type) }))
-            .map(prop => `${prop.key}${q}: ${prop.type}`)
+            .map(key => ({ key, type: getTypeString(type.properties[key].type), nullable: type.properties[key].nullable }))
+            .map(prop => `${prop.key}${q(prop.nullable)}: ${prop.type}`)
             .join("\n");
 
         const baseTypeNs = type.baseType?.namespace ? `${sanitizeNamespace(type.baseType?.namespace)}.` : ""

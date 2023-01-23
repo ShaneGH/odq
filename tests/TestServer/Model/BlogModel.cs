@@ -67,6 +67,11 @@ public class BlogPost : HasId
     public string Content { get; set; }
 
     [Required]
+    public long Likes { get; set; }
+
+    public long? AgeRestriction { get; set; }
+
+    [Required]
     public DateTimeOffset Date { get; set; }
 
     [Required]

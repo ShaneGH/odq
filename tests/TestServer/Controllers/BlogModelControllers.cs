@@ -65,6 +65,9 @@ public abstract class ODataControllerBase<T> : ODataController
 
     public ActionResult Post([FromBody] T item)
     {
+        if (item == null)
+            return BadRequest("null");
+
         item.Id = Guid.NewGuid().ToString();
         AddEntity(_inMemoryDb, item);
         _inMemoryDb.SaveChanges();

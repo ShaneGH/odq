@@ -1,5 +1,8 @@
 
-export const uniqueString = (function () {
+export const { uniqueString, uniqueNumber } = (function () {
     let i = parseInt((new Date().getTime() / 100).toFixed());
-    return (prefix = "string_") => `${prefix}${++i}`;
+    return {
+        uniqueString: (prefix = "string_") => `${prefix}${++i}`,
+        uniqueNumber: () => ++i
+    };
 })();

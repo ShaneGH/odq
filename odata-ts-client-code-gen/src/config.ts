@@ -141,7 +141,7 @@ export type CodeGenConfig = Partial<{
 
     /* 
      * If true, all properties in generated files with be postixed with "?"
-     * Default true
+     * Default false
      */
     makeAllPropsOptional: boolean
 }>

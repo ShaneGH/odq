@@ -216,6 +216,7 @@ function parseType(type: Attr | undefined) {
 function mapProperty(x: { navigationProp: boolean, prop: Node }) {
     const name = nsLookup(x.prop, "@Name")[0] as Attr | undefined
     const type = nsLookup(x.prop, "@Type")[0] as Attr | undefined
+    const nullable = nsLookup(x.prop, "@Nullable")[0] as Attr | undefined
 
     // TODO: ignore errors?
     if (!name) {
@@ -224,9 +225,9 @@ function mapProperty(x: { navigationProp: boolean, prop: Node }) {
 
     // TODO: parse type correctly
     // TODO: setting default type to string
-
     return {
         [name.value]: {
+            nullable: !nullable || /^\s*true\s*$/.test(nullable.value),
             navigationProperty: x.navigationProp,
             type: parseType(type)
         }

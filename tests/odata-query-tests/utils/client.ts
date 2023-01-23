@@ -1,6 +1,8 @@
 import fetch, { Response } from 'node-fetch'
 import { My } from '../generatedCode.js'
-import { uniqueString } from './utils.js'
+import { uniqueNumber, uniqueString } from './utils.js'
+
+type BlogPost = My.Odata.Entities.BlogPost
 
 // for debug
 export async function drain() {
@@ -109,28 +111,21 @@ export async function addBlog(userId: string) {
     return blog;
 }
 
-export type BlogPost = {
-    Id?: string
-    Name?: string
-    Content?: string
-    Date?: Date
-    BlogId?: string
-    Blog?: Blog
-    Comments?: Comment[]
-    Words?: string[]
-    CommentTags?: CommentTag[][]
-    CommentWords?: string[][]
-}
-
-export function postBlogPost(val: BlogPost) {
-    return post("BlogPosts", val);
+export function postBlogPost(val: Partial<BlogPost>) {
+    return post("BlogPosts", val) as Promise<BlogPost>;
 }
 
 export async function addBlogPost(blogId: string, content?: string) {
 
-    const blogPost: BlogPost = { Name: uniqueString("Blog Post Name "), BlogId: blogId, Content: content || uniqueString("Blog Content"), Date: new Date() }
-    blogPost.Id = (await postBlogPost(blogPost)).Id;
-    return blogPost;
+    const blogPost: Partial<BlogPost> = {
+        Name: uniqueString("Blog Post Name "),
+        BlogId: blogId, Content: content || uniqueString("Blog Content"),
+        Likes: uniqueNumber(),
+        AgeRestriction: uniqueNumber(),
+        Date: new Date()
+    }
+
+    return await postBlogPost(blogPost);
 }
 
 export type BlogComment = {
@@ -165,7 +160,7 @@ export async function postTag(val: CommentTag) {
     await post("CommentTags", val);
 }
 
-export async function postCompositeKeyItem(val: My.Odata.Entities.CompositeKeyItem) {
+export async function postCompositeKeyItem(val: Partial<My.Odata.Entities.CompositeKeyItem>) {
     return await post("CompositeKeyItems", val);
 }
 
