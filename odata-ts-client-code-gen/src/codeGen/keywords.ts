@@ -27,7 +27,6 @@ export type Keywords = {
     QueryingOnCollectionsOfCollectionsIsNotSupported: string
     ThisItemDoesNotHaveAKey: string
     QueryBuilder: string
-    PrimitiveQueryBuilder: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -47,7 +46,6 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
     // TODO: tests for all keyword re-mappings
     return {
         QueryBuilder: getKeyword("QueryBuilder"),
-        PrimitiveQueryBuilder: getKeyword("PrimitiveQueryBuilder"),
         ODataTypeRef: getKeyword("ODataTypeRef"),
         ODataComplexType: getKeyword("ODataComplexType"),
         RequestTools: getKeyword("RequestTools"),
@@ -90,7 +88,6 @@ export function imports(keywords: Keywords, tab: Tab) {
     // TODO: audit are all of these still used?
     return `import {
 ${tab(importWithAlias("QueryBuilder"))},
-${tab(importWithAlias("PrimitiveQueryBuilder"))},
 ${tab(importWithAlias("ODataComplexType"))},
 ${tab(importWithAlias("ODataTypeRef"))},
 ${tab(importWithAlias("RequestTools"))},

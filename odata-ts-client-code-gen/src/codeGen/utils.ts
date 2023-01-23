@@ -220,7 +220,7 @@ export function httpClientType(keywords: Keywords, generics: HttpClientGenerics,
         generics.tKey,
         generics.tQuery.isComplex
             ? `${keywords.QueryBuilder}<${tQueryType}, ${keywords.QueryComplexObject}<${tQueryType}>>`
-            : `${keywords.PrimitiveQueryBuilder}<${tQueryType}, ${keywords.QueryPrimitive}<${tQueryType}>>`,
+            : `${keywords.QueryBuilder}<${tQueryType}, ${keywords.QueryPrimitive}<${tQueryType}>>`,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,

@@ -1,5 +1,5 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
-import { IQueryBulder, PrimitiveQueryBuilder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
+import { IQueryBulder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
 import { ODataUriParts, RequestTools } from "./requestTools.js";
 import { bulidTypeRef, QueryComplexObject, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
@@ -428,7 +428,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
     }
 
     private executePrimitiveQueryBuilder(
-        queryBuilder: (q: PrimitiveQueryBuilder<TEntity, QueryPrimitive<TEntity>>) => PrimitiveQueryBuilder<TEntity, QueryPrimitive<TEntity>>): QueryStringBuilder {
+        queryBuilder: (q: QueryBuilder<TEntity, QueryPrimitive<TEntity>>) => QueryBuilder<TEntity, QueryPrimitive<TEntity>>): QueryStringBuilder {
 
         const typeRef: QueryPrimitive<TEntity> = {
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
@@ -441,7 +441,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             }
         };
 
-        return queryBuilder(new PrimitiveQueryBuilder<TEntity, QueryPrimitive<TEntity>>(typeRef));
+        return queryBuilder(new QueryBuilder<TEntity, QueryPrimitive<TEntity>>(typeRef));
     }
 
     private executeComplexQueryBuilder(
@@ -449,7 +449,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         queryBuilder: (q: QueryBuilder<TEntity, QueryComplexObject<TEntity>>) => QueryBuilder<TEntity, QueryComplexObject<TEntity>>): QueryStringBuilder {
 
         const typeRef: QueryComplexObject<TEntity> = bulidTypeRef(type, this.root.types);
-        return queryBuilder(new QueryBuilder<TEntity, QueryComplexObject<TEntity>>(typeRef, type, this.root.types));
+        return queryBuilder(new QueryBuilder<TEntity, QueryComplexObject<TEntity>>(typeRef));
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {

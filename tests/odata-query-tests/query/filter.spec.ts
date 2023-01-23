@@ -374,7 +374,7 @@ describe("Query.Filter", function () {
         }
 
         const typeRef: QueryComplexObject<T> = bulidTypeRef(type.type, rootConfig.types);
-        return new QueryBuilder<T, QueryComplexObject<T>>(typeRef, type.type, rootConfig.types);
+        return new QueryBuilder<T, QueryComplexObject<T>>(typeRef);
     }
 
     // TODO: not sure if HasSubset is a real thing

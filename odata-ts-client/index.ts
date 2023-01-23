@@ -7,7 +7,6 @@ export {
 
 export {
     QueryBuilder,
-    PrimitiveQueryBuilder,
     ICollectionQueryBulder,
     ISingletonQueryBulder
 } from "./src/queryBuilder.js"
