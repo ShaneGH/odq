@@ -17,14 +17,17 @@ export * as ExpandUtils from "./src/expandUtils.js"
 export * as FilterUtils from "./src/filterUtils.js"
 
 export {
-    RequestTools,
     ODataAnnotatedResult,
     ODataResult,
     EntityQuery,
-    ODataUriParts,
     CastSelection,
     SubPathSelection
 } from "./src/httpClient.js"
+
+export {
+    RequestTools,
+    ODataUriParts
+} from "./src/requestTools.js"
 
 export {
     QueryObjectType,

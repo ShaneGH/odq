@@ -1,5 +1,6 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes } from "odata-ts-client-shared";
 import { IQueryBulder, PrimitiveQueryBuilder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
+import { ODataUriParts, RequestTools } from "./requestTools.js";
 import { QueryComplexObject } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -18,44 +19,6 @@ export type ODataAnnotatedResult<T> = ODataResultMetadata & {
 export type ODataResult<T> = ODataResultMetadata & T
 
 export type Dictionary<T> = { [key: string]: T }
-
-export type ODataUriParts = {
-    uriRoot: string,
-    entitySetNamespace: string | null;
-    entitySetName: string;
-    relativePath: string,
-    query: Dictionary<string>
-}
-
-// TODO: document: 1. Add code comments, 2. Add article
-// TODO: test all of these
-export type RequestTools = {
-    /* 
-     * A basic http client. Set this to a browser fetch, node18 fetch or a client from the the node-fetch npm module
-     */
-    fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
-
-    /* 
-     * The root URI of all collections. Something like: https://my.service.com/my-odata-collections",
-     */
-    uriRoot: string
-
-    /* 
-     * Interceptor for uri building
-     * Optional
-     */
-    uriInterceptor?: (uri: ODataUriParts) => string
-
-    /* 
-     * Interceptor for http requests. Use this to add custom http headers
-     */
-    requestInterceptor?: (uri: string, reqValues: RequestInit) => RequestInit
-
-    /* 
-     * Interceptor for http responses. Use this to add custom error handling or deserialization
-     */
-    responseInterceptor?: (input: Response, uri: string, reqValues: RequestInit, defaultInterceptor: (input: Response) => Promise<any>) => any
-}
 
 function addLeadingSlash(path: string) {
     return path && `/${path}`
@@ -233,7 +196,9 @@ function getCastingTypeRef(type: ODataTypeRef) {
     }
 }
 
-// TODO: test
+/*
+ * Specified how to format an entity key in a url
+ */
 export enum WithKeyType {
     /*
      * Specifies that a key should be embedded added as a function call
@@ -263,7 +228,7 @@ const defaultRequestTools: Partial<RequestTools> = {
         return `${uriRoot}${entityName}${queryPart}`
     },
 
-    requestInterceptor: (_, x) => x,
+    requestInterceptor: (_: any, x: RequestInit) => x,
 
     // NOTE: defaultProcessor will always be null
     responseInterceptor: <TEntity>(response: Response, uri: any, reqValues: any, defaultProcessor: any): Promise<ODataAnnotatedResult<TEntity>> => {
@@ -514,7 +479,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         const uri = tools.uriInterceptor!({
             uriRoot: tools.uriRoot,
             // if namespace === "", give null instead
-            entitySetNamespace: this.entitySet.namespace || null,
+            entitySetContainerName: this.entitySet.namespace || null,
             entitySetName: this.entitySet.name,
             relativePath: relativePath,
             query: this.state.query || {}
