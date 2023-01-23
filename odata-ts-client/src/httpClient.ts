@@ -201,13 +201,13 @@ function getCastingTypeRef(type: ODataTypeRef) {
  */
 export enum WithKeyType {
     /*
-     * Specifies that a key should be embedded added as a function call
+     * Specifies that a key should be embedded as a function call
      * e.g. ~/Users(1)
      */
     FunctionCall = "FunctionCall",
 
     /*
-     * Specifies that a key should be embedded added as a path segment
+     * Specifies that a key should be added as a path segment
      * e.g. ~/Users/1
      */
     PathSegment = "PathSegment"
