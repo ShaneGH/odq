@@ -5,6 +5,7 @@ export type Keywords = {
     QueryPrimitive: string
     QueryArray: string
     QueryComplexObject: string
+    QueryEnum: string
     EntityQuery: string
     rootConfig: string
     rootConfigExporter: string
@@ -45,6 +46,7 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
     // TODO: tests for all keyword re-mappings
     return {
+        QueryEnum: getKeyword("QueryEnum"),
         QueryBuilder: getKeyword("QueryBuilder"),
         ODataTypeRef: getKeyword("ODataTypeRef"),
         ODataComplexType: getKeyword("ODataComplexType"),
@@ -87,6 +89,7 @@ export function imports(keywords: Keywords, tab: Tab) {
 
     // TODO: audit are all of these still used?
     return `import {
+${tab(importWithAlias("QueryEnum"))},
 ${tab(importWithAlias("QueryBuilder"))},
 ${tab(importWithAlias("ODataComplexType"))},
 ${tab(importWithAlias("ODataTypeRef"))},

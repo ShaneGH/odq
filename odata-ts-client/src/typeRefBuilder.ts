@@ -1,11 +1,12 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef, ODataTypeName } from "odata-ts-client-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef, ODataTypeName, ODataEnum } from "odata-ts-client-shared";
 
 type Dict<T> = { [key: string]: T }
 
 export enum QueryObjectType {
     QueryObject = "QueryObject",
     QueryArray = "QueryArray",
-    QueryPrimitive = "QueryPrimitive"
+    QueryPrimitive = "QueryPrimitive",
+    QueryEnum = "QueryEnum"
 }
 
 export type PathSegment = {
@@ -28,6 +29,11 @@ export interface HasQueryObjectMetadata<T extends QueryObjectType> {
 
 // T is not used, but adds strong typing to FilterUtils
 export interface QueryPrimitive<T> extends HasQueryObjectMetadata<QueryObjectType.QueryPrimitive> { }
+
+// T is not used, but adds strong typing to FilterUtils
+export interface QueryEnum<T> extends HasQueryObjectMetadata<QueryObjectType.QueryEnum> {
+    $$oDataEnumType: ODataEnum
+}
 
 // TODO: rename to Collection
 // type def is recursive for this type: "TQueryObj extends QueryObject<...". Cannot be a "type"
@@ -190,7 +196,7 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         }, base) as QueryComplexObject<T>;
 }
 
-export function bulidTypeRef<T>(type: ODataComplexType, root: ODataServiceTypes): QueryComplexObject<T> {
+export function buildComplexTypeRef<T>(type: ODataComplexType, root: ODataServiceTypes): QueryComplexObject<T> {
 
     const typeRef = buildPropertyTypeRef<T>({
         name: type.name,

@@ -218,6 +218,7 @@ export function httpClientType(keywords: Keywords, generics: HttpClientGenerics,
     const gs = [
         generics.tEntity,
         generics.tKey,
+        tQueryType,
         generics.tQuery.isComplex
             ? `${keywords.QueryBuilder}<${tQueryType}, ${keywords.QueryComplexObject}<${tQueryType}>>`
             : `${keywords.QueryBuilder}<${tQueryType}, ${keywords.QueryPrimitive}<${tQueryType}>>`,

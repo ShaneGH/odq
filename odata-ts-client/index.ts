@@ -31,6 +31,7 @@ export {
 export {
     QueryObjectType,
     QueryPrimitive,
+    QueryEnum,
     QueryArray,
     QueryComplexObject,
     QueryObject

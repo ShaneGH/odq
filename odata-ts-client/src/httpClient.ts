@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
 import { IQueryBulder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
 import { ODataUriParts, RequestTools } from "./requestTools.js";
-import { bulidTypeRef, QueryComplexObject, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
+import { buildComplexTypeRef, QueryComplexObject, QueryEnum, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
 
@@ -285,6 +285,14 @@ function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType) {
     }
 }
 
+type ComplexQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryComplexObject<TEntity>>) => QueryBuilder<TEntity, QueryComplexObject<TEntity>>
+type PrimitiveQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryPrimitive<TEntity>>) => QueryBuilder<TEntity, QueryPrimitive<TEntity>>
+type EnumQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryEnum<TEntity>>) => QueryBuilder<TEntity, QueryEnum<TEntity>>
+
+type QB<TEntity> =
+    | QueryBuilder<TEntity, QueryComplexObject<TEntity>>
+    | QueryBuilder<TEntity, QueryPrimitive<TEntity>>
+    | QueryBuilder<TEntity, QueryEnum<TEntity>>
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
@@ -293,7 +301,7 @@ function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType) {
 
 // NOTE: these generic type names are copy pasted into code gen project \src\codeGen\utils.ts
 // NOTE: make sure that they stay in sync
-export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
+export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQueryable>, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
 
     state: EntityQueryState
 
@@ -343,7 +351,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
                 keyPath.value
             ]
 
-        return new EntityQuery<TEntity, never, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataResult<TEntity>>(
+        return new EntityQuery<TEntity, never, TQueryable, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataResult<TEntity>>(
             this.requestTools,
             this.type.collectionType,
             this.entitySet,
@@ -365,7 +373,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
             this.requestTools,
             newT.type,
             this.entitySet,
@@ -393,7 +401,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
         const path = this.state.path?.length ? [...this.state.path, newT.propertyName] : [newT.propertyName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
             this.requestTools,
             prop,
             this.entitySet,
@@ -414,12 +422,16 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
             throw new Error("Querying of collections of collections is not supported");
         }
 
+        // There is a lot of trust in these 2 lines of code.
+        // trust that the TEntity lines up with a typeRef in terms of being complex, primitive or enum
         const t = lookup(typeRef, this.root.types)
         const queryObjBuilder = t.flag === "Complex"
             ? this.executeComplexQueryBuilder(t.type, queryBuilder as any)
-            : this.executePrimitiveQueryBuilder(queryBuilder as any);
+            : t.flag === "Primitive"
+                ? this.executePrimitiveQueryBuilder(queryBuilder as any)
+                : this.executeEnumQueryBuilder(t.type, queryBuilder as any);
 
-        return new EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
+        return new EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -428,7 +440,7 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
     }
 
     private executePrimitiveQueryBuilder(
-        queryBuilder: (q: QueryBuilder<TEntity, QueryPrimitive<TEntity>>) => QueryBuilder<TEntity, QueryPrimitive<TEntity>>): QueryStringBuilder {
+        queryBuilder: PrimitiveQueryBuilder<TEntity>): QueryStringBuilder {
 
         const typeRef: QueryPrimitive<TEntity> = {
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
@@ -446,10 +458,29 @@ export class EntityQuery<TEntity, TKey, TQueryBuilder, TCaster, TSingleCaster, T
 
     private executeComplexQueryBuilder(
         type: ODataComplexType,
-        queryBuilder: (q: QueryBuilder<TEntity, QueryComplexObject<TEntity>>) => QueryBuilder<TEntity, QueryComplexObject<TEntity>>): QueryStringBuilder {
+        queryBuilder: ComplexQueryBuilder<TEntity>): QueryStringBuilder {
 
-        const typeRef: QueryComplexObject<TEntity> = bulidTypeRef(type, this.root.types);
+        const typeRef: QueryComplexObject<TEntity> = buildComplexTypeRef(type, this.root.types);
         return queryBuilder(new QueryBuilder<TEntity, QueryComplexObject<TEntity>>(typeRef));
+    }
+
+    private executeEnumQueryBuilder(
+        type: ODataEnum,
+        queryBuilder: EnumQueryBuilder<TEntity>): QueryStringBuilder {
+
+        const typeRef: QueryEnum<TEntity> = {
+            $$oDataEnumType: type,
+            $$oDataQueryObjectType: QueryObjectType.QueryEnum,
+            $$oDataQueryMetadata: {
+                type: QueryObjectType.QueryEnum,
+                path: [{
+                    path: "$it",
+                    navigationProperty: false
+                }]
+            }
+        };
+
+        return queryBuilder(new QueryBuilder<TEntity, QueryEnum<TEntity>>(typeRef));
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {

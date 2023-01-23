@@ -1,5 +1,5 @@
 import { Filter } from "./queryBuilder.js";
-import { QueryArray, QueryObject, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
+import { PathSegment, QueryArray, QueryEnum, QueryObject, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 
 export function and(...conditions: Filter[]): Filter {
     if (conditions.length === 0) {
@@ -49,14 +49,14 @@ function defaultMapper(forValue: any) {
             : toString;
 }
 
-export function infixFunction<T>(obj: QueryPrimitive<T>, value: T, operator: string, mapper?: (x: T) => string): Filter {
-    if (!obj.$$oDataQueryMetadata.path.length) {
+export function infixFunction<T>(path: PathSegment[], value: T, operator: string, mapper?: (x: T) => string): Filter {
+    if (!path.length) {
         throw new Error("Primitive objects are not supported as root values");
     }
 
     mapper = mapper || defaultMapper(value);
     return {
-        filter: `${obj.$$oDataQueryMetadata.path.map(x => x.path).join("/")} ${operator} ${mapper(value)}`
+        filter: `${path.map(x => x.path).join("/")} ${operator} ${mapper(value)}`
     }
 }
 
@@ -79,32 +79,50 @@ export function binaryArrayFunction<TQueryObj extends QueryObject<TArrayType>, T
 // TODO: this is all incorrect. e.g. if valiue is a guid, it will be treated like a string
 // and will be surrounded by quotes which is incorrect
 // check: valueSerializer.ts
-export function eq<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "eq", mapper);
+export function eq<T>(obj: QueryPrimitive<T> | QueryEnum<T>, value: T, mapper?: (x: T) => string): Filter {
+    return obj.$$oDataQueryObjectType === QueryObjectType.QueryPrimitive || mapper || typeof value !== "number"
+        ? infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "eq", mapper)
+        : eqEnum(obj, value);
+}
+
+function eqEnum<T>(obj: QueryEnum<T>, value: number): Filter {
+    const name = Object
+        .keys(obj.$$oDataEnumType.members)
+        .filter(k => obj.$$oDataEnumType.members[k] === value);
+
+    if (!name.length) {
+        throw new Error(`Cannot find name of enum for value: ${value}. Use the mapper arg to specify a custom value`);
+    } else if (name.length > 1) {
+        console.warn(`Found multiple members for enum value: ${value}`);
+    }
+
+    const c = infixFunction(obj.$$oDataQueryMetadata.path, name[0], "eq");
+    console.log(c);
+    return c
 }
 
 export function ne<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "ne", mapper);
+    return infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "ne", mapper);
 }
 
 export function gt<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "gt", mapper);
+    return infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "gt", mapper);
 }
 
 export function ge<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "ge", mapper);
+    return infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "ge", mapper);
 }
 
 export function lt<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "lt", mapper);
+    return infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "lt", mapper);
 }
 
 export function le<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "le", mapper);
+    return infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "le", mapper);
 }
 
 export function has<T>(obj: QueryPrimitive<T>, value: T, mapper?: (x: T) => string): Filter {
-    return infixFunction<T>(obj, value, "has", mapper);
+    return infixFunction<T>(obj.$$oDataQueryMetadata.path, value, "has", mapper);
 }
 
 export function hasSubset<TArrayType>(
@@ -121,7 +139,7 @@ export function isIn<T>(obj: QueryPrimitive<T>, values: T[], mapper?: (x: T) => 
         .map(x => (mapper ??= defaultMapper(x))(x))
         .join(",");
 
-    return infixFunction<string>(obj, valuesStr, "in", addRoundBrackets);
+    return infixFunction<string>(obj.$$oDataQueryMetadata.path, valuesStr, "in", addRoundBrackets);
 }
 
 function arrayExpansion<TQueryObj extends QueryObject<TArrayType>, TArrayType>(

@@ -1,5 +1,4 @@
-import { ODataComplexType, ODataServiceTypes } from "odata-ts-client-shared";
-import { bulidTypeRef, PathSegment, QueryComplexObject, QueryObjectType, QueryPath, QueryPrimitive } from "./typeRefBuilder.js";
+import { PathSegment, QueryPath } from "./typeRefBuilder.js";
 
 
 type Dict<T> = { [key: string]: T }

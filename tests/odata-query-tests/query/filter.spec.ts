@@ -4,7 +4,7 @@ import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
 import { FilterUtils as F, QueryBuilder, QueryComplexObject } from "odata-ts-client";
 import { uniqueString } from "../utils/utils.js";
 import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
-import { bulidTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
+import { buildComplexTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
 
 const rootConfig = rootConfigExporter();
 
@@ -373,7 +373,7 @@ describe("Query.Filter", function () {
             throw new Error(fullName);
         }
 
-        const typeRef: QueryComplexObject<T> = bulidTypeRef(type.type, rootConfig.types);
+        const typeRef: QueryComplexObject<T> = buildComplexTypeRef(type.type, rootConfig.types);
         return new QueryBuilder<T, QueryComplexObject<T>>(typeRef);
     }
 

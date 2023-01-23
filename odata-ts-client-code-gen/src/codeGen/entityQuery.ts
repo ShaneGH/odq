@@ -46,7 +46,7 @@ function getQueryableType(type: ODataTypeRef, keywords: Keywords,
     const t = fullyQualifiedTsType(type, getQueryableName);
 
     return {
-        wrapper: isEnum ? keywords.QueryPrimitive : keywords.QueryComplexObject,
+        wrapper: isEnum ? keywords.QueryEnum : keywords.QueryComplexObject,
         generics: [t]
     };
 }
