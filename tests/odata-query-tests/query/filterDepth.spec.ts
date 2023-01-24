@@ -44,7 +44,7 @@ function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
     }
 }
 
-describe("Query.Filter", function () {
+describe("Query.Filter Depth", function () {
 
     afterAll(verifyEntityRelationships);
 
@@ -406,6 +406,7 @@ describe("Query.Filter", function () {
             const result = await client.BlogPosts
                 .withQuery((q, { filter: { eq, and, any } }) => q
                     .filter(bp => and(
+                        eq(bp.Id, user.blogPost.Id),
                         any(bp.Words, w => eq(w, blogPostWord)))))
                 .get({ requestInterceptor: toListRequestInterceptor });
 

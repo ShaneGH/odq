@@ -32,12 +32,12 @@ ${tab(mapSimpleType("Guid", "string"))}
 ${tab(mapSimpleType("Boolean", "boolean"))}
 ${tab(mapSimpleType("DateTime", "Date"))}
 ${tab(mapSimpleType("DateTimeOffset", "Date"))}
-${tab(mapSimpleType("Int16", "Number"))}
-${tab(mapSimpleType("Int32", "Number"))}
-${tab(mapSimpleType("Int64", "Number"))}
-${tab(mapSimpleType("Decimal", "Number"))}
-${tab(mapSimpleType("Double", "Number"))}
-${tab(mapSimpleType("Single", "Number"))}
+${tab(mapSimpleType("Int16", "number"))}
+${tab(mapSimpleType("Int32", "number"))}
+${tab(mapSimpleType("Int64", "number"))}
+${tab(mapSimpleType("Decimal", "number"))}
+${tab(mapSimpleType("Double", "number"))}
+${tab(mapSimpleType("Single", "number"))}
 }`
 
     function mapSimpleType(edmName: string, primitiveName: string) {

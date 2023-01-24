@@ -64,7 +64,9 @@ Evaluated: v1
      * confusing. Think it is done (except for the 204)
  * Make dev env linux friendly
  * Cast enums
- * IsFlags https://devblogs.microsoft.com/odata/tutorial-sample-use-enumeration-types-in-odata/
+ * IsFlags
+    * https://devblogs.microsoft.com/odata/tutorial-sample-use-enumeration-types-in-odata/
+    * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BuiltinFilterOperations "has" operator
 
 Evaluated: vNext
  

@@ -16,7 +16,7 @@ export type QueryParts = {
  * There is nothing special about this type. You can construct them yourself
  */
 export type Filter = {
-    filter: string
+    $$filter: string
 }
 
 export type Expand = {
@@ -66,7 +66,7 @@ export class QueryStringBuilder implements IQueryBulder {
     toQueryParts(urlEncode = true): Dict<string> {
 
         return [
-            param("$filter", this.state.filter?.filter),
+            param("$filter", this.state.filter?.$$filter),
             param("$expand", expand(this.state.expand?.expand)),
             param("$count", this.state.count ? "true" : undefined),
             param("$top", this.state.top?.toString()),
