@@ -41,6 +41,24 @@ public class UserRole
     public string Description { get; set; }
 }
 
+public class AppDetails
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    public string AppName { get; set; }
+}
+
+public class UserProfile
+{
+    [Key]
+    public UserProfileType Key { get; set; }
+
+    [Required]
+    public string Description { get; set; }
+}
+
 public enum UserType
 {
     User,

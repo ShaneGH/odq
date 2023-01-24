@@ -99,7 +99,9 @@ describe("SubPath", function () {
 
     describe("Enum", () => {
 
-        it("Should retrieve enum item in the path, 1 level", async () => {
+        describe("Number enum", () =>
+            it("Should be a number", () => expect(typeof My.Odata.Entities.UserType.Admin).toBe("number")));
+        it("Should retrieve number enum item in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const userType = await client.My.Odata.Container.Users
                 .withKey(user.blogUser.Id!)
@@ -107,6 +109,18 @@ describe("SubPath", function () {
                 .get();
 
             expect(userType.value).toBe(user.blogUser.UserType);
+        });
+
+        describe("String enum", () =>
+            it("Should be a string", () => expect(typeof My.Odata.Entities.UserProfileType.Advanced).toBe("string")));
+        it("Should retrieve string enum item in the path, 1 level", async () => {
+            const user = await addFullUserChain();
+            const userProfileType = await client.My.Odata.Container.Users
+                .withKey(user.blogUser.Id!)
+                .subPath(x => x.UserProfileType)
+                .get();
+
+            expect(userProfileType.value).toBe(user.blogUser.UserProfileType);
         });
 
         // TODO: enum as key not working with Microsoft odata

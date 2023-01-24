@@ -167,10 +167,13 @@ describe("Query.Filter", function () {
     // User, UserType
     testCase("Complex -> Enum", function () {
 
-        it("Should filter (success)", execute.bind(null, true));
-        it("Should filter (failure)", execute.bind(null, false))
+        describe("Number enum", () =>
+            it("Should be a number", () => expect(typeof My.Odata.Entities.UserType.Admin).toBe("number")));
 
-        async function execute(success: boolean) {
+        it("Should filter with number enum (success)", executeNum.bind(null, true));
+        it("Should filter with number enum (failure)", executeNum.bind(null, false))
+
+        async function executeNum(success: boolean) {
 
             const user = await addFullUserChain({ userType: "Admin" as any });
             const userType = success
@@ -190,15 +193,14 @@ describe("Query.Filter", function () {
                 expect(result.value.length).toBe(0);
             }
         }
-    });
 
-    // User, UserType
-    testCase("Complex -> Enum", function () {
+        describe("String enum", () =>
+            it("Should be a string", () => expect(typeof My.Odata.Entities.UserProfileType.Advanced).toBe("string")));
 
-        it("Should filter (success)", execute.bind(null, true));
-        it("Should filter (failure)", execute.bind(null, false))
+        it("Should filter with string enum (success)", executeStr.bind(null, true));
+        it("Should filter with string enum (failure)", executeStr.bind(null, false))
 
-        async function execute(success: boolean) {
+        async function executeStr(success: boolean) {
 
             const user = await addFullUserChain({ userProfileType: My.Odata.Entities.UserProfileType.Advanced });
             const userProfileType = success

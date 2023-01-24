@@ -8,27 +8,48 @@ using TestServer.Model;
 
 namespace TestServer.Controllers;
 
-// [Route(Program.OdataRoot)]
-// public abstract class ShapesController : ODataController
-// {
-//     private static IQueryable<Shape> Shapes = new Shape[]
-//     {
-//         new Square { Key = "Square", Length = 100 },
-//         new Circle { Key = "Circle", Radius = 100 }
-//     }.AsQueryable();
+[Route(Program.OdataRoot)]
+public class AppDetialsController : ODataController
+{
+    private readonly EntityDbContext _inMemoryDb;
 
-//     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-//     public IQueryable<Shape> Get()
-//     {
-//         return Shapes;
-//     }
+    public AppDetialsController(EntityDbContext inMemoryDb)
+    {
+        this._inMemoryDb = inMemoryDb;
+    }
 
-//     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-//     public SingleResult<Shape> Get([FromODataUri] string key)
-//     {
-//         return SingleResult.Create(Get().Where(p => p.Key == key));
-//     }
-// }
+    [HttpGet("AppDetails")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<AppDetails> Get([FromODataUri] UserType key)
+    {
+        return _inMemoryDb.AppDetails
+            .AsQueryable()
+            .AsSingleResult();
+    }
+
+    [HttpGet("AppDetails/AppName")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<string> GetAppName()
+    {
+        return _inMemoryDb.AppDetails
+            .AsQueryable()
+            .Select(x => x.AppName)
+            .AsSingleResult();
+    }
+
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<UserRole> Get()
+    {
+        var es = _inMemoryDb.UserRoles.AsQueryable();
+        if (Request.Headers.ContainsKey("ToList"))
+        {
+            es = es.ToList().AsQueryable();
+        }
+
+        return es;
+    }
+}
+
 [Route(Program.OdataRoot)]
 public class UserRolesController : ODataController
 {
@@ -51,12 +72,11 @@ public class UserRolesController : ODataController
 
     [HttpGet("UserRoles({key})/Description")]
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
-    public SingleResult<string> GetDescription([FromODataUri] string key)
+    public SingleResult<string> GetDescription([FromODataUri] UserType key)
     {
-        var k = Enum.Parse<UserType>(key);
         return _inMemoryDb.UserRoles
             .AsQueryable()
-            .Where(x => x.Key == k)
+            .Where(x => x.Key == key)
             .Select(x => x.Description)
             .AsSingleResult();
     }
@@ -65,6 +85,50 @@ public class UserRolesController : ODataController
     public IQueryable<UserRole> Get()
     {
         var es = _inMemoryDb.UserRoles.AsQueryable();
+        if (Request.Headers.ContainsKey("ToList"))
+        {
+            es = es.ToList().AsQueryable();
+        }
+
+        return es;
+    }
+}
+
+[Route(Program.OdataRoot)]
+public class UserProfilesController : ODataController
+{
+    private readonly EntityDbContext _inMemoryDb;
+
+    public UserProfilesController(EntityDbContext inMemoryDb)
+    {
+        this._inMemoryDb = inMemoryDb;
+    }
+
+    [HttpGet("UserProfiles({key})")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<UserProfile> Get([FromODataUri] UserProfileType key)
+    {
+        return _inMemoryDb.UserProfiles
+            .AsQueryable()
+            .Where(x => x.Key == key)
+            .AsSingleResult();
+    }
+
+    [HttpGet("UserProfiles({key})/Description")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<string> GetDescription([FromODataUri] UserProfileType key)
+    {
+        return _inMemoryDb.UserProfiles
+            .AsQueryable()
+            .Where(x => x.Key == key)
+            .Select(x => x.Description)
+            .AsSingleResult();
+    }
+
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<UserProfile> Get()
+    {
+        var es = _inMemoryDb.UserProfiles.AsQueryable();
         if (Request.Headers.ContainsKey("ToList"))
         {
             es = es.ToList().AsQueryable();
@@ -212,6 +276,16 @@ public class UsersController : ODataControllerBase<User>
         return _inMemoryDb.Users
             .Where(x => x.Id == key)
             .Select(u => u.UserType)
+            .AsSingleResult();
+    }
+
+    [HttpGet("Users({key})/UserProfileType")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<UserProfileType> GetUserProfileType([FromRoute] string key)
+    {
+        return _inMemoryDb.Users
+            .Where(x => x.Id == key)
+            .Select(u => u.UserProfileType)
             .AsSingleResult();
     }
 

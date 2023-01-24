@@ -5,6 +5,8 @@ namespace TestServer.Model;
 
 public class EntityDbContext : DbContext
 {
+    public DbSet<AppDetails> AppDetails => Set<AppDetails>();
+    public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Blog> Blogs => Set<Blog>();
@@ -35,7 +37,15 @@ public class EntityDbContext : DbContext
     private void MapBlogModel(ModelBuilder modelBuilder)
     {
         modelBuilder
+            .Entity<AppDetails>()
+            .HasKey(a => a.Id);
+
+        modelBuilder
             .Entity<UserRole>()
+            .HasKey(u => u.Key);
+
+        modelBuilder
+            .Entity<UserProfile>()
             .HasKey(u => u.Key);
 
         modelBuilder

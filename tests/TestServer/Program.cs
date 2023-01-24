@@ -46,6 +46,14 @@ public class Program
         using (var ctxt = App.Services.CreateScope())
         {
             var dbContext = ctxt.ServiceProvider.GetRequiredService<EntityDbContext>();
+            dbContext.AppDetails.AddRange(new[]
+            {
+                new AppDetails
+                {
+                    AppName = "Blog app"
+                }
+            });
+
             dbContext.UserRoles.AddRange(new[]
             {
                 new UserRole
@@ -56,7 +64,21 @@ public class Program
                 new UserRole
                 {
                     Key = UserType.User,
-                    Description = "Uesr"
+                    Description = "User"
+                }
+            });
+
+            dbContext.UserProfiles.AddRange(new[]
+            {
+                new UserProfile
+                {
+                    Key = UserProfileType.Advanced,
+                    Description = "Advanced"
+                },
+                new UserProfile
+                {
+                    Key = UserProfileType.Standard,
+                    Description = "Standard"
                 }
             });
 
@@ -75,6 +97,8 @@ public class Program
         builder.Namespace = "My.Odata.Entities";
         builder.ContainerName = "My/Odata.Container";
 
+        builder.Singleton<AppDetails>("AppDetails");
+        builder.EntitySet<UserProfile>("UserProfiles");
         builder.EntitySet<UserRole>("UserRoles");
         builder.EntitySet<HasId>("HasIds");
         builder.EntitySet<User>("Users");
