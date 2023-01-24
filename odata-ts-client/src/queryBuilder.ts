@@ -11,6 +11,10 @@ export type QueryParts = {
     top?: number | undefined
 }
 
+/**
+ * A wrapper around a filter string. 
+ * There is nothing special about this type. You can construct them yourself
+ */
 export type Filter = {
     filter: string
 }

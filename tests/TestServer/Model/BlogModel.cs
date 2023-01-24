@@ -41,13 +41,18 @@ public class UserRole
     public string Description { get; set; }
 }
 
-public class AppDetails
+public class AppDetailsBase
 {
     [Key]
     public int Id { get; set; }
+}
 
+public class AppDetails : AppDetailsBase
+{
     [Required]
     public string AppName { get; set; }
+
+    public IEnumerable<string> AppNameWords => AppName.Split(" ", StringSplitOptions.RemoveEmptyEntries);
 }
 
 public class UserProfile

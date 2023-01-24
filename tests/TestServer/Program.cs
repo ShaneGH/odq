@@ -98,6 +98,7 @@ public class Program
         builder.ContainerName = "My/Odata.Container";
 
         builder.Singleton<AppDetails>("AppDetails");
+        builder.Singleton<AppDetailsBase>("AppDetailsBase");
         builder.EntitySet<UserProfile>("UserProfiles");
         builder.EntitySet<UserRole>("UserRoles");
         builder.EntitySet<HasId>("HasIds");

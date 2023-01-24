@@ -1,6 +1,7 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
-import { IQueryBulder, QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
+import { QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
 import { ODataUriParts, RequestTools } from "./requestTools.js";
+import { utils as queryUtils, Utils } from "./queryUtils.js";
 import { buildComplexTypeRef, QueryComplexObject, QueryEnum, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -285,9 +286,9 @@ function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType, servi
     }
 }
 
-type ComplexQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryComplexObject<TEntity>>) => QueryBuilder<TEntity, QueryComplexObject<TEntity>>
-type PrimitiveQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryPrimitive<TEntity>>) => QueryBuilder<TEntity, QueryPrimitive<TEntity>>
-type EnumQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryEnum<TEntity>>) => QueryBuilder<TEntity, QueryEnum<TEntity>>
+type ComplexQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryComplexObject<TEntity>>, utils: Utils) => QueryBuilder<TEntity, QueryComplexObject<TEntity>>
+type PrimitiveQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryPrimitive<TEntity>>, utils: Utils) => QueryBuilder<TEntity, QueryPrimitive<TEntity>>
+type EnumQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryEnum<TEntity>>, utils: Utils) => QueryBuilder<TEntity, QueryEnum<TEntity>>
 
 type QB<TEntity> =
     | QueryBuilder<TEntity, QueryComplexObject<TEntity>>
@@ -389,6 +390,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         }
 
         if (this.type.isCollection) {
+            console.log(this.type)
             throw new Error("You cannot navigate the subpath of a collection. Try to filter by key first");
         }
 
@@ -411,7 +413,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
 
     // TODO: this allows the user to do illegal queries on singletons:
     //  The query specified in the URI is not valid. The requested resource is not a collection. Query options $filter, $orderby, $count, $skip, and $top can be applied only on collections
-    withQuery(queryBuilder: (q: TQueryBuilder) => TQueryBuilder, urlEncode = true) {
+    withQuery(queryBuilder: (q: TQueryBuilder, utils: Utils) => TQueryBuilder, urlEncode = true) {
 
         if (this.state.query) {
             throw new Error("This request already has a query");
@@ -428,7 +430,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         const queryObjBuilder = t.flag === "Complex"
             ? this.executeComplexQueryBuilder(t.type, queryBuilder as any)
             : t.flag === "Primitive"
-                ? this.executePrimitiveQueryBuilder(queryBuilder as any)
+                ? this.executePrimitiveQueryBuilder(t.type, queryBuilder as any)
                 : this.executeEnumQueryBuilder(t.type, queryBuilder as any);
 
         return new EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
@@ -440,12 +442,18 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
     }
 
     private executePrimitiveQueryBuilder(
+        type: ODataTypeName,
         queryBuilder: PrimitiveQueryBuilder<TEntity>): QueryStringBuilder {
 
         const typeRef: QueryPrimitive<TEntity> = {
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
             $$oDataQueryMetadata: {
                 type: QueryObjectType.QueryPrimitive,
+                typeRef: {
+                    isCollection: false,
+                    ...type
+                },
+                root: this.root.types,
                 path: [{
                     path: "$it",
                     navigationProperty: false
@@ -453,7 +461,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             }
         };
 
-        return queryBuilder(new QueryBuilder<TEntity, QueryPrimitive<TEntity>>(typeRef));
+        return queryBuilder(new QueryBuilder<TEntity, QueryPrimitive<TEntity>>(typeRef), queryUtils());
     }
 
     private executeComplexQueryBuilder(
@@ -461,7 +469,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         queryBuilder: ComplexQueryBuilder<TEntity>): QueryStringBuilder {
 
         const typeRef: QueryComplexObject<TEntity> = buildComplexTypeRef(type, this.root.types);
-        return queryBuilder(new QueryBuilder<TEntity, QueryComplexObject<TEntity>>(typeRef));
+        return queryBuilder(new QueryBuilder<TEntity, QueryComplexObject<TEntity>>(typeRef), queryUtils());
     }
 
     private executeEnumQueryBuilder(
@@ -473,6 +481,12 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             $$oDataQueryObjectType: QueryObjectType.QueryEnum,
             $$oDataQueryMetadata: {
                 type: QueryObjectType.QueryEnum,
+                root: this.root.types,
+                typeRef: {
+                    isCollection: false,
+                    namespace: type.namespace,
+                    name: type.name
+                },
                 path: [{
                     path: "$it",
                     navigationProperty: false
@@ -480,7 +494,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             }
         };
 
-        return queryBuilder(new QueryBuilder<TEntity, QueryEnum<TEntity>>(typeRef));
+        return queryBuilder(new QueryBuilder<TEntity, QueryEnum<TEntity>>(typeRef), queryUtils());
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
@@ -529,7 +543,8 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         let init: RequestInit = tools.requestInterceptor!(uri, {
             headers: {
                 "Content-Type": "application/json; charset=utf-8",
-                "Accept": "application/json"
+                "Accept": "application/json",
+                "OData-Version": "46"
             }
         });
 

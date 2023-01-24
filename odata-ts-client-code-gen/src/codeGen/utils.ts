@@ -209,7 +209,7 @@ export type HttpClientGenerics = {
     }
 }
 
-const httpClientGenericNames = ["TEntity", "TKey", "TQueryBuilder", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
+const httpClientGenericNames = ["TEntity", "TKey", "TQueryable", "TQueryBuilder", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
 const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x ? s : x, -1);
 
 export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {

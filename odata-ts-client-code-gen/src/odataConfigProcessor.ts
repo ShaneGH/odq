@@ -61,11 +61,42 @@ function mapEntityContainer(entityContainer: Node): ODataEntitySet[] {
 
     const namespace = namespaces[0]?.value || "";
     return nsLookup(entityContainer, "edm:EntitySet")
-        .map(node => mapEntitySet(namespace, node as Node));
+        .map(node => mapEntitySet(namespace, node as Node))
+        .concat(nsLookup(entityContainer, "edm:Singleton")
+            .map(node => mapSingleton(namespace, node as Node)));
 }
 
 function mapEntitySet(namespace: string, entitySet: Node): ODataEntitySet {
-    const name = nsLookup(entitySet, "@Name") as Attr[];
+
+    const name = getName(entitySet, "@Name", namespace);
+    const forType = getType(entitySet, "@EntityType", namespace, name);
+    return {
+        isSingleton: false,
+        namespace,
+        name: name,
+        forType
+    };
+}
+
+function mapSingleton(namespace: string, entitySet: Node): ODataEntitySet {
+
+    const name = getName(entitySet, "@Name", namespace);
+    const forType = getType(entitySet, "@Type", namespace, name);
+    return {
+        isSingleton: true,
+        namespace,
+        name: name,
+        forType
+    };
+}
+
+function getName(entitySet: Node, nameAttr: string, namespace: string) {
+
+    /*
+                <EntitySet Name="CompositeKeyItems" EntityType="My.Odata.Entities.CompositeKeyItem" />
+                <Singleton Name="AppDetails" Type="My.Odata.Entities.AppDetails" /> */
+
+    const name = nsLookup(entitySet, nameAttr) as Attr[];
     if (name.length > 1) {
         const names = name.map(x => x.value).join(", ");
         console.warn(`Found more than one Name for EntitySet: ${names}. Using first value.`);
@@ -73,25 +104,24 @@ function mapEntitySet(namespace: string, entitySet: Node): ODataEntitySet {
         throw new Error(`Could not find name for entity set in collection ${namespace}`);
     }
 
-    const type = nsLookup(entitySet, "@EntityType") as Attr[];
+    return name[0].value;
+}
+
+function getType(entitySet: Node, typeAttr: string, namespace: string, forName: string): ODataSingleTypeRef {
+
+    const type = nsLookup(entitySet, typeAttr) as Attr[];
     if (type.length > 1) {
         const names = type.map(x => x.value).join(", ");
         console.warn(`Found more than one Name for EntityContianer: ${names}. Using first value.`);
     } else if (!type.length) {
-        throw new Error(`Could not find type for entity set ${name[0].value} in collection ${namespace}`);
+        throw new Error(`Could not find type for entity set ${forName} in collection ${namespace}`);
     }
 
     const lastDot = type[0].value.lastIndexOf(".");
-    const forType: ODataSingleTypeRef = lastDot === -1
+    return lastDot === -1
         // TODO: can this be true???
         ? { isCollection: false, namespace: "", name: type[0].value }
         : { isCollection: false, namespace: type[0].value.substring(0, lastDot), name: type[0].value.substring(lastDot + 1) };
-
-    return {
-        namespace,
-        name: name[0].value,
-        forType
-    };
 }
 
 const supressUnableToVerifyOdataVersionMessage = "To supress this warning, set warningSettings.suppressUnableToVerifyOdataVersion to false"

@@ -23,7 +23,7 @@ const client = new ODataClient({
                 throw new Error(JSON.stringify(err, null, 2));
             })
     }
-});
+}).My.Odata.Container;
 
 function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
     return {
@@ -52,7 +52,7 @@ describe("Composite Keys", function () {
 
     it("Should retrieve items by key", async () => {
         const item = await addCompositeKeyItem();
-        const result = await client.My.Odata.Container.CompositeKeyItems
+        const result = await client.CompositeKeyItems
             .withKey({ Id1: item.Id1!, Id2: item.Id2! })
             .get();
 
@@ -61,7 +61,7 @@ describe("Composite Keys", function () {
 
     it("Should not retrieve items by invalid key", async () => {
         const item = await addCompositeKeyItem();
-        const result = await client.My.Odata.Container.CompositeKeyItems
+        const result = await client.CompositeKeyItems
             .withKey({ Id1: item.Id1! + "a", Id2: item.Id2! })
             .getAs<number>({ responseInterceptor: x => x.status });
 
@@ -70,7 +70,7 @@ describe("Composite Keys", function () {
 
     it("Should not retrieve items by swapped key", async () => {
         const item = await addCompositeKeyItem();
-        const result = await client.My.Odata.Container.CompositeKeyItems
+        const result = await client.CompositeKeyItems
             .withKey({ Id1: item.Id2!, Id2: item.Id1! })
             .getAs<number>({ responseInterceptor: x => x.status });
 
@@ -81,7 +81,7 @@ describe("Composite Keys", function () {
         const item = await addCompositeKeyItem();
 
         try {
-            client.My.Odata.Container.CompositeKeyItems
+            client.CompositeKeyItems
                 .withKey({ Id1: item.Id1! } as any);
 
             expect(true).toBe(false);

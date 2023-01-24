@@ -23,7 +23,7 @@ const client = new ODataClient({
                 throw new Error(JSON.stringify(err, null, 2));
             })
     }
-});
+}).My.Odata.Container;
 
 function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
     return {
@@ -52,7 +52,7 @@ describe("Multiple entity sets", function () {
 
     it("Should retrieve items from entity set 1", async () => {
         const item = await addFullUserChain();
-        const result = await client.My.Odata.Container.BlogPosts
+        const result = await client.BlogPosts
             .withKey(item.blogPost.Id!)
             .get();
 
@@ -61,7 +61,7 @@ describe("Multiple entity sets", function () {
 
     it("Should retrieve items from entity set 2", async () => {
         const item = await addFullUserChain();
-        const result = await client.My.Odata.Container.BlogPosts2
+        const result = await client.BlogPosts2
             .withKey(item.blogPost.Id!)
             .get();
 

@@ -1,7 +1,7 @@
 
 import { addFullUserChain } from "../utils/client.js";
 import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
-import { FilterUtils as F, QueryBuilder, QueryComplexObject } from "odata-ts-client";
+import { FilterUtils as F, QueryBuilder, QueryComplexObject, queryUtils } from "odata-ts-client";
 import { uniqueString } from "../utils/utils.js";
 import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
 import { buildComplexTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
@@ -32,7 +32,7 @@ const client = new ODataClient({
                 throw new Error(JSON.stringify(err, null, 2));
             })
     }
-});
+}).My.Odata.Container;
 
 function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
     return {
@@ -65,10 +65,36 @@ describe("Query.Filter", function () {
                 ? uniqueWord
                 : uniqueString("FilterByWord");
 
-            const result = await client.My.Odata.Container.BlogPosts
+            const result = await client.BlogPosts
                 .withKey(user.blogPost.Id!)
                 .subPath(x => x.Words)
-                .withQuery(q => q.filter(n => F.eq(n, word)))
+                .withQuery((q, { filter: { eq, and } }) => q.filter(n => eq(n, word)))
+                .get();
+
+            if (success) {
+                expect(result.value.length).toBe(1);
+                expect(result.value[0]).toBe(word);
+            } else {
+                expect(result.value.length).toBe(0);
+            }
+        }
+    });
+
+    // BlogName -> BlogName
+    testCase("Singleton -> Simple", function () {
+
+        it("Should filter (success)", execute.bind(null, true));
+        it("Should filter (failure)", execute.bind(null, false))
+
+        async function execute(success: boolean) {
+
+            const word = success
+                ? "Blog"
+                : "Invalid";
+
+            const result = await client.AppDetails
+                .subPath(x => x.AppNameWords)
+                .withQuery((q, { filter: { eq, and } }) => q.filter(w => eq(w, word)))
                 .get();
 
             if (success) {
@@ -93,10 +119,10 @@ describe("Query.Filter", function () {
                 ? user.blog.Name
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.BlogPosts.withQuery(q => q
-                .filter(bp => F.and(
-                    F.eq(bp.Id, user.blogPost.Id),
-                    F.eq(bp.Blog.Name, blogName))))
+            const result = await client.BlogPosts.withQuery((q, { filter: { eq, and } }) => q
+                .filter(bp => and(
+                    eq(bp.Id, user.blogPost.Id),
+                    eq(bp.Blog.Name, blogName))))
                 .get();
 
             if (success) {
@@ -121,10 +147,10 @@ describe("Query.Filter", function () {
                 ? user.blog.Name
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.Users.withQuery(q => q
-                .filter(u => F.and(
-                    F.eq(u.Id, user.blogUser.Id),
-                    F.any(u.Blogs, b1 => F.eq(b1.Name, userBlogName)))))
+            const result = await client.Users.withQuery((q, { filter: { eq, and, any } }) => q
+                .filter(u => and(
+                    eq(u.Id, user.blogUser.Id),
+                    any(u.Blogs, b1 => eq(b1.Name, userBlogName)))))
                 .get();
 
             if (success) {
@@ -149,10 +175,10 @@ describe("Query.Filter", function () {
                 ? user.blogUser.Name
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.Users.withQuery(q => q
-                .filter(u => F.and(
-                    F.eq(u.Id, user.blogUser.Id),
-                    F.eq(u.Name, userName))))
+            const result = await client.Users.withQuery((q, { filter: { eq, and } }) => q
+                .filter(u => and(
+                    eq(u.Id, user.blogUser.Id),
+                    eq(u.Name, userName))))
                 .get();
 
             if (success) {
@@ -180,10 +206,10 @@ describe("Query.Filter", function () {
                 ? My.Odata.Entities.UserType.Admin
                 : My.Odata.Entities.UserType.User;
 
-            const result = await client.My.Odata.Container.Users.withQuery(q => q
-                .filter(u => F.and(
-                    F.eq(u.Id, user.blogUser.Id),
-                    F.eq(u.UserType, userType))))
+            const result = await client.Users.withQuery((q, { filter: { eq, and } }) => q
+                .filter(u => and(
+                    eq(u.Id, user.blogUser.Id),
+                    eq(u.UserType, userType))))
                 .get();
 
             if (success) {
@@ -207,10 +233,10 @@ describe("Query.Filter", function () {
                 ? My.Odata.Entities.UserProfileType.Advanced
                 : My.Odata.Entities.UserProfileType.Standard;
 
-            const result = await client.My.Odata.Container.Users.withQuery(q => q
-                .filter(u => F.and(
-                    F.eq(u.Id, user.blogUser.Id),
-                    F.eq(u.UserProfileType, userProfileType))))
+            const result = await client.Users.withQuery((q, { filter: { eq, and } }) => q
+                .filter(u => and(
+                    eq(u.Id, user.blogUser.Id),
+                    eq(u.UserProfileType, userProfileType))))
                 .get();
 
             if (success) {
@@ -233,11 +259,11 @@ describe("Query.Filter", function () {
             const user = await addFullUserChain();
             const expectedCount = success ? 1 : 111;
 
-            const result = await client.My.Odata.Container.Users
-                .withQuery(q => q
-                    .filter(u => F.and(
-                        F.eq(u.Id, user.blogUser.Id),
-                        F.eq(F.count(u.Blogs), expectedCount))))
+            const result = await client.Users
+                .withQuery((q, { filter: { eq, and, count } }) => q
+                    .filter(u => and(
+                        eq(u.Id, user.blogUser.Id),
+                        eq(count(u.Blogs), expectedCount))))
                 .get();
 
             if (success) {
@@ -262,10 +288,10 @@ describe("Query.Filter", function () {
                 ? user.blogPost.Name
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.Users.withQuery(q => q
-                .filter(u => F.and(
-                    F.eq(u.Id, user.blogUser.Id),
-                    F.any(u.Blogs, b => F.any(b.Posts, bp => F.eq(bp.Name, postName))))))
+            const result = await client.Users.withQuery((q, { filter: { eq, and, any } }) => q
+                .filter(u => and(
+                    eq(u.Id, user.blogUser.Id),
+                    any(u.Blogs, b => any(b.Posts, bp => eq(bp.Name, postName))))))
                 .get();
 
             if (success) {
@@ -290,10 +316,10 @@ describe("Query.Filter", function () {
                 ? user.commentUser.Name
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.BlogPosts.withQuery(q => q
-                .filter(bp => F.and(
-                    F.eq(bp.Id, user.blogPost.Id),
-                    F.any(bp.Comments, c => F.eq(c.User.Name, userName)))))
+            const result = await client.BlogPosts.withQuery((q, { filter: { eq, and, any } }) => q
+                .filter(bp => and(
+                    eq(bp.Id, user.blogPost.Id),
+                    any(bp.Comments, c => eq(c.User.Name, userName)))))
                 .get();
 
             if (success) {
@@ -319,11 +345,11 @@ describe("Query.Filter", function () {
                 : "Not a valid name";
 
             // blogs where the owner user has commented on a blog with a post name "blogPostName"
-            const result = await client.My.Odata.Container.Blogs
-                .withQuery(q => q
-                    .filter(b => F.and(
-                        F.eq(b.Id, user.commentUserChain!.blog.Id),
-                        F.any(b.User.BlogPostComments, c => F.eq(c.BlogPost.Name, blogPostName)))))
+            const result = await client.Blogs
+                .withQuery((q, { filter: { eq, and, any } }) => q
+                    .filter(b => and(
+                        eq(b.Id, user.commentUserChain!.blog.Id),
+                        any(b.User.BlogPostComments, c => eq(c.BlogPost.Name, blogPostName)))))
                 .get();
 
             if (success) {
@@ -348,10 +374,10 @@ describe("Query.Filter", function () {
                 ? user.commentUserChain!.blog.Name
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.Comments.withQuery(q => q
-                .filter(c => F.and(
-                    F.eq(c.Id, user.comment.Id),
-                    F.any(c.User.Blogs, b => F.eq(b.Name, blogName)))))
+            const result = await client.Comments.withQuery((q, { filter: { eq, and, any } }) => q
+                .filter(c => and(
+                    eq(c.Id, user.comment.Id),
+                    any(c.User.Blogs, b => eq(b.Name, blogName)))))
                 .get();
 
             if (success) {
@@ -377,10 +403,10 @@ describe("Query.Filter", function () {
                 ? blogPostText
                 : "Not a valid name";
 
-            const result = await client.My.Odata.Container.BlogPosts
-                .withQuery(q => q
-                    .filter(bp => F.and(
-                        F.any(bp.Words, w => F.eq(w, blogPostWord)))))
+            const result = await client.BlogPosts
+                .withQuery((q, { filter: { eq, and, any } }) => q
+                    .filter(bp => and(
+                        any(bp.Words, w => eq(w, blogPostWord)))))
                 .get({ requestInterceptor: toListRequestInterceptor });
 
             if (success) {
@@ -406,13 +432,15 @@ describe("Query.Filter", function () {
         return new QueryBuilder<T, QueryComplexObject<T>>(typeRef);
     }
 
+    const { filter: { hassubset, any, eq, and } } = queryUtils();
+
     // TODO: not sure if HasSubset is a real thing
     // BlogPost, Words, HasSubset
     testCase("Complex -> Array<Simple> -> HasSubset", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
-                .filter(bp => F.hasSubset(bp.Words, ["something"]))
+                .filter(bp => hassubset(bp.Words, ["something"]))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("hassubset(Words,['something'])");
@@ -429,10 +457,10 @@ describe("Query.Filter", function () {
         //         ? blogPostText
         //         : "Not a valid name";
 
-        //     const result = await client.My.Odata.Container.BlogPosts
-        //         .withQuery(q => q
-        //             .filter(bp => F.and(
-        //                 F.hasSubset(bp.Words, [blogPostWord]))))
+        //     const result = await client.BlogPosts
+        //         .withQuery((q, { filter: { eq, and } }) => q
+        //             .filter(bp => and(
+        //                 hasSubset(bp.Words, [blogPostWord]))))
         //         .get({ requestInterceptor: toListRequestInterceptor });
 
         //     if (success) {
@@ -449,7 +477,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
-                .filter(bp => F.any(bp.Comments, c => F.any(c.Words, w => F.eq(w, "something"))))
+                .filter(bp => any(bp.Comments, c => any(c.Words, w => eq(w, "something"))))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("Comments/any(c:c/Words/any(w:w eq 'something'))");
@@ -461,8 +489,8 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableBlog>("My.Odata.Entities.Blog")
-                .filter(b => F.and(
-                    F.any(b.Posts, b => F.any(b.Words, w => F.eq(w, "something")))))
+                .filter(b => and(
+                    any(b.Posts, b => any(b.Words, w => eq(w, "something")))))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("Posts/any(p:p/Words/any(w:w eq 'something'))");
@@ -474,7 +502,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
-                .filter(bp => F.any(bp.Comments, c => F.any(c.Words, w => F.eq(w, "something"))))
+                .filter(bp => any(bp.Comments, c => any(c.Words, w => eq(w, "something"))))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("Comments/any(c:c/Words/any(w:w eq 'something'))");
@@ -486,7 +514,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
-                .filter(b => F.any(b.Words, w => F.eq(w, "something")))
+                .filter(b => any(b.Words, w => eq(w, "something")))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("Words/any(w:w eq 'something')");
@@ -498,7 +526,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
-                .filter(c => F.any(c.BlogPost.Words, w => F.eq(w, "something")))
+                .filter(c => any(c.BlogPost.Words, w => eq(w, "something")))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("BlogPost/Words/any(w:w eq 'something')");
@@ -510,7 +538,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
-                .filter(c => F.hasSubset(c.BlogPost.Words, ["something"]))
+                .filter(c => hassubset(c.BlogPost.Words, ["something"]))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("hassubset(BlogPost/Words,['something'])");
@@ -523,7 +551,7 @@ describe("Query.Filter", function () {
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableUser>("My.Odata.Entities.User")
                 .filter(u =>
-                    F.any(u.BlogPostComments, c => F.hasSubset(c.BlogPost.Words, ["something"])))
+                    any(u.BlogPostComments, c => hassubset(c.BlogPost.Words, ["something"])))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("BlogPostComments/any(bpc:hassubset(bpc/BlogPost/Words,['something']))");
@@ -536,7 +564,7 @@ describe("Query.Filter", function () {
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableUser>("My.Odata.Entities.User")
                 .filter(u =>
-                    F.any(u.BlogPostComments, c => F.any(c.BlogPost.Words, w => F.eq(w, "something"))))
+                    any(u.BlogPostComments, c => any(c.BlogPost.Words, w => eq(w, "something"))))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("BlogPostComments/any(bpc:bpc/BlogPost/Words/any(w:w eq 'something'))");
@@ -548,7 +576,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
-                .filter(c => F.hasSubset(c.BlogPost.Words, ["something"]))
+                .filter(c => hassubset(c.BlogPost.Words, ["something"]))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("hassubset(BlogPost/Words,['something'])");
@@ -562,7 +590,7 @@ describe("Query.Filter", function () {
 
         it("Should build filter (server can't process)", () => {
             const q = qb<My.Odata.Entities.QueryableComment>("My.Odata.Entities.Comment")
-                .filter(c1 => F.any(c1.BlogPost.Comments, c2 => F.any(c2.Words, w => F.eq(w, "something"))))
+                .filter(c1 => any(c1.BlogPost.Comments, c2 => any(c2.Words, w => eq(w, "something"))))
                 .toQueryParts(false);
 
             expect(q["$filter"]).toBe("BlogPost/Comments/any(c:c/Words/any(w:w eq 'something'))");

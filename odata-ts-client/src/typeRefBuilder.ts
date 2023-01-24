@@ -1,4 +1,4 @@
-import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef, ODataTypeName, ODataEnum } from "odata-ts-client-shared";
+import { ODataComplexType, ODataTypeRef, ODataServiceTypes, ODataSingleTypeRef, ODataTypeName, ODataEnum, ODataServiceConfig } from "odata-ts-client-shared";
 
 type Dict<T> = { [key: string]: T }
 
@@ -20,6 +20,8 @@ export interface QueryPath {
 
 export interface QueryObjectMetadata<T extends QueryObjectType> extends QueryPath {
     type: T
+    typeRef: ODataTypeRef
+    root: ODataServiceTypes
 }
 
 export interface HasQueryObjectMetadata<T extends QueryObjectType> {
@@ -99,7 +101,9 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataQueryObjectType: QueryObjectType.QueryArray,
             $$oDataQueryMetadata: {
                 type: QueryObjectType.QueryArray,
-                path: path
+                path: path,
+                root,
+                typeRef: type
             },
             childObjConfig: buildPropertyTypeRef<T>(type.collectionType, root, [newRootPath], newAliases.aliases),
             childObjAlias: newAliases.newAlias
@@ -112,7 +116,9 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
             $$oDataQueryMetadata: {
                 type: QueryObjectType.QueryPrimitive,
-                path: path
+                path: path,
+                root,
+                typeRef: type
             }
         };
     }
@@ -129,7 +135,9 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataQueryObjectType: QueryObjectType.QueryEnum,
             $$oDataQueryMetadata: {
                 type: QueryObjectType.QueryEnum,
-                path: path
+                path: path,
+                root,
+                typeRef: type
             }
         };
     }
@@ -139,7 +147,9 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         $$oDataQueryObjectType: QueryObjectType.QueryObject,
         $$oDataQueryMetadata: {
             path: path,
-            type: QueryObjectType.QueryObject
+            type: QueryObjectType.QueryObject,
+            root,
+            typeRef: type
         }
     }
 

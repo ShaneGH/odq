@@ -1,4 +1,4 @@
-import { ODataEntitySet, ODataServiceConfig } from "odata-ts-client-shared";
+import { ODataComplexType, ODataEntitySet, ODataServiceConfig } from "odata-ts-client-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { Keywords } from "./keywords.js";
 import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupComplexType, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";
@@ -23,6 +23,7 @@ export function httpClient(
     // view of an EntitySet, not an Entity(or root namespace)
     const methods = Object
         .keys(serviceConfig.entitySets)
+        .sort((x, y) => x < y ? -1 : 1)
         .map(namespace => ({
             escapedNamespaceParts: sanitizeNamespace(namespace).split("."),
             entitySets: Object
@@ -50,8 +51,9 @@ ${tab(methods)}
     }
 
     function toODataTypeRef() {
-        return `private static toODataTypeRef(namespace: string, name: string): ${keywords.ODataTypeRef} {
-${tab("return { isCollection: true, collectionType: { isCollection: false, name, namespace } }")}
+        return `private static toODataTypeRef(collection: boolean, namespace: string, name: string): ${keywords.ODataTypeRef} {
+${tab(`const collectionType: ${keywords.ODataTypeRef} = { isCollection: false, name, namespace }`)}
+${tab("return collection ? { isCollection: true, collectionType } : collectionType")}
 }`
     }
 
@@ -62,7 +64,8 @@ ${tab("return { isCollection: true, collectionType: { isCollection: false, name,
         first = true): string {
 
         if (!entitySetNamespaceParts.length) {
-            return entitySets
+            return [...entitySets]
+                .sort((x, y) => x.name < y.name ? -1 : 1)
                 .map(methodForEntitySet)
                 .filter(x => x)
                 .join(first ? "\n\n" : ",\n\n");
@@ -101,13 +104,31 @@ ${methods}
             return undefined;
         }
 
+        const generics = entitySet.isSingleton
+            ? singletonGenerics(entitySet, type)
+            : entitySetGenerics(entitySet, type);
+
+        const instanceType = httpClientType(keywords, generics, tab);
+        const constructorArgs = [
+            `${keywords._httpClientArgs}`,
+            `${className()}.toODataTypeRef(${!entitySet.isSingleton}, "${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,
+            `${keywords.rootConfig}.entitySets["${entitySet.namespace || ""}"]["${entitySet.name}"]`,
+            keywords.rootConfig
+        ]
+
+        return `get ${entitySet.name}() {
+${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
+}`
+    }
+
+    function entitySetGenerics(entitySet: ODataEntitySet, type: ODataComplexType) {
         const resultType = fullyQualifiedTsType(entitySet.forType);
         const queryableType = fullyQualifiedTsType(entitySet.forType, getQueryableName);
         const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
         const subPathType = fullyQualifiedTsType(entitySet.forType, getSubPathName)
-
         const idType = getKeyType(type, true);
-        const generics = {
+
+        return {
             tEntity: resultType,
             tKey: idType,
             tQuery: {
@@ -123,17 +144,29 @@ ${methods}
                 resultType: `${resultType}[]`
             }
         }
+    }
 
-        const instanceType = httpClientType(keywords, generics, tab);
-        const constructorArgs = [
-            `${keywords._httpClientArgs}`,
-            `${className()}.toODataTypeRef("${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,
-            `${keywords.rootConfig}.entitySets["${entitySet.namespace || ""}"]["${entitySet.name}"]`,
-            keywords.rootConfig
-        ]
+    function singletonGenerics(entitySet: ODataEntitySet, type: ODataComplexType) {
+        const resultType = fullyQualifiedTsType(entitySet.forType);
+        const queryableType = fullyQualifiedTsType(entitySet.forType, getQueryableName);
+        const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
+        const subPathType = fullyQualifiedTsType(entitySet.forType, getSubPathName)
 
-        return `get ${entitySet.name}() {
-${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
-}`
+        return {
+            tEntity: resultType,
+            tKey: keywords.SingleItemsCannotBeQueriedByKey,
+            tQuery: {
+                isComplex: true,
+                fullyQualifiedQueryableName: queryableType
+            },
+            tCaster: `${casterType}.Single`,
+            tSingleCaster: `${casterType}.Single`,
+            tSubPath: subPathType,
+            tSingleSubPath: subPathType,
+            tResult: {
+                annotated: true,
+                resultType: resultType
+            }
+        }
     }
 }

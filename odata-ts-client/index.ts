@@ -11,6 +11,14 @@ export {
     ISingletonQueryBulder
 } from "./src/queryBuilder.js"
 
+export {
+    IntegerTypes
+} from "./src/filterUtils.js"
+
+export {
+    utils as queryUtils
+} from "./src/queryUtils.js"
+
 export * as ExpandUtils from "./src/expandUtils.js"
 
 export * as FilterUtils from "./src/filterUtils.js"

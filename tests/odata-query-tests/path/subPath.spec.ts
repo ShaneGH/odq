@@ -26,7 +26,7 @@ const client = new ODataClient({
                 throw new Error(JSON.stringify(err, null, 2));
             })
     }
-});
+}).My.Odata.Container;
 
 function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
     return {
@@ -57,7 +57,7 @@ describe("SubPath", function () {
 
         it("Should retrieve primitive item in the path, 1 level", async () => {
             const user = await addFullUserChain();
-            const userName = await client.My.Odata.Container.Users
+            const userName = await client.Users
                 .withKey(user.blogUser.Id!)
                 .subPath(x => x.Name)
                 .get();
@@ -67,7 +67,7 @@ describe("SubPath", function () {
 
         it("Should retrieve primitive items in the path, 1 level", async () => {
             const user = await addFullUserChain();
-            const blogWords = await client.My.Odata.Container.BlogPosts
+            const blogWords = await client.BlogPosts
                 .withKey(user.blogPost.Id!)
                 .subPath(x => x.Words)
                 .get();
@@ -77,7 +77,7 @@ describe("SubPath", function () {
 
         it("Should retrieve items in the path, 1 level", async () => {
             const user = await addFullUserChain();
-            const blog = await client.My.Odata.Container.BlogPosts
+            const blog = await client.BlogPosts
                 .withKey(user.blogPost.Id!)
                 .subPath(x => x.Blog)
                 .get();
@@ -87,7 +87,7 @@ describe("SubPath", function () {
 
         it("Should retrieve items in the path, 2 levels", async () => {
             const context = await addFullUserChain();
-            const user = await client.My.Odata.Container.BlogPosts
+            const user = await client.BlogPosts
                 .withKey(context.blogPost.Id!)
                 .subPath(x => x.Blog)
                 .subPath(x => x.User)
@@ -103,7 +103,7 @@ describe("SubPath", function () {
             it("Should be a number", () => expect(typeof My.Odata.Entities.UserType.Admin).toBe("number")));
         it("Should retrieve number enum item in the path, 1 level", async () => {
             const user = await addFullUserChain();
-            const userType = await client.My.Odata.Container.Users
+            const userType = await client.Users
                 .withKey(user.blogUser.Id!)
                 .subPath(x => x.UserType)
                 .get();
@@ -115,7 +115,7 @@ describe("SubPath", function () {
             it("Should be a string", () => expect(typeof My.Odata.Entities.UserProfileType.Advanced).toBe("string")));
         it("Should retrieve string enum item in the path, 1 level", async () => {
             const user = await addFullUserChain();
-            const userProfileType = await client.My.Odata.Container.Users
+            const userProfileType = await client.Users
                 .withKey(user.blogUser.Id!)
                 .subPath(x => x.UserProfileType)
                 .get();
@@ -127,7 +127,7 @@ describe("SubPath", function () {
         // TODO: also need the same test with enum as string
         // it("Should retrieve item with enum as key", async () => {
         //     const user = await addFullUserChain();
-        //     const role = await client.My.Odata.Container.UserRoles
+        //     const role = await client.UserRoles
         //         .withKey(My.Odata.Entities.UserType.Admin)
         //         .get();
 
@@ -136,7 +136,7 @@ describe("SubPath", function () {
 
         // it("Should retrieve subpath of item with enum as key", async () => {
         //     const user = await addFullUserChain();
-        //     const role = await client.My.Odata.Container.UserRoles
+        //     const role = await client.UserRoles
         //         .withKey(My.Odata.Entities.UserType.User)
         //         .subPath(x => x.Description)
         //         .get();
@@ -149,7 +149,7 @@ describe("SubPath", function () {
 
         it("Should retrieve items in the path, 1 level", async () => {
             const user = await addFullUserChain();
-            const comments = await client.My.Odata.Container.BlogPosts
+            const comments = await client.BlogPosts
                 .withKey(user.blogPost.Id!)
                 .subPath(x => x.Comments)
                 .get();
@@ -160,7 +160,7 @@ describe("SubPath", function () {
 
         it("Should retrieve items in the path, 2 levels", async () => {
             const context = await addFullUserChain({ addFullChainToCommentUser: {} });
-            const comments = await client.My.Odata.Container.Blogs
+            const comments = await client.Blogs
                 .withKey(context.commentUserChain!.blog.Id!)
                 .subPath(x => x.User)
                 .subPath(x => x.BlogPostComments)
@@ -172,7 +172,7 @@ describe("SubPath", function () {
 
         it("Should retrieve items in the path, 3 levels", async () => {
             const context = await addFullUserChain({ addFullChainToCommentUser: {} });
-            const comments = await client.My.Odata.Container.BlogPosts
+            const comments = await client.BlogPosts
                 .withKey(context.commentUserChain!.blogPost.Id!)
                 .subPath(x => x.Blog)
                 .subPath(x => x.User)
@@ -200,7 +200,7 @@ describe("SubPath", function () {
 
                 const records: Recorder[] = []
                 const user = await addFullUserChain();
-                const comment = await client.My.Odata.Container.BlogPosts
+                const comment = await client.BlogPosts
                     .withKey(user.blogPost.Id!, keyType)
                     .subPath(x => x.Comments)
                     .withKey(user.comment.Id!, keyType)
@@ -221,7 +221,7 @@ describe("SubPath", function () {
             it("Should work correctly", async () => {
 
                 const user = await addFullUserChain();
-                const comment = await client.My.Odata.Container.BlogPosts
+                const comment = await client.BlogPosts
                     .withKey(user.blogPost.Id!)
                     .subPath(x => x.Comments)
                     .withKey(user.comment.Id!)
@@ -238,7 +238,7 @@ describe("SubPath", function () {
 
             const tag = { Tag: uniqueString() }
             const user = await addFullUserChain({ commentTags: [tag] });
-            const comment = await client.My.Odata.Container.Comments
+            const comment = await client.Comments
                 .withKey(user.comment.Id!)
                 .subPath(x => x.Tags)
                 .get();
@@ -254,10 +254,10 @@ describe("SubPath", function () {
 
             const tag = { Tag: uniqueString() }
             const user = await addFullUserChain({ commentTags: [tag] });
-            const comment = await client.My.Odata.Container.Comments
+            const comment = await client.Comments
                 .withKey(user.comment.Id!)
                 .subPath(x => x.Tags)
-                .withQuery(q => q.filter(t => F.eq(t.Tag, success ? tag.Tag : "invalid")))
+                .withQuery((q, { filter: { eq } }) => q.filter(t => eq(t.Tag, success ? tag.Tag : "invalid")))
                 .get();
 
             if (success) {

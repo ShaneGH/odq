@@ -17,6 +17,10 @@ export function enumMemberName(enumDef: ODataEnum, value: number): string {
 }
 
 export function serialize(value: any, type: ODataTypeRef, serviceConfig: ODataServiceTypes): string {
+    if (value == null) {
+        return "null"
+    }
+
     if (type.isCollection) {
         throw new Error("TODO: not implemented")
         // if (!Array.isArray(value)) {
@@ -47,7 +51,7 @@ export function serialize(value: any, type: ODataTypeRef, serviceConfig: ODataSe
     }
 
     if (typeof value === "string") {
-        return `${value}`
+        return `'${value}'`
     }
 
     if (typeof value !== "number") {

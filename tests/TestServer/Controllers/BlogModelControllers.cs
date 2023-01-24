@@ -9,11 +9,11 @@ using TestServer.Model;
 namespace TestServer.Controllers;
 
 [Route(Program.OdataRoot)]
-public class AppDetialsController : ODataController
+public class AppDetailsController : ODataController
 {
     private readonly EntityDbContext _inMemoryDb;
 
-    public AppDetialsController(EntityDbContext inMemoryDb)
+    public AppDetailsController(EntityDbContext inMemoryDb)
     {
         this._inMemoryDb = inMemoryDb;
     }
@@ -35,6 +35,81 @@ public class AppDetialsController : ODataController
             .AsQueryable()
             .Select(x => x.AppName)
             .AsSingleResult();
+    }
+
+    [HttpGet("AppDetails/AppNameWords")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<string> GetAppNameWords()
+    {
+        return _inMemoryDb.AppDetails
+            .AsQueryable()
+            .ToList()
+            .SelectMany(x => x.AppNameWords)
+            .AsQueryable();
+    }
+
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<UserRole> Get()
+    {
+        var es = _inMemoryDb.UserRoles.AsQueryable();
+        if (Request.Headers.ContainsKey("ToList"))
+        {
+            es = es.ToList().AsQueryable();
+        }
+
+        return es;
+    }
+}
+
+[Route(Program.OdataRoot)]
+public class AppDetailsBaseController : ODataController
+{
+    private readonly EntityDbContext _inMemoryDb;
+
+    public AppDetailsBaseController(EntityDbContext inMemoryDb)
+    {
+        this._inMemoryDb = inMemoryDb;
+    }
+
+    [HttpGet("AppDetailsBase")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<AppDetailsBase> Get([FromODataUri] UserType key)
+    {
+        return _inMemoryDb.AppDetails
+            .ToList()
+            .Cast<AppDetailsBase>()
+            .AsQueryable()
+            .AsSingleResult();
+    }
+
+    [HttpGet("AppDetailsBase/My.Odata.Entities.AppDetails")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<AppDetails> GetAppDetails()
+    {
+        return _inMemoryDb.AppDetails
+            .AsQueryable()
+            .AsSingleResult();
+    }
+
+    [HttpGet("AppDetailsBase/My.Odata.Entities.AppDetails/AppName")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<string> GetAppName()
+    {
+        return _inMemoryDb.AppDetails
+            .AsQueryable()
+            .Select(x => x.AppName)
+            .AsSingleResult();
+    }
+
+    [HttpGet("AppDetailsBase/My.Odata.Entities.AppDetails/AppNameWords")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public IQueryable<string> GetAppNameWords()
+    {
+        return _inMemoryDb.AppDetails
+            .AsQueryable()
+            .ToList()
+            .SelectMany(x => x.AppNameWords)
+            .AsQueryable();
     }
 
     [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]

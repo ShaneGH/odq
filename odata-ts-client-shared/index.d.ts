@@ -52,6 +52,7 @@ export type ODataServiceConfig = {
 }
 
 export type ODataEntitySet = {
+    isSingleton: boolean
     name: string,
     namespace: string,
     forType: ODataSingleTypeRef
