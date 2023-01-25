@@ -1,4 +1,5 @@
-import { PathSegment, QueryPath } from "./typeRefBuilder.js";
+import { Filter } from "./filterUtils.js";
+import { PathSegment, QueryObjectMetadata, QueryObjectType, QueryPath } from "./typeRefBuilder.js";
 
 
 type Dict<T> = { [key: string]: T }
@@ -9,14 +10,6 @@ export type QueryParts = {
     count?: boolean | undefined,
     skip?: number | undefined,
     top?: number | undefined
-}
-
-/**
- * A wrapper around a filter string. 
- * There is nothing special about this type. You can construct them yourself
- */
-export type Filter = {
-    $$filter: string
 }
 
 export type Expand = {

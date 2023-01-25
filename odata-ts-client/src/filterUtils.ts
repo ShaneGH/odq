@@ -1,11 +1,14 @@
-import { Filter } from "./queryBuilder.js";
 import { HasQueryObjectMetadata, QueryArray, QueryEnum, QueryObject, QueryObjectMetadata, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
-import { enumMemberName, serialize } from "./valueSerializer.js";
+import { serialize } from "./valueSerializer.js";
 
 export enum IntegerTypes {
     Int16 = "Int16",
     Int32 = "Int32",
     Int64 = "Int64"
+}
+
+export type Filter = {
+    $$filter: string
 }
 
 function lhsToFilter<T extends QueryObjectType>(item: HasQueryObjectMetadata<T> | Filter): { filter: Filter, metadata: QueryObjectMetadata<T> | null } {
@@ -113,10 +116,227 @@ function infixOp<T>(lhs: HasQueryObjectMetadata<QueryObjectType> | Filter, opera
     }
 }
 
+function op(filter: string): Filter;
+function op(obj: HasQueryObjectMetadata<QueryObjectType>, filter: (path: string) => string): Filter;
+function op(arg1: string | HasQueryObjectMetadata<QueryObjectType>, arg2?: (path: string) => string): Filter {
+
+    if (typeof arg1 === "string") {
+        if (arg2) {
+            throw new Error("Invalid overload args");
+        }
+
+        return { $$filter: arg1 }
+    }
+
+    if (!arg2) {
+        throw new Error("Invalid overload args");
+    }
+
+    const path = arg1.$$oDataQueryMetadata.path
+    return { $$filter: arg2(path.map(x => x.path).join("/") || "$it") }
+}
+
 type Concatable<T> = QueryPrimitive<string> | Filter | string | QueryArray<QueryObject<T>, T>
 type Operable<T> = HasQueryObjectMetadata<QueryObjectType> | Filter | T
 
-export const utils = {
+function eq<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
+    return infixOp(lhs, "eq", rhs, mapper);
+}
+
+function isIn<T>(lhs: QueryPrimitive<T> | QueryEnum<T>, rhs: T[], mapper?: (x: T) => string): Filter {
+
+    // TODO: rhs as Filter or Filter[]
+
+    const path = lhs.$$oDataQueryMetadata.path
+    if (!path.length) {
+        throw new Error("Primitive objects are not supported as root values");
+    }
+
+    mapper = mapper || ((x: T) => serialize(x, lhs.$$oDataQueryMetadata.typeRef, lhs.$$oDataQueryMetadata.root));
+    return {
+        $$filter: `${path.map(x => x.path).join("/")} in (${rhs.map(mapper).join(",")})`
+    }
+}
+
+function ne<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
+    return infixOp(lhs, "ne", rhs, mapper);
+}
+
+function lt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
+    return infixOp(lhs, "lt", rhs, mapper);
+}
+
+function le<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
+    return infixOp(lhs, "le", rhs, mapper);
+}
+
+function gt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
+    return infixOp(lhs, "gt", rhs, mapper);
+}
+
+function ge<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
+    return infixOp(lhs, "ge", rhs, mapper);
+}
+
+function not(condition: Filter, group = true): Filter {
+
+    // TODO: not on primitive value
+    return {
+        $$filter: `not${group ? `(${condition.$$filter})` : ` ${condition.$$filter}`}`
+    }
+}
+
+function group(condition: Filter): Filter {
+
+    // TODO: not on primitive value
+    return {
+        $$filter: `(${condition.$$filter})`
+    }
+}
+
+function and(...conditions: Filter[]): Filter {
+    if (conditions.length === 0) {
+        throw new Error("You must include at least 1 condition");
+    }
+
+    return {
+        $$filter: conditions.map(x => x.$$filter).join(" and ")
+    }
+}
+
+function or(...conditions: Filter[]): Filter {
+    if (conditions.length === 0) {
+        throw new Error("You must include at least 1 condition");
+    }
+
+    return {
+        $$filter: conditions.map(x => x.$$filter).join(" or ")
+    }
+}
+
+function collection<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collection: QueryArray<TQueryObj, TArrayType>,
+    operator: string,
+    collectionItemOperation: ((t: TQueryObj) => Filter)): Filter {
+
+    const ancestorsStr = collection.$$oDataQueryMetadata.path.map(x => x.path).join("/");
+    const filter = collectionItemOperation(collection.childObjConfig)?.$$filter;
+    if (!filter) {
+        throw new Error("Invalid prop filter for any method");
+    }
+
+    return {
+        $$filter: `${ancestorsStr}/${operator}(${collection.childObjAlias}:${filter})`
+    }
+}
+
+const collectionF = collection
+
+function collectionFunction<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    functionName: string,
+    collection: QueryArray<TQueryObj, TArrayType>,
+    values: TArrayType[],
+    mapper?: (x: TArrayType) => string): Filter {
+
+    if (!collection.$$oDataQueryMetadata.path.length) {
+        throw new Error("Collection objects are not supported as root values");
+    }
+
+    mapper =
+        mapper
+            || values.length
+            ? ((x: TArrayType) => serialize(x, collection.childObjConfig.$$oDataQueryMetadata.typeRef, collection.$$oDataQueryMetadata.root))
+            : toString;
+
+    return {
+        $$filter: `${functionName}(${collection.$$oDataQueryMetadata.path.map(x => x.path).join("/")},[${values.map(mapper).join(",")}])`
+    }
+}
+
+function any<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collection: QueryArray<TQueryObj, TArrayType>,
+    collectionItemOperation: ((t: TQueryObj) => Filter)): Filter {
+
+    return collectionF(collection, "any", collectionItemOperation);
+}
+
+function all<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collection: QueryArray<TQueryObj, TArrayType>,
+    collectionItemOperation: ((t: TQueryObj) => Filter)): Filter {
+
+    return collectionF(collection, "all", collectionItemOperation);
+}
+
+function count(collection: QueryArray<any, any>, countUnit = IntegerTypes.Int32): QueryPrimitive<Number> {
+
+    return {
+        $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
+        $$oDataQueryMetadata: {
+            type: QueryObjectType.QueryPrimitive,
+            root: collection.$$oDataQueryMetadata.root,
+            typeRef: {
+                isCollection: false,
+                namespace: "Edm",
+                name: countUnit
+            },
+            path: [
+                ...collection.$$oDataQueryMetadata.path,
+                {
+                    path: "$count",
+                    navigationProperty: false
+                }
+            ]
+        }
+    }
+}
+
+function hassubset<TArrayType>(
+    collection: QueryArray<QueryPrimitive<TArrayType>, TArrayType>,
+    values: TArrayType[],
+    mapper?: (x: TArrayType) => string): Filter {
+
+    return collectionFunction("hassubset", collection, values, mapper);
+}
+
+function add(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+    return infixOp(lhs, "add", rhs, mapper);
+}
+
+function sub(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+    return infixOp(lhs, "sub", rhs, mapper);
+}
+
+function mul(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+    return infixOp(lhs, "mul", rhs, mapper);
+}
+
+function div(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+    return infixOp(lhs, "div", rhs, mapper);
+}
+
+function divby(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+    return infixOp(lhs, "divby", rhs, mapper);
+}
+
+function mod(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+    return infixOp(lhs, "mod", rhs, mapper);
+}
+
+function concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter {
+    throw new Error("NotImplemented");
+    // return infixOp(lhs, "mod", rhs, mapper);
+}
+
+export interface IFilterUtils {
+    /**
+     * Do a custom filter operation
+     * 
+     * @param filter - A basic filter string
+     * 
+     * @example - op("property eq 'hello'")
+     */
+    op(filter: string): Filter;
+
     /**
      * Do a custom filter operation
      *
@@ -130,10 +350,7 @@ export const utils = {
      * 
      * @example - op(my.property, p => `${p} eq 'hello'`)
      */
-    op: (obj: HasQueryObjectMetadata<QueryObjectType>, filter: (path: string) => string): Filter => {
-        const path = obj.$$oDataQueryMetadata.path.map(x => x.path).join("/") || "$it"
-        return { $$filter: filter(path) }
-    },
+    op(obj: HasQueryObjectMetadata<QueryObjectType>, filter: (path: string) => string): Filter;
 
     /**
      * Do a custom filter operation with a given operator
@@ -148,9 +365,7 @@ export const utils = {
      * 
      * @example - infixOp(my.property, "eq", "hello")
      */
-    infixOp: <T>(lhs: HasQueryObjectMetadata<QueryObjectType> | Filter, operator: string, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, operator, rhs, mapper);
-    },
+    infixOp<T>(lhs: HasQueryObjectMetadata<QueryObjectType> | Filter, operator: string, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "==" operation
@@ -163,9 +378,7 @@ export const utils = {
      * 
      * @example - eq(my.property, "hello")
      */
-    eq: <T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, "eq", rhs, mapper);
-    },
+    eq<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "in" operation
@@ -178,20 +391,7 @@ export const utils = {
      * 
      * @example - in(my.property, [1, 3])
      */
-    isIn: <T>(lhs: QueryPrimitive<T> | QueryEnum<T>, rhs: T[], mapper?: (x: T) => string): Filter => {
-
-        // TODO: rhs as Filter or Filter[]
-
-        const path = lhs.$$oDataQueryMetadata.path
-        if (!path.length) {
-            throw new Error("Primitive objects are not supported as root values");
-        }
-
-        mapper = mapper || ((x: T) => serialize(x, lhs.$$oDataQueryMetadata.typeRef, lhs.$$oDataQueryMetadata.root));
-        return {
-            $$filter: `${path.map(x => x.path).join("/")} in (${rhs.map(mapper).join(",")})`
-        }
-    },
+    isIn<T>(lhs: QueryPrimitive<T> | QueryEnum<T>, rhs: T[], mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "!=" operation
@@ -204,9 +404,7 @@ export const utils = {
      * 
      * @example - ne(my.property, "hello")
      */
-    ne: <T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, "ne", rhs, mapper);
-    },
+    ne<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "<" operation
@@ -219,9 +417,7 @@ export const utils = {
      * 
      * @example - lt(my.property, 4)
      */
-    lt: <T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, "lt", rhs, mapper);
-    },
+    lt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "<=" operation
@@ -234,9 +430,7 @@ export const utils = {
      * 
      * @example - le(my.property, 4)
      */
-    le: <T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, "le", rhs, mapper);
-    },
+    le<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData ">" operation
@@ -249,9 +443,7 @@ export const utils = {
      * 
      * @example - gt(my.property, 4)
      */
-    gt: <T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, "gt", rhs, mapper);
-    },
+    gt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData ">=" operation
@@ -264,26 +456,18 @@ export const utils = {
      * 
      * @example - ge(my.property, 4)
      */
-    ge: <T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter => {
-        return infixOp(lhs, "ge", rhs, mapper);
-    },
+    ge<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "not(...)" operation
      *
      * @param condition - The value from a previous filter
      * 
-     * @param group - If true, will surround the condition in (...)
+     * @param group - If true, will surround the condition in (...). Default: true
      * 
      * @example - not(eq(my.property, 4))
      */
-    not: (condition: Filter, group = true): Filter => {
-
-        // TODO: not on primitive value
-        return {
-            $$filter: `not${group ? `(${condition.$$filter})` : ` ${condition.$$filter}`}`
-        }
-    },
+    not(condition: Filter, group?: boolean): Filter;
 
     /**
      * Surrounds a filter value in (...)
@@ -292,13 +476,7 @@ export const utils = {
      * 
      * @example - and( group(eq(my.property1, 4)), group(eq(my.property2, 4)) )
      */
-    group: (condition: Filter): Filter => {
-
-        // TODO: not on primitive value
-        return {
-            $$filter: `(${condition.$$filter})`
-        }
-    },
+    group(condition: Filter): Filter;
 
     /**
      * An OData "and" operation
@@ -307,15 +485,7 @@ export const utils = {
      * 
      * @example - and( eq(my.property1, 4), eq(my.property2, 4) )
      */
-    and: (...conditions: Filter[]): Filter => {
-        if (conditions.length === 0) {
-            throw new Error("You must include at least 1 condition");
-        }
-
-        return {
-            $$filter: conditions.map(x => x.$$filter).join(" and ")
-        }
-    },
+    and(...conditions: Filter[]): Filter;
 
     /**
      * An OData "or" operation
@@ -324,15 +494,7 @@ export const utils = {
      * 
      * @example - or( eq(my.property1, 4), eq(my.property2, 4) )
      */
-    or: (...conditions: Filter[]): Filter => {
-        if (conditions.length === 0) {
-            throw new Error("You must include at least 1 condition");
-        }
-
-        return {
-            $$filter: conditions.map(x => x.$$filter).join(" or ")
-        }
-    },
+    or(...conditions: Filter[]): Filter;
 
     /**
      * Do an operation on the elelments of a collection
@@ -345,21 +507,10 @@ export const utils = {
      * 
      * @example - collection(my.items, "any", item => eq(item, 4))
      */
-    collection: <TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collection<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         collection: QueryArray<TQueryObj, TArrayType>,
         operator: string,
-        collectionItemOperation: ((t: TQueryObj) => Filter)): Filter => {
-
-        const ancestorsStr = collection.$$oDataQueryMetadata.path.map(x => x.path).join("/");
-        const filter = collectionItemOperation(collection.childObjConfig)?.$$filter;
-        if (!filter) {
-            throw new Error("Invalid prop filter for any method");
-        }
-
-        return {
-            $$filter: `${ancestorsStr}/${operator}(${collection.childObjAlias}:${filter})`
-        }
-    },
+        collectionItemOperation: ((t: TQueryObj) => Filter)): Filter;
 
     /**
      * Call a function on a collection
@@ -374,26 +525,11 @@ export const utils = {
      * 
      * @example - collectionFunction("hassubset", my.items, [1, 2, 3])
      */
-    collectionFunction: <TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collectionFunction<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         functionName: string,
         collection: QueryArray<TQueryObj, TArrayType>,
         values: TArrayType[],
-        mapper?: (x: TArrayType) => string): Filter => {
-
-        if (!collection.$$oDataQueryMetadata.path.length) {
-            throw new Error("Collection objects are not supported as root values");
-        }
-
-        mapper =
-            mapper
-                || values.length
-                ? ((x: TArrayType) => serialize(x, collection.childObjConfig.$$oDataQueryMetadata.typeRef, collection.$$oDataQueryMetadata.root))
-                : toString;
-
-        return {
-            $$filter: `${functionName}(${collection.$$oDataQueryMetadata.path.map(x => x.path).join("/")},[${values.map(mapper).join(",")}])`
-        }
-    },
+        mapper?: (x: TArrayType) => string): Filter;
 
     /**
      * Do an OData "any" operation on a collection
@@ -404,12 +540,9 @@ export const utils = {
      * 
      * @example - any(my.items, item => eq(item, 4))
      */
-    any: <TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    any<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         collection: QueryArray<TQueryObj, TArrayType>,
-        collectionItemOperation: ((t: TQueryObj) => Filter)): Filter => {
-
-        return utils.collection(collection, "any", collectionItemOperation);
-    },
+        collectionItemOperation: ((t: TQueryObj) => Filter)): Filter;
 
     /**
      * Do an OData "all" operation on a collection
@@ -420,42 +553,20 @@ export const utils = {
      * 
      * @example - all(my.items, item => eq(item, 4))
      */
-    all: <TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    all<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         collection: QueryArray<TQueryObj, TArrayType>,
-        collectionItemOperation: ((t: TQueryObj) => Filter)): Filter => {
-
-        return utils.collection(collection, "all", collectionItemOperation);
-    },
+        collectionItemOperation: ((t: TQueryObj) => Filter)): Filter;
 
     /**
      * Do an OData "$count" operation on a collection
      *
      * @param collection - The collection
      * 
+     * @param countUnit - The expected result of the type. Default Int32
+     * 
      * @example - count(my.items)
      */
-    count: (collection: QueryArray<any, any>, countUnit = IntegerTypes.Int32): QueryPrimitive<Number> => {
-
-        return {
-            $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
-            $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryPrimitive,
-                root: collection.$$oDataQueryMetadata.root,
-                typeRef: {
-                    isCollection: false,
-                    namespace: "Edm",
-                    name: countUnit
-                },
-                path: [
-                    ...collection.$$oDataQueryMetadata.path,
-                    {
-                        path: "$count",
-                        navigationProperty: false
-                    }
-                ]
-            }
-        }
-    },
+    count(collection: QueryArray<any, any>, countUnit?: IntegerTypes): QueryPrimitive<Number>;
 
     /**
      * Call the "hassubset" function on a collection
@@ -468,13 +579,10 @@ export const utils = {
      * 
      * @example - hassubset(my.items, [1, 2, 3])
      */
-    hassubset: <TArrayType>(
+    hassubset<TArrayType>(
         collection: QueryArray<QueryPrimitive<TArrayType>, TArrayType>,
         values: TArrayType[],
-        mapper?: (x: TArrayType) => string): Filter => {
-
-        return utils.collectionFunction("hassubset", collection, values, mapper);
-    },
+        mapper?: (x: TArrayType) => string): Filter;
 
     /**
      * An OData "+" operation
@@ -487,9 +595,7 @@ export const utils = {
      * 
      * @example - add(my.property, 4)
      */
-    add: (lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter => {
-        return infixOp(lhs, "add", rhs, mapper);
-    },
+    add(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
 
     /**
      * An OData "-" operation
@@ -502,9 +608,7 @@ export const utils = {
      * 
      * @example - sub(my.property, 4)
      */
-    sub: (lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter => {
-        return infixOp(lhs, "sub", rhs, mapper);
-    },
+    sub(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
 
     /**
      * An OData "*" operation
@@ -517,9 +621,7 @@ export const utils = {
      * 
      * @example - mul(my.property, 4)
      */
-    mul: (lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter => {
-        return infixOp(lhs, "mul", rhs, mapper);
-    },
+    mul(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
 
     /**
      * An OData "/" operation on integers
@@ -532,9 +634,7 @@ export const utils = {
      * 
      * @example - div(my.property, 4)
      */
-    div: (lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter => {
-        return infixOp(lhs, "div", rhs, mapper);
-    },
+    div(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
 
     /**
      * An OData "/" operation on decimals
@@ -547,9 +647,7 @@ export const utils = {
      * 
      * @example - divby(my.property, 4)
      */
-    divby: (lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter => {
-        return infixOp(lhs, "divby", rhs, mapper);
-    },
+    divby(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
 
     /**
      * An OData "%" operation on decimals
@@ -562,9 +660,7 @@ export const utils = {
      * 
      * @example - mod(my.property, 4)
      */
-    mod: (lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter => {
-        return infixOp(lhs, "mod", rhs, mapper);
-    },
+    mod(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
 
     /**
      * An OData "concat" operation
@@ -577,8 +673,35 @@ export const utils = {
      * 
      * @example - concat(my.property, "some string"); concat(-1, 2], my.property)
      */
-    concat: <T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter => {
-        throw new Error("NotImplemented");
-        // return infixOp(lhs, "mod", rhs, mapper);
-    }
+    concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter;
+}
+
+export const utils: IFilterUtils = {
+
+    op,
+    infixOp,
+    eq,
+    isIn,
+    ne,
+    lt,
+    le,
+    gt,
+    ge,
+    not,
+    group,
+    and,
+    or,
+    collection,
+    collectionFunction,
+    any,
+    all,
+    count,
+    hassubset,
+    add,
+    sub,
+    mul,
+    div,
+    divby,
+    mod,
+    concat
 }
