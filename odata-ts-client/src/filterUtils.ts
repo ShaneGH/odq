@@ -1,3 +1,5 @@
+import { ODataServiceTypes } from "odata-ts-client-shared";
+import { ODataTypeRef } from "../index.js";
 import { HasQueryObjectMetadata, QueryArray, QueryEnum, QueryObject, QueryObjectMetadata, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -7,118 +9,115 @@ export enum IntegerTypes {
     Int64 = "Int64"
 }
 
+export enum DecimalNumberTypes {
+    Single = "Single",
+    Double = "Double",
+    Decimal = "Decimal"
+}
+
+export type RealNumberTypes = IntegerTypes | DecimalNumberTypes
+
 export type Filter = {
+    $$oDataQueryObjectType: "Filter"
     $$filter: string
+    $$output: ODataTypeRef
+    $$root: ODataServiceTypes
 }
 
-function lhsToFilter<T extends QueryObjectType>(item: HasQueryObjectMetadata<T> | Filter): { filter: Filter, metadata: QueryObjectMetadata<T> | null } {
-    if (typeof (item as any)?.$$filter === "string") {
-        return {
-            metadata: null,
-            filter: item as Filter
-        };
-    }
+// function lhsToFilter<T extends QueryObjectType>(item: HasQueryObjectMetadata<T> | Filter): { filter: Filter, metadata: QueryObjectMetadata<T> | null } {
+//     if (typeof (item as any)?.$$filter === "string") {
+//         return {
+//             metadata: null,
+//             filter: item as Filter
+//         };
+//     }
 
-    const itemMeta = item as HasQueryObjectMetadata<T>
-    const path = (item as HasQueryObjectMetadata<T>).$$oDataQueryMetadata.path
-    if (!path.length) {
-        throw new Error("Primitive objects are not supported as root values");
-    }
+//     const itemMeta = item as HasQueryObjectMetadata<T>
+//     const path = (item as HasQueryObjectMetadata<T>).$$oDataQueryMetadata.path
+//     if (!path.length) {
+//         throw new Error("Primitive objects are not supported as root values");
+//     }
 
-    return {
-        metadata: itemMeta.$$oDataQueryMetadata,
-        filter: {
-            $$filter: path.map(x => x.path).join("/")
-        }
-    };
-}
+//     return {
+//         metadata: itemMeta.$$oDataQueryMetadata,
+//         filter: {
+//             $$filter: path.map(x => x.path).join("/")
+//         }
+//     };
+// }
 
-function rhsToFilter<T, TOp extends QueryObjectType>(
-    item: T | Filter,
-    lhsMetadata: null | QueryObjectMetadata<TOp>,
-    mapper: undefined | ((x: T) => string)): Filter {
+// function rhsToFilter<T, TOp extends QueryObjectType>(
+//     item: T | Filter,
+//     lhsMetadata: null | QueryObjectMetadata<TOp>,
+//     mapper: undefined | ((x: T) => string)): Filter {
 
-    if (typeof (item as any)?.$$filter === "string") {
-        if (mapper) {
-            throw new Error(`You cannot specify a mapper if the rhs is a Filter`);
-        }
+//     if (typeof (item as any)?.$$filter === "string") {
+//         if (mapper) {
+//             throw new Error(`You cannot specify a mapper if the rhs is a Filter`);
+//         }
 
-        return item as Filter;
-    }
+//         return item as Filter;
+//     }
 
-    // TODO: is there a way to remove this constraint
-    if (!mapper) {
-        if (!lhsMetadata) {
-            throw new Error("Error processing complex filter. If the RHS of the expression is not a Filter, then the either:\n"
-                + " * The mapper arg must be specified\n"
-                + " * -OR- The LHS must not be a Filter");
-        }
+//     // TODO: is there a way to remove this constraint
+//     if (!mapper) {
+//         if (!lhsMetadata) {
+//             throw new Error("Error processing complex filter. If the RHS of the expression is not a Filter, then the either:\n"
+//                 + " * The mapper arg must be specified\n"
+//                 + " * -OR- The LHS must not be a Filter");
+//         }
 
-        mapper = (x: T) => serialize(x, lhsMetadata.typeRef, lhsMetadata.root);
-    }
+//         mapper = (x: T) => serialize(x, lhsMetadata.typeRef, lhsMetadata.root);
+//     }
 
-    return {
-        $$filter: mapper(item as T)
-    };
-}
+//     return {
+//         $$filter: mapper(item as T)
+//     };
+// }
 
-function asQueryObjectMetadata(item: Operable<any>) {
+// function asQueryObjectMetadata(item: Operable<any>) {
 
-    const itemMeta = item as HasQueryObjectMetadata<any>
-    return Array.isArray(itemMeta?.$$oDataQueryMetadata?.path)
-        ? itemMeta
-        : null;
-}
+//     const itemMeta = item as HasQueryObjectMetadata<any>
+//     return Array.isArray(itemMeta?.$$oDataQueryMetadata?.path)
+//         ? itemMeta
+//         : null;
+// }
 
-function toFilterString<T>(item: Operable<T>, mapper: (x: T) => string, otherMetadata: QueryObjectMetadata<any> | null): string {
+// function toFilterString<T>(item: Operable<T>, mapper: (x: T) => string, otherMetadata: QueryObjectMetadata<any> | null): string {
 
-    const asFilter = item as Filter
-    if (typeof asFilter?.$$filter === "string") {
-        return asFilter.$$filter;
-    }
+//     const asFilter = item as Filter
+//     if (typeof asFilter?.$$filter === "string") {
+//         return asFilter.$$filter;
+//     }
 
-    const itemMeta = item as HasQueryObjectMetadata<any>
-    if (Array.isArray(itemMeta?.$$oDataQueryMetadata?.path)) {
-        const path = itemMeta.$$oDataQueryMetadata.path
-        if (!path.length) {
-            throw new Error("Primitive objects are not supported as root values");
-        }
+//     const itemMeta = item as HasQueryObjectMetadata<any>
+//     if (Array.isArray(itemMeta?.$$oDataQueryMetadata?.path)) {
+//         const path = itemMeta.$$oDataQueryMetadata.path
+//         if (!path.length) {
+//             throw new Error("Primitive objects are not supported as root values");
+//         }
 
-        return path.map(x => x.path).join("/");
-    }
+//         return path.map(x => x.path).join("/");
+//     }
 
-    // TODO: is there a way to remove this constraint
-    if (!mapper) {
-        if (!otherMetadata) {
-            throw new Error("Error processing complex filter: unable to read type info for serialization. "
-                + "When adding a filter, one of the following must be true:\n"
-                + " * The mapper arg must be specified\n"
-                + " * -OR- At lesat one of the arguments must be a property of a query filter object");
-        }
+//     // TODO: is there a way to remove this constraint
+//     if (!mapper) {
+//         if (!otherMetadata) {
+//             throw new Error("Error processing complex filter: unable to read type info for serialization. "
+//                 + "When adding a filter, one of the following must be true:\n"
+//                 + " * The mapper arg must be specified\n"
+//                 + " * -OR- At lesat one of the arguments must be a property of a query filter object");
+//         }
 
-        mapper = (x: T) => serialize(x, otherMetadata.typeRef, otherMetadata.root);
-    }
+//         mapper = (x: T) => serialize(x, otherMetadata.typeRef, otherMetadata.root);
+//     }
 
-    return mapper(item as T);
-}
-
-function infixOp<T>(lhs: HasQueryObjectMetadata<QueryObjectType> | Filter, operator: string, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-
-    const { filter, metadata } = lhsToFilter(lhs);
-    try {
-        const rhsF = rhsToFilter(rhs, metadata, mapper);
-
-        return {
-            $$filter: `${filter.$$filter} ${operator} ${rhsF.$$filter}`
-        }
-    } catch (e) {
-        throw new Error(`Error executing infix operation:\n  lhs: ${lhs}\n  operator: ${operator}\n  rhs: ${rhs}\n  mapper: ${mapper}\n${e}`);
-    }
-}
+//     return mapper(item as T);
+// }
 
 function op(filter: string): Filter;
-function op(obj: HasQueryObjectMetadata<QueryObjectType>, filter: (path: string) => string): Filter;
-function op(arg1: string | HasQueryObjectMetadata<QueryObjectType>, arg2?: (path: string) => string): Filter {
+function op(obj: QueryObject<any>, filter: (path: string) => string): Filter;
+function op(arg1: string | QueryObject<any>, arg2?: (path: string) => string): Filter {
 
     if (typeof arg1 === "string") {
         if (arg2) {
@@ -136,52 +135,203 @@ function op(arg1: string | HasQueryObjectMetadata<QueryObjectType>, arg2?: (path
     return { $$filter: arg2(path.map(x => x.path).join("/") || "$it") }
 }
 
-type Concatable<T> = QueryPrimitive<string> | Filter | string | QueryArray<QueryObject<T>, T>
-type Operable<T> = HasQueryObjectMetadata<QueryObjectType> | Filter | T
-
-function eq<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-    return infixOp(lhs, "eq", rhs, mapper);
+const bool: ODataTypeRef = {
+    isCollection: false,
+    namespace: "Edm",
+    name: "Boolean"
 }
 
-function isIn<T>(lhs: QueryPrimitive<T> | QueryEnum<T>, rhs: T[], mapper?: (x: T) => string): Filter {
-
-    // TODO: rhs as Filter or Filter[]
-
-    const path = lhs.$$oDataQueryMetadata.path
-    if (!path.length) {
-        throw new Error("Primitive objects are not supported as root values");
+type TypeLookup = { typeRef: ODataTypeRef, root: ODataServiceTypes }
+type HasFilterMetadata = Filter
+    | {
+        $$oDataQueryObjectType: QueryObjectType.QueryArray
+        $$oDataQueryMetadata: QueryObjectMetadata<QueryObjectType.QueryArray>
+    }
+    | {
+        $$oDataQueryObjectType: QueryObjectType.QueryPrimitive
+        $$oDataQueryMetadata: QueryObjectMetadata<QueryObjectType.QueryPrimitive>
+    }
+    | {
+        $$oDataQueryObjectType: QueryObjectType.QueryEnum
+        $$oDataQueryMetadata: QueryObjectMetadata<QueryObjectType.QueryEnum>
     }
 
-    mapper = mapper || ((x: T) => serialize(x, lhs.$$oDataQueryMetadata.typeRef, lhs.$$oDataQueryMetadata.root));
+function getTypeInfoX<T>(operable: Operable<T> | T): TypeLookup | null {
+
+    const maybeOperable = operable as Operable<T>
+    return typeof (operable as Operable<T>).$$oDataQueryObjectType === "string"
+        ? getOperableTypeInfo(maybeOperable)
+        : null;
+}
+
+function getOperableTypeInfo<T>(operable: HasFilterMetadata): TypeLookup {
+    return operable.$$oDataQueryObjectType === "Filter"
+        ? {
+            typeRef: operable.$$output,
+            root: operable.$$root
+        }
+        : {
+            typeRef: operable.$$oDataQueryMetadata.typeRef,
+            root: operable.$$oDataQueryMetadata.root
+        };
+}
+
+// function asHasQueryObjectMetadata<T>(operable: Operable<T>) {
+//     const cast = operable as HasQueryObjectMetadata<QueryObjectType>
+//     return cast?.$$oDataQueryMetadata ? cast : null
+// }
+
+// function asFilter<T>(operable: Operable<T>) {
+//     const cast = operable as Filter
+//     return typeof cast?.$$filter === "string" ? cast : null
+// }
+
+function getFilterString<T>(
+    operable: HasFilterMetadata | T,
+    mapper: ((x: T) => string) | undefined,
+    otherMetadata: Partial<TypeLookup> | null) {
+
+    if (typeof (operable as any)?.$$oDataQueryObjectType === "string") {
+        return getOperableFilterString(operable as Operable<T>);
+    }
+
+    return mapper
+        ? mapper(operable as T)
+        : serialize(operable as T, otherMetadata?.typeRef, otherMetadata?.root)
+}
+
+function getOperableFilterString(operable: HasFilterMetadata) {
+
+    return operable.$$oDataQueryObjectType === "Filter"
+        ? operable.$$filter
+        : operable.$$oDataQueryMetadata.path.map(x => x.path).join("/")
+}
+
+// function _infixOp<TL, TR>(
+//     lhs: Operable<TL> | OperableCollection<TL>,
+//     operator: string,
+//     rhs: TR | Operable<TR>, //| OperableCollection<TR>,
+//     typesSerializeTheSame: boolean,
+//     mapper: ((x: TR) => string) | undefined,
+//     returnType: ODataTypeRef | undefined): Filter {
+
+//     try {
+//         const metadata = getOperableTypeInfo(lhs)
+//         const lhsF = getOperableFilterString(lhs);
+//         const rhsF = getFilterString(rhs, mapper, typesSerializeTheSame ? metadata : null);
+
+//         return {
+//             $$oDataQueryObjectType: "Filter",
+//             $$output: returnType,
+//             // the root is a global constant. Get it from anywhere we can
+//             $$root: metadata.root,
+//             $$filter: `${lhsF} ${operator} ${rhsF}`
+//         }
+//     } catch (e) {
+//         throw new Error(`Error executing infix operation:\n  lhs: ${lhs}\n  operator: ${operator}\n  rhs: ${rhs}\n  mapper: ${mapper}\n${e}`);
+//     }
+// }
+
+function queryStrings<T>(
+    firstItem: HasFilterMetadata,
+    subsequentItems: (T | HasFilterMetadata)[],
+    mapper: ((x: T) => string) | undefined) {
+
+    const metadata = getOperableTypeInfo(firstItem)
+    return [
+        getOperableFilterString(firstItem),
+        ...subsequentItems.map(x =>
+            getFilterString(x, mapper, metadata))
+    ]
+}
+
+/** 
+ * an operation with 2 inputs of the same type
+ * which return a boolean
+ */
+function logicalInfixOp<T>(
+    lhs: HasFilterMetadata,
+    operator: string,
+    rhs: T | HasFilterMetadata,
+    mapper: ((x: T) => string) | undefined): Filter {
+
+    try {
+        const operands = queryStrings<T>(lhs, [rhs], mapper)
+        const metadata = getOperableTypeInfo(lhs)
+
+        return combineFilterStrings(operator, bool, metadata.root, ...operands)
+    } catch (e) {
+        throw new Error(`Error executing logical operation:\n  lhs: ${lhs}\n  operator: ${operator}\n  rhs: ${rhs}\n  mapper: ${mapper}\n${e}`);
+    }
+}
+
+function combineFilterStrings(
+    operator: string,
+    output: ODataTypeRef,
+    root: ODataServiceTypes,
+    ...filters: string[]): Filter {
+
+    const result = filters
+        .join(operator);
+
     return {
-        $$filter: `${path.map(x => x.path).join("/")} in (${rhs.map(mapper).join(",")})`
+        $$oDataQueryObjectType: "Filter",
+        $$output: output,
+        $$root: root,
+        $$filter: result
     }
 }
 
-function ne<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-    return infixOp(lhs, "ne", rhs, mapper);
+type Concatable<T> = QueryPrimitive<string> | Filter | string | QueryArray<QueryObject<T>, T>
+type Operable<T> = QueryPrimitive<T> | QueryEnum<T> | Filter
+type OperableCollection<T> = QueryArray<QueryObject<T>, T> | Filter
+
+function eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
+    return logicalInfixOp(lhs, "eq", rhs, mapper);
 }
 
-function lt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-    return infixOp(lhs, "lt", rhs, mapper);
+function makeCollectionMapper<T>(mapper: ((x: T) => string) | undefined, metadata: TypeLookup) {
+
+    return (mapper && ((xs: T[]) => xs?.map(mapper!).join(",")))
+        || ((xs: T[]) => serialize(xs, { isCollection: true, collectionType: metadata.typeRef }, metadata.root))
 }
 
-function le<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-    return infixOp(lhs, "le", rhs, mapper);
+function isIn<T>(lhs: Operable<T>, rhs: T[] | OperableCollection<T>, mapper?: (x: T) => string): Filter {
+
+    const metadata = getOperableTypeInfo(lhs)
+    const lhsS = getOperableFilterString(lhs);
+    const rhsS = Array.isArray(rhs)
+        ? getFilterString(rhs, makeCollectionMapper(mapper, metadata), null)
+        : getOperableFilterString(rhs);
+
+    return combineFilterStrings("in", bool, metadata.root, lhsS, rhsS)
 }
 
-function gt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-    return infixOp(lhs, "gt", rhs, mapper);
+function ne<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
+    return logicalInfixOp(lhs, "ne", rhs, mapper);
 }
 
-function ge<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter {
-    return infixOp(lhs, "ge", rhs, mapper);
+function lt<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
+    return logicalInfixOp(lhs, "lt", rhs, mapper);
+}
+
+function le<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
+    return logicalInfixOp(lhs, "le", rhs, mapper);
+}
+
+function gt<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
+    return logicalInfixOp(lhs, "gt", rhs, mapper);
+}
+
+function ge<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
+    return logicalInfixOp(lhs, "ge", rhs, mapper);
 }
 
 function not(condition: Filter, group = true): Filter {
 
     // TODO: not on primitive value
     return {
+        ...condition,
         $$filter: `not${group ? `(${condition.$$filter})` : ` ${condition.$$filter}`}`
     }
 }
@@ -190,6 +340,7 @@ function group(condition: Filter): Filter {
 
     // TODO: not on primitive value
     return {
+        ...condition,
         $$filter: `(${condition.$$filter})`
     }
 }
@@ -199,9 +350,7 @@ function and(...conditions: Filter[]): Filter {
         throw new Error("You must include at least 1 condition");
     }
 
-    return {
-        $$filter: conditions.map(x => x.$$filter).join(" and ")
-    }
+    return combineFilterStrings(" and ", bool, conditions[0]?.$$root, ...conditions.map(x => x.$$filter))
 }
 
 function or(...conditions: Filter[]): Filter {
@@ -209,62 +358,58 @@ function or(...conditions: Filter[]): Filter {
         throw new Error("You must include at least 1 condition");
     }
 
-    return {
-        $$filter: conditions.map(x => x.$$filter).join(" or ")
-    }
+    return combineFilterStrings(" or ", bool, conditions[0]?.$$root, ...conditions.map(x => x.$$filter))
 }
 
-function collection<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+function collectionFilter<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
     collection: QueryArray<TQueryObj, TArrayType>,
     operator: string,
     collectionItemOperation: ((t: TQueryObj) => Filter)): Filter {
 
     const ancestorsStr = collection.$$oDataQueryMetadata.path.map(x => x.path).join("/");
-    const filter = collectionItemOperation(collection.childObjConfig)?.$$filter;
+    let filter = collectionItemOperation(collection.childObjConfig)?.$$filter;
     if (!filter) {
         throw new Error("Invalid prop filter for any method");
     }
 
-    return {
-        $$filter: `${ancestorsStr}/${operator}(${collection.childObjAlias}:${filter})`
-    }
+    filter = `(${collection.childObjAlias}:${filter})`
+    return combineFilterStrings(`/${operator}`, bool, collection.$$oDataQueryMetadata.root, ancestorsStr, filter);
 }
 
-const collectionF = collection
-
-function collectionFunction<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+function collectionFunction<TArrayType>(
     functionName: string,
-    collection: QueryArray<TQueryObj, TArrayType>,
+    collection: OperableCollection<TArrayType>,
     values: TArrayType[],
     mapper?: (x: TArrayType) => string): Filter {
 
-    if (!collection.$$oDataQueryMetadata.path.length) {
-        throw new Error("Collection objects are not supported as root values");
-    }
+    const metadata = getOperableTypeInfo(collection);
+    throw new Error("TODO: is the next line correct?")
+    // const singleTypeRef = metadata.typeRef.isCollection
+    //     ? metadata.typeRef.collectionType
+    //     : undefined;
 
-    mapper =
-        mapper
-            || values.length
-            ? ((x: TArrayType) => serialize(x, collection.childObjConfig.$$oDataQueryMetadata.typeRef, collection.$$oDataQueryMetadata.root))
-            : toString;
+    // const firstArg = getOperableFilterString(collection);
 
-    return {
-        $$filter: `${functionName}(${collection.$$oDataQueryMetadata.path.map(x => x.path).join("/")},[${values.map(mapper).join(",")}])`
-    }
+    // const secondArg = mapper
+    //     ? values.map(mapper)
+    //     : values.map(x => serialize(x, singleTypeRef, metadata.root))
+
+    // return combineFilterStrings("", bool,
+    //     metadata.root, `${functionName}(${firstArg},${secondArg.join(",")})`);
 }
 
 function any<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
     collection: QueryArray<TQueryObj, TArrayType>,
     collectionItemOperation: ((t: TQueryObj) => Filter)): Filter {
 
-    return collectionF(collection, "any", collectionItemOperation);
+    return collectionFilter(collection, "any", collectionItemOperation);
 }
 
 function all<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
     collection: QueryArray<TQueryObj, TArrayType>,
     collectionItemOperation: ((t: TQueryObj) => Filter)): Filter {
 
-    return collectionF(collection, "all", collectionItemOperation);
+    return collectionFilter(collection, "all", collectionItemOperation);
 }
 
 function count(collection: QueryArray<any, any>, countUnit = IntegerTypes.Int32): QueryPrimitive<Number> {
@@ -298,27 +443,27 @@ function hassubset<TArrayType>(
     return collectionFunction("hassubset", collection, values, mapper);
 }
 
-function add(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+function add(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return infixOp(lhs, "add", rhs, mapper);
 }
 
-function sub(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+function sub(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return infixOp(lhs, "sub", rhs, mapper);
 }
 
-function mul(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+function mul(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return infixOp(lhs, "mul", rhs, mapper);
 }
 
-function div(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+function div(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return infixOp(lhs, "div", rhs, mapper);
 }
 
-function divby(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+function divby(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return infixOp(lhs, "divby", rhs, mapper);
 }
 
-function mod(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter {
+function mod(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return infixOp(lhs, "mod", rhs, mapper);
 }
 
@@ -329,216 +474,228 @@ function concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => st
 
 export interface IFilterUtils {
     /**
-     * Do a custom filter operation
+     * Do a custom filter operation. If mixing this operation with other
+     * filtering operations, it is best to include an output type so that values
+     * can be serialized correctly
      * 
-     * @param filter - A basic filter string
+     * @param filter  A basic filter string
      * 
-     * @example - op("property eq 'hello'")
+     * @param outputType  Add this parameter if you are using 
+     * the output of this filter with some of the other built in filters:
+     * e.g. eq(my.val1, op(my.val2, p => `${p} add 1`, OutputTypes.Int32)). 
+     * This will help the filter utils to serialize data correctly.
+     * 
+     * @example op("property eq 'hello'")
      */
-    op(filter: string): Filter;
+    op(filter: string, outputType: xxx): Filter;
 
     /**
-     * Do a custom filter operation
+     * Do a custom filter operation using the path of an item.
      *
-     * @param obj - The root object of this filter operation. 
+     * @param obj  The root object of this filter operation. 
      * The root object can be any object available to the query. 
      * It does not have to be the query root object
      * 
-     * @param filter - A function to build the filter as a string. 
+     * @param filter  A function to build the filter as a string. 
      * The input is a reference to the root object param
      * The filter should return an unencoded filter string
      * 
-     * @example - op(my.property, p => `${p} eq 'hello'`)
+     * @param outputType  Add this parameter if you are using 
+     * the output of this filter with some of the other built in filters:
+     * e.g. eq(my.val1, op(my.val2, p => `${p} add 1`, OutputTypes.Int32)). 
+     * This will help the filter utils to serialize data correctly.
+     * 
+     * @example op(my.property, p => `${p} eq 'hello'`)
      */
-    op(obj: HasQueryObjectMetadata<QueryObjectType>, filter: (path: string) => string): Filter;
+    op(obj: QueryObject<any>, filter: (path: string) => string, outputType: xxx): Filter;
 
     /**
-     * Do a custom filter operation with a given operator
+     * Do a custom filter operation with a given operator. The result of the operation should be a boolean
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param operator - The operation
+     * @param operator  The operation
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - infixOp(my.property, "eq", "hello")
+     * @example logicalOp(my.property, "eq", "hello")
      */
-    infixOp<T>(lhs: HasQueryObjectMetadata<QueryObjectType> | Filter, operator: string, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    logicalOp<T>(lhs: Operable<T>, operator: string, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "==" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - eq(my.property, "hello")
+     * @example eq(my.property, "hello")
      */
-    eq<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "in" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - in(my.property, [1, 3])
+     * @example isIn(my.property, [1, 3])
      */
-    isIn<T>(lhs: QueryPrimitive<T> | QueryEnum<T>, rhs: T[], mapper?: (x: T) => string): Filter;
+    isIn<T>(lhs: Operable<T>, rhs: T[] | OperableCollection<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "!=" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - ne(my.property, "hello")
+     * @example ne(my.property, "hello")
      */
-    ne<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    ne<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "<" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - lt(my.property, 4)
+     * @example lt(my.property, 4)
      */
-    lt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    lt<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "<=" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - le(my.property, 4)
+     * @example le(my.property, 4)
      */
-    le<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    le<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData ">" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - gt(my.property, 4)
+     * @example gt(my.property, 4)
      */
-    gt<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    gt<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData ">=" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map the rhs to a string. The mapper should return values unencoded
      * 
-     * @example - ge(my.property, 4)
+     * @example ge(my.property, 4)
      */
-    ge<T>(lhs: QueryPrimitive<T> | QueryEnum<T> | Filter, rhs: T | Filter, mapper?: (x: T) => string): Filter;
+    ge<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
 
     /**
      * An OData "not(...)" operation
      *
-     * @param condition - The value from a previous filter
+     * @param condition  The value from a previous filter
      * 
-     * @param group - If true, will surround the condition in (...). Default: true
+     * @param group - true If true, will surround the condition in (...).
      * 
-     * @example - not(eq(my.property, 4))
+     * @example not(eq(my.property, 4))
      */
     not(condition: Filter, group?: boolean): Filter;
 
     /**
      * Surrounds a filter value in (...)
      *
-     * @param condition - The value from a previous filter
+     * @param condition  The value from a previous filter
      * 
-     * @example - and( group(eq(my.property1, 4)), group(eq(my.property2, 4)) )
+     * @example and( group(eq(my.property1, 4)), group(eq(my.property2, 4)) )
      */
     group(condition: Filter): Filter;
 
     /**
      * An OData "and" operation
      *
-     * @param conditions - The values from a previous filter
+     * @param conditions  The values from a previous filter
      * 
-     * @example - and( eq(my.property1, 4), eq(my.property2, 4) )
+     * @example and( eq(my.property1, 4), eq(my.property2, 4) )
      */
     and(...conditions: Filter[]): Filter;
 
     /**
      * An OData "or" operation
      *
-     * @param conditions - The values from a previous filter
+     * @param conditions  The values from a previous filter
      * 
-     * @example - or( eq(my.property1, 4), eq(my.property2, 4) )
+     * @example or( eq(my.property1, 4), eq(my.property2, 4) )
      */
     or(...conditions: Filter[]): Filter;
 
     /**
-     * Do an operation on the elelments of a collection
+     * Do a filter operation on the elelments of a collection. The filter result should be a boolean
      *
-     * @param collection - The collection
+     * @param collection  The collection
      * 
-     * @param operator - The operator used to expand the collection (e.g. any, all)
+     * @param operator  The operator used to expand the collection (e.g. any, all)
      * 
-     * @param collectionItemOperation - The operation on individual collection items
+     * @param collectionItemOperation  The operation on individual collection items
      * 
-     * @example - collection(my.items, "any", item => eq(item, 4))
+     * @example collectionFilter(my.items, "any", item => eq(item, 4))
      */
-    collection<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collectionFilter<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         collection: QueryArray<TQueryObj, TArrayType>,
         operator: string,
         collectionItemOperation: ((t: TQueryObj) => Filter)): Filter;
 
     /**
-     * Call a function on a collection
+     * Call a function on a collection. The result of this function should be a boolean
      * 
-     * @param functionName - The function to call (e.g. hassubset)
+     * @param functionName  The function to call (e.g. hassubset)
      *
-     * @param collection - The collection
+     * @param collection  The collection
      * 
-     * @param values - The second arg to pass into the function
+     * @param values  The second arg to pass into the function
      * 
-     * @param mapper - A custom mapper to seialize individual values
+     * @param mapper  A custom mapper to seialize individual values
      * 
-     * @example - collectionFunction("hassubset", my.items, [1, 2, 3])
+     * @example collectionFunction("hassubset", my.items, [1, 2, 3])
      */
-    collectionFunction<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
+    collectionFunction<TArrayType>(
         functionName: string,
-        collection: QueryArray<TQueryObj, TArrayType>,
+        collection: OperableCollection<TArrayType>,
         values: TArrayType[],
         mapper?: (x: TArrayType) => string): Filter;
 
     /**
      * Do an OData "any" operation on a collection
      *
-     * @param collection - The collection
+     * @param collection  The collection
      * 
-     * @param collectionItemOperation - The operation on individual collection items
+     * @param collectionItemOperation  The operation on individual collection items
      * 
-     * @example - any(my.items, item => eq(item, 4))
+     * @example any(my.items, item => eq(item, 4))
      */
     any<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         collection: QueryArray<TQueryObj, TArrayType>,
@@ -547,11 +704,11 @@ export interface IFilterUtils {
     /**
      * Do an OData "all" operation on a collection
      *
-     * @param collection - The collection
+     * @param collection  The collection
      * 
-     * @param collectionItemOperation - The operation on individual collection items
+     * @param collectionItemOperation  The operation on individual collection items
      * 
-     * @example - all(my.items, item => eq(item, 4))
+     * @example all(my.items, item => eq(item, 4))
      */
     all<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
         collection: QueryArray<TQueryObj, TArrayType>,
@@ -560,24 +717,24 @@ export interface IFilterUtils {
     /**
      * Do an OData "$count" operation on a collection
      *
-     * @param collection - The collection
+     * @param collection  The collection
      * 
-     * @param countUnit - The expected result of the type. Default Int32
+     * @param countUnit - IntegerTypes.Int32 The expected result of the type
      * 
-     * @example - count(my.items)
+     * @example count(my.items)
      */
     count(collection: QueryArray<any, any>, countUnit?: IntegerTypes): QueryPrimitive<Number>;
 
     /**
      * Call the "hassubset" function on a collection
      *
-     * @param collection - The collection
+     * @param collection  The collection
      * 
-     * @param values - The second arg to pass into the function
+     * @param values  The second arg to pass into the function
      * 
-     * @param mapper - A custom mapper to seialize individual values
+     * @param mapper  A custom mapper to seialize individual values
      * 
-     * @example - hassubset(my.items, [1, 2, 3])
+     * @example hassubset(my.items, [1, 2, 3])
      */
     hassubset<TArrayType>(
         collection: QueryArray<QueryPrimitive<TArrayType>, TArrayType>,
@@ -587,121 +744,122 @@ export interface IFilterUtils {
     /**
      * An OData "+" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
      * 
-     * @example - add(my.property, 4)
+     * @example add(my.property, 4)
      */
-    add(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
+    add(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "-" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
      * 
-     * @example - sub(my.property, 4)
+     * @example sub(my.property, 4)
      */
-    sub(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
+    sub(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "*" operation
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
      * 
-     * @example - mul(my.property, 4)
+     * @example mul(my.property, 4)
      */
-    mul(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
+    mul(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "/" operation on integers
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
      * 
-     * @example - div(my.property, 4)
+     * @example div(my.property, 4)
      */
-    div(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
+    div(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "/" operation on decimals
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
      * 
-     * @example - divby(my.property, 4)
+     * @example divby(my.property, 4)
      */
-    divby(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
+    divby(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "%" operation on decimals
      *
-     * @param lhs - The left operand
+     * @param lhs  The left operand
      * 
-     * @param rhs - The right operand
+     * @param rhs  The right operand
      * 
-     * @param mapper - An optional mapper to map the rhs to a string. The mapper should return values unencoded
+     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
      * 
-     * @example - mod(my.property, 4)
+     * @example mod(my.property, 4)
      */
-    mod(lhs: QueryPrimitive<number> | Filter, rhs: number | Filter, mapper?: (x: number) => string): Filter;
+    mod(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "concat" operation
      *
-     * @param lhs - The first value to concatenate
+     * @param lhs  The first value to concatenate
      * 
-     * @param rhs - The second value to concatenate
+     * @param rhs  The second value to concatenate
      * 
-     * @param mapper - An optional mapper to map any primitives to a string. The mapper should return values unencoded
+     * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
      * 
-     * @example - concat(my.property, "some string"); concat(-1, 2], my.property)
+     * @example concat(my.property, "some string"); concat(-1, 2], my.property)
      */
     concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter;
 }
 
-export const utils: IFilterUtils = {
-
-    op,
-    infixOp,
-    eq,
-    isIn,
-    ne,
-    lt,
-    le,
-    gt,
-    ge,
-    not,
-    group,
-    and,
-    or,
-    collection,
-    collectionFunction,
-    any,
-    all,
-    count,
-    hassubset,
-    add,
-    sub,
-    mul,
-    div,
-    divby,
-    mod,
-    concat
+export function newUtils(): IFilterUtils {
+    return {
+        op,
+        infixOp,
+        eq,
+        isIn,
+        ne,
+        lt,
+        le,
+        gt,
+        ge,
+        not,
+        group,
+        and,
+        or,
+        collection,
+        collectionFunction,
+        any,
+        all,
+        count,
+        hassubset,
+        add,
+        sub,
+        mul,
+        div,
+        divby,
+        mod,
+        concat
+    }
 }

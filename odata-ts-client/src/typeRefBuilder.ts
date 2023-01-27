@@ -4,9 +4,10 @@ type Dict<T> = { [key: string]: T }
 
 export enum QueryObjectType {
     QueryObject = "QueryObject",
-    QueryArray = "QueryArray",
+    QueryArray = "QueryArray",  // TODO: rename collection
     QueryPrimitive = "QueryPrimitive",
     QueryEnum = "QueryEnum"
+    // TODO: add Filter
 }
 
 export type PathSegment = {

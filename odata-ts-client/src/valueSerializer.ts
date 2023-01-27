@@ -16,19 +16,34 @@ export function enumMemberName(enumDef: ODataEnum, value: number): string {
     return name[0]
 }
 
-export function serialize(value: any, type: ODataTypeRef, serviceConfig: ODataServiceTypes): string {
+export function basicSerialize(value: any): string {
+    return typeof value === "string"
+        ? `'${value}'`
+        : value.toString();
+}
+
+export function serialize(value: any, type?: ODataTypeRef, serviceConfig?: ODataServiceTypes): string {
     if (value == null) {
         return "null"
     }
 
-    if (type.isCollection) {
-        throw new Error("TODO: not implemented")
-        // if (!Array.isArray(value)) {
-        //     throw new Error(`Cannot serialize non array value to `);
-        // }
+    if (Array.isArray(value)) {
+        type = type?.isCollection ? type.collectionType : type
+        // TODO test
+        return `[${value.map(x => serialize(x, type, serviceConfig))}]`
     }
 
-    const t = type;
+    if (type?.isCollection) {
+        // TODO: disable warnings
+        console.warn(`Collection type found when serializing non collection for filter. `
+            + `Ignoring type info. This may lead to incorrect serializaton of values in filtering`, type);
+        type = undefined;
+    }
+
+    if (!type) {
+        return basicSerialize(value);
+    }
+
     if (type.namespace === "Edm") {
         // TODO: test each
         switch (type.name) {
@@ -41,28 +56,34 @@ export function serialize(value: any, type: ODataTypeRef, serviceConfig: ODataSe
             case "Decimal":
             case "Double":
             case "Single": return value.toString()
-            default: throw err()
+            default:
+                console.warn(`Unknown type found when serializing value for filter. `
+                    + `Ignoring type info. This may lead to incorrect serializaton of values in filtering`, type);
+                return basicSerialize(value);
         }
+    }
+
+    if (!serviceConfig) {
+        return basicSerialize(value);
     }
 
     const enumType = serviceConfig[type.namespace] && serviceConfig[type.namespace][type.name]
     if (enumType.containerType !== "Enum") {
-        throw err();
+        // TODO: disable warnings
+        console.warn(`Complex type found when serializing value for filter. `
+            + `Ignoring type info. This may lead to incorrect serializaton of values in filtering`, type);
+        return basicSerialize(value);
     }
 
     if (typeof value === "string") {
         return `'${value}'`
     }
 
-    if (typeof value !== "number") {
-        throw err();
+    if (typeof value === "number") {
+        return `'${enumMemberName(enumType.type, value)}'`
     }
 
-    return `'${enumMemberName(enumType.type, value)}'`
-
-    function err() {
-        return new Error(`Property type - namespace: ${t.namespace}, name: ${t.name} cannot be used as a key lookup`);
-    }
+    return basicSerialize(value);
 
     /* TODO:
     ${tab(mapSimpleType("DateTime", "Date"))}
