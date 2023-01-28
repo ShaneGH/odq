@@ -1,4 +1,4 @@
-import { IFilterUtils, newUtils as filter } from "./filterUtils.js";
+import { IFilterUtils, newUtils as filter } from "./filters.js";
 
 export type Utils = {
     filter: IFilterUtils

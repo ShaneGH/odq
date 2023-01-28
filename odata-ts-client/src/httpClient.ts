@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
+import { utils as queryUtils, Utils } from "./query/queryUtils.js";
 import { QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
 import { ODataUriParts, RequestTools } from "./requestTools.js";
-import { utils as queryUtils, Utils } from "./queryUtils.js";
 import { buildComplexTypeRef, QueryComplexObject, QueryEnum, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 

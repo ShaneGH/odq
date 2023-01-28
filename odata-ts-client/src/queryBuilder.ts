@@ -1,5 +1,5 @@
-import { Filter } from "./filterUtils.js";
-import { PathSegment, QueryObjectMetadata, QueryObjectType, QueryPath } from "./typeRefBuilder.js";
+import { Filter } from "./query/operable.js";
+import { PathSegment, QueryPath } from "./typeRefBuilder.js";
 
 
 type Dict<T> = { [key: string]: T }

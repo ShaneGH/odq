@@ -17,7 +17,7 @@ export {
     RealNumberTypes,
     NonNumericTypes,
     OutputTypes
-} from "./src/query/filterUtils.js"
+} from "./src/query/queryPrimitiveTypes.js"
 
 export {
     utils as queryUtils
@@ -25,7 +25,7 @@ export {
 
 export * as ExpandUtils from "./src/expandUtils.js"
 
-export * as FilterUtils from "./src/query/filterUtils.js"
+export * as FilterUtils from "./src/query/filters.js"
 
 export {
     ODataAnnotatedResult,
