@@ -9,11 +9,15 @@ export enum IntegerTypes {
     Int64 = "Int64"
 }
 
+const integerTypes = Object.keys(IntegerTypes);
+
 export enum DecimalNumberTypes {
     Single = "Single",
     Double = "Double",
     Decimal = "Decimal"
 }
+
+const decimalNumberTypes = Object.keys(DecimalNumberTypes);
 
 export type RealNumberTypes = IntegerTypes | DecimalNumberTypes
 
@@ -245,24 +249,99 @@ function queryStrings<T>(
     ]
 }
 
+// using a class here because they play ywell with type deconstruction
+class MappableType<T> {
+    constructor(public val: T, public mapper: (x: T) => string) { }
+
+    resolve() {
+        return this.mapper(this.val);
+    }
+}
+
 /** 
- * an operation with 2 inputs of the same type
- * which return a boolean
+ * an operation with 2 inputs
  */
-function logicalInfixOp<T>(
+function infixOp<T>(
     lhs: HasFilterMetadata,
     operator: string,
-    rhs: T | HasFilterMetadata,
-    mapper: ((x: T) => string) | undefined): Filter {
+    rhs: MappableType<T> | HasFilterMetadata,
+    output: ODataTypeRef): Filter {
 
     try {
-        const operands = queryStrings<T>(lhs, [rhs], mapper)
-        const metadata = getOperableTypeInfo(lhs)
+        const root = getOperableTypeInfo(lhs).root;
+        const lhsS = getOperableFilterString(lhs);
+        const rhsS = rhs instanceof MappableType<T>
+            ? rhs.resolve()
+            : getOperableFilterString(rhs);
 
-        return combineFilterStrings(operator, bool, metadata.root, ...operands)
+        return combineFilterStrings(" ", output, root, lhsS, operator, rhsS)
     } catch (e) {
-        throw new Error(`Error executing logical operation:\n  lhs: ${lhs}\n  operator: ${operator}\n  rhs: ${rhs}\n  mapper: ${mapper}\n${e}`);
+        throw new Error(`Error executing operation:\n  lhs: ${lhs}\n  operator: ${operator}\n  rhs: ${rhs}\n${e}`);
     }
+}
+
+function isInteger(item: Operable<number> | number) {
+
+    if (typeof item === "number") {
+        return Number.isInteger(item);
+    }
+
+    const metadata = getOperableTypeInfo(item)
+    return !metadata.typeRef.isCollection
+        && metadata.typeRef.namespace === "Edm"
+        && integerTypes.indexOf(metadata.typeRef.name) !== -1
+}
+
+function guessAritmeticOutputType(
+    lhs: Operable<number>, operator: string, rhs: Operable<number> | number): RealNumberTypes {
+
+    return operator === "div" || operator === "divby" || !isInteger(lhs) || !isInteger(rhs)
+        ? DecimalNumberTypes.Double
+        : IntegerTypes.Int64;
+}
+
+/** 
+ * an operation with 2 nummeric inputs which return a number
+ */
+function arithmeticInfixOp(
+    lhs: Operable<number>,
+    operator: string,
+    rhs: Operable<number> | number,
+    result: RealNumberTypes | undefined): Filter {
+
+    const mappableRhs = typeof rhs === "number"
+        ? new MappableType<number>(rhs, x => x.toString())
+        : rhs;
+
+    const outputT: ODataTypeRef = {
+        isCollection: false,
+        name: result || guessAritmeticOutputType(lhs, operator, rhs),
+        namespace: "Edm"
+    }
+
+    return infixOp(lhs, operator, mappableRhs, outputT)
+}
+
+/** 
+ * an operation with 2 nummeric inputs which return a number
+ */
+function logicalInfixOp<T>(
+    lhs: Operable<T>,
+    operator: string,
+    rhs: T | Operable<T>,
+    mapper?: (x: T) => string): Filter {
+
+    const mappableRhs = typeof rhs === "number"
+        ? new MappableType<number>(rhs, x => x.toString())
+        : rhs;
+
+    const outputT: ODataTypeRef = {
+        isCollection: false,
+        name: result || guessAritmeticOutputType(lhs, operator, rhs),
+        namespace: "Edm"
+    }
+
+    return infixOp(lhs, operator, mappableRhs, outputT)
 }
 
 function combineFilterStrings(
@@ -444,27 +523,27 @@ function hassubset<TArrayType>(
 }
 
 function add(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
-    return infixOp(lhs, "add", rhs, mapper);
+    return arithmeticInfixOp(lhs, "add", rhs, result);
 }
 
 function sub(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
-    return infixOp(lhs, "sub", rhs, mapper);
+    return arithmeticInfixOp(lhs, "sub", rhs, result);
 }
 
 function mul(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
-    return infixOp(lhs, "mul", rhs, mapper);
+    return arithmeticInfixOp(lhs, "mul", rhs, result);
 }
 
 function div(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
-    return infixOp(lhs, "div", rhs, mapper);
+    return arithmeticInfixOp(lhs, "div", rhs, result);
 }
 
 function divby(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
-    return infixOp(lhs, "divby", rhs, mapper);
+    return arithmeticInfixOp(lhs, "divby", rhs, result);
 }
 
 function mod(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
-    return infixOp(lhs, "mod", rhs, mapper);
+    return arithmeticInfixOp(lhs, "mod", rhs, result);
 }
 
 function concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter {
