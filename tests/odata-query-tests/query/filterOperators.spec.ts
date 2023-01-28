@@ -4,6 +4,7 @@ import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
 import { FilterUtils as F, QueryBuilder, QueryComplexObject, queryUtils } from "odata-ts-client";
 import { uniqueString } from "../utils/utils.js";
 import { buildComplexTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
+import { NonNumericTypes } from "odata-ts-client/dist/src/filterUtils.js";
 
 const rootConfig = rootConfigExporter();
 
@@ -62,31 +63,62 @@ describe("Query.Filter Operators", function () {
 
     testCase("op", function () {
 
-        it("Should work correctly (success)", execute.bind(null, true));
-        it("Should work correctly (failure)", execute.bind(null, false))
+        describe("overload1", () => {
 
-        async function execute(success: boolean) {
+            it("Should work correctly (success)", execute.bind(null, true));
+            it("Should work correctly (failure)", execute.bind(null, false))
 
-            const ctxt = await addFullUserChain();
-            const name = success
-                ? ctxt.blogUser.Name
-                : uniqueString("FilterByWord");
+            async function execute(success: boolean) {
 
-            const result = await client.Users
-                .withQuery((q, { filter: { eq, and, op } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op(u.Name, x => `${x} eq '${name}'`))))
-                .get();
+                const ctxt = await addFullUserChain();
+                const name = success
+                    ? ctxt.blogUser.Name
+                    : uniqueString("FilterByWord");
 
-            if (success) {
-                expect(result.value.length).toBe(1);
-                expect(result.value[0].UserProfileType).toBe(ctxt.blogUser.UserProfileType);
-            } else {
-                expect(result.value.length).toBe(0);
+                const result = await client.Users
+                    .withQuery((q, { filter: { eq, and, op } }) => q
+                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op(u.Name, x => `${x} eq '${name}'`))))
+                    .get();
+
+                if (success) {
+                    expect(result.value.length).toBe(1);
+                    expect(result.value[0].UserProfileType).toBe(ctxt.blogUser.UserProfileType);
+                } else {
+                    expect(result.value.length).toBe(0);
+                }
             }
-        }
+        });
+
+        describe("overload2", () => {
+
+            it("Should work correctly (success) (addTypeInfo)", execute.bind(null, true, true));
+            it("Should work correctly (failure) (addTypeInfo)", execute.bind(null, false, true));
+            it("Should work correctly (success)", execute.bind(null, true, false));
+            it("Should work correctly (failure)", execute.bind(null, false, false));
+
+            async function execute(success: boolean, addTypeInfo: boolean) {
+
+                const ctxt = await addFullUserChain();
+                const name = success
+                    ? ctxt.blogUser.Name
+                    : uniqueString("FilterByWord");
+
+                const result = await client.Users
+                    .withQuery((q, { filter: { eq, and, op } }) => q
+                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op(`Name eq '${name}'`, addTypeInfo ? NonNumericTypes.Boolean : undefined))))
+                    .get();
+
+                if (success) {
+                    expect(result.value.length).toBe(1);
+                    expect(result.value[0].UserProfileType).toBe(ctxt.blogUser.UserProfileType);
+                } else {
+                    expect(result.value.length).toBe(0);
+                }
+            }
+        });
     });
 
-    testCase("infixOp", function () {
+    testCase("logicalOp", function () {
 
         it("Should work correctly (success)", execute.bind(null, true));
         it("Should work correctly (failure)", execute.bind(null, false))
@@ -99,8 +131,8 @@ describe("Query.Filter Operators", function () {
                 : uniqueString("FilterByWord");
 
             const result = await client.Users
-                .withQuery((q, { filter: { eq, and, infixOp } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogUser.Id), infixOp(u.Name, "eq", name))))
+                .withQuery((q, { filter: { eq, and, logicalOp } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogUser.Id), logicalOp(u.Name, "eq", name))))
                 .get();
 
             if (success) {
@@ -460,7 +492,7 @@ describe("Query.Filter Operators", function () {
         }
     });
 
-    testCase("collection", function () {
+    testCase("collectionFilter", function () {
 
         it("Should work correctly (success)", execute.bind(null, true));
         it("Should work correctly (failure)", execute.bind(null, false))
@@ -473,10 +505,10 @@ describe("Query.Filter Operators", function () {
                 : uniqueString("Invalid")
 
             const result = await client.Users
-                .withQuery((q, { filter: { eq, and, collection } }) => q
+                .withQuery((q, { filter: { eq, and, collectionFilter } }) => q
                     .filter(u => and(
                         eq(u.Id, ctxt.blogUser.Id),
-                        collection(u.Blogs, "all", b => eq(b.Name, name)))))
+                        collectionFilter(u.Blogs, "all", b => eq(b.Name, name)))))
                 .get();
 
             if (success) {
@@ -544,8 +576,8 @@ describe("Query.Filter Operators", function () {
                 : ctxt.blogPost.Likes;
 
             const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, add } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, add({ $$filter: likes.toString() }, 1, x => x.toString())))))
+                .withQuery((q, { filter: { eq, and, add, op } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, add(op(likes.toString()), 1)))))
                 .get();
 
             if (success) {
@@ -570,8 +602,8 @@ describe("Query.Filter Operators", function () {
                 : ctxt.blogPost.Likes;
 
             const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, sub } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, sub({ $$filter: likes.toString() }, 1, x => x.toString())))))
+                .withQuery((q, { filter: { eq, and, sub, op } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, sub(op(likes.toString()), 1)))))
                 .get();
 
             if (success) {
@@ -642,8 +674,8 @@ describe("Query.Filter Operators", function () {
             const likes = success ? 1 : 10000000;
 
             const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, mod } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq({ $$filter: "0" }, mod(u.Likes, likes)))))
+                .withQuery((q, { filter: { eq, and, mod, op } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(op("0"), mod(u.Likes, likes)))))
                 .get();
 
             if (success) {

@@ -12,16 +12,20 @@ export {
 } from "./src/queryBuilder.js"
 
 export {
-    IntegerTypes
-} from "./src/filterUtils.js"
+    IntegerTypes,
+    DecimalNumberTypes,
+    RealNumberTypes,
+    NonNumericTypes,
+    OutputTypes
+} from "./src/query/filterUtils.js"
 
 export {
     utils as queryUtils
-} from "./src/queryUtils.js"
+} from "./src/query/queryUtils.js"
 
 export * as ExpandUtils from "./src/expandUtils.js"
 
-export * as FilterUtils from "./src/filterUtils.js"
+export * as FilterUtils from "./src/query/filterUtils.js"
 
 export {
     ODataAnnotatedResult,

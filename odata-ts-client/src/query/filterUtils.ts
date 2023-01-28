@@ -1,7 +1,6 @@
-import { ODataServiceTypes } from "odata-ts-client-shared";
-import { ODataTypeRef } from "../index.js";
-import { HasQueryObjectMetadata, QueryArray, QueryEnum, QueryObject, QueryObjectMetadata, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
-import { serialize } from "./valueSerializer.js";
+import { ODataServiceTypes, ODataTypeRef } from "odata-ts-client-shared";
+import { PathSegment, QueryArray, QueryEnum, QueryObject, QueryObjectMetadata, QueryObjectType, QueryPrimitive } from "../typeRefBuilder.js";
+import { serialize } from "../valueSerializer.js";
 
 export enum IntegerTypes {
     Int16 = "Int16",
@@ -17,15 +16,50 @@ export enum DecimalNumberTypes {
     Decimal = "Decimal"
 }
 
-const decimalNumberTypes = Object.keys(DecimalNumberTypes);
-
 export type RealNumberTypes = IntegerTypes | DecimalNumberTypes
+
+export enum NonNumericTypes {
+    Boolean = "Boolean",
+    Guid = "Guid",
+    String = "String",
+    Date = "Date",
+    DateTimeOffset = "DateTimeOffset",
+    Duration = "Duration",
+    TimeOfDay = "TimeOfDay",
+    Binary = "Binary",
+    Byte = "Byte",
+    GeographyPoint = "GeographyPoint",
+    GeographyLineString = "GeographyLineString",
+    GeographyPolygon = "GeographyPolygon",
+    GeographyMultiPoint = "GeographyMultiPoint",
+    GeographyMultiLineString = "GeographyMultiLineString",
+    GeographyMultiPolygon = "GeographyMultiPolygon",
+    GeographyCollection = "GeographyCollection",
+    GeometryPoint = "GeometryPoint",
+    GeometryLineString = "GeometryLineString",
+    GeometryPolygon = "GeometryPolygon",
+    GeometryMultiPoint = "GeometryMultiPoint",
+    GeometryMultiLineString = "GeometryMultiLineString",
+    GeometryMultiPolygon = "GeometryMultiPolygon",
+    GeometryCollection = "GeometryCollection",
+    SByte = "SByte"
+}
+
+export type OutputTypes = IntegerTypes | DecimalNumberTypes | NonNumericTypes
+
+function resolveOutputYType(t: OutputTypes): ODataTypeRef {
+    return {
+        isCollection: false,
+        name: t,
+        namespace: "Edm"
+    }
+}
 
 export type Filter = {
     $$oDataQueryObjectType: "Filter"
     $$filter: string
-    $$output: ODataTypeRef
-    $$root: ODataServiceTypes
+    $$output?: ODataTypeRef
+    $$root?: ODataServiceTypes
 }
 
 // function lhsToFilter<T extends QueryObjectType>(item: HasQueryObjectMetadata<T> | Filter): { filter: Filter, metadata: QueryObjectMetadata<T> | null } {
@@ -119,33 +153,42 @@ export type Filter = {
 //     return mapper(item as T);
 // }
 
-function op(filter: string): Filter;
-function op(obj: QueryObject<any>, filter: (path: string) => string): Filter;
-function op(arg1: string | QueryObject<any>, arg2?: (path: string) => string): Filter {
+function op(filter: string, outputType?: OutputTypes | undefined): Filter;
+function op(obj: QueryObject<any>, filter: (path: string) => string, outputType?: OutputTypes | undefined): Filter;
+function op(arg1: string | QueryObject<any>, arg2?: ((path: string) => string) | OutputTypes, arg3?: OutputTypes | undefined): Filter {
+
+    // WARNING: ts is having a hard time resolving types here
+    // take care modifying this method
 
     if (typeof arg1 === "string") {
-        if (arg2) {
+        if (typeof arg2 === "function" || arg3) {
             throw new Error("Invalid overload args");
         }
 
-        return { $$filter: arg1 }
+        return {
+            $$oDataQueryObjectType: "Filter",
+            $$output: arg2 && resolveOutputYType(arg2),
+            $$root: undefined,
+            $$filter: arg1
+        }
     }
 
-    if (!arg2) {
+    if (typeof arg2 !== "function") {
         throw new Error("Invalid overload args");
     }
 
-    const path = arg1.$$oDataQueryMetadata.path
-    return { $$filter: arg2(path.map(x => x.path).join("/") || "$it") }
+    const path: PathSegment[] = arg1.$$oDataQueryMetadata.path
+    return {
+        $$oDataQueryObjectType: "Filter",
+        $$output: arg3 && resolveOutputYType(arg3),
+        $$root: undefined,
+        $$filter: arg2(path.map(x => x.path).join("/") || "$it")
+    }
 }
 
-const bool: ODataTypeRef = {
-    isCollection: false,
-    namespace: "Edm",
-    name: "Boolean"
-}
+const bool = resolveOutputYType(NonNumericTypes.Boolean)
 
-type TypeLookup = { typeRef: ODataTypeRef, root: ODataServiceTypes }
+type TypeLookup = { typeRef?: ODataTypeRef, root?: ODataServiceTypes }
 type HasFilterMetadata = Filter
     | {
         $$oDataQueryObjectType: QueryObjectType.QueryArray
@@ -287,7 +330,8 @@ function isInteger(item: Operable<number> | number) {
     }
 
     const metadata = getOperableTypeInfo(item)
-    return !metadata.typeRef.isCollection
+    return metadata.typeRef
+        && !metadata.typeRef.isCollection
         && metadata.typeRef.namespace === "Edm"
         && integerTypes.indexOf(metadata.typeRef.name) !== -1
 }
@@ -313,41 +357,34 @@ function arithmeticInfixOp(
         ? new MappableType<number>(rhs, x => x.toString())
         : rhs;
 
-    const outputT: ODataTypeRef = {
-        isCollection: false,
-        name: result || guessAritmeticOutputType(lhs, operator, rhs),
-        namespace: "Edm"
-    }
-
+    const outputT = resolveOutputYType(result || guessAritmeticOutputType(lhs, operator, rhs))
     return infixOp(lhs, operator, mappableRhs, outputT)
 }
 
 /** 
- * an operation with 2 nummeric inputs which return a number
+ * an operation with 2 inputs of the same type
+ * which return a boolean
  */
 function logicalInfixOp<T>(
-    lhs: Operable<T>,
+    lhs: HasFilterMetadata,
     operator: string,
-    rhs: T | Operable<T>,
-    mapper?: (x: T) => string): Filter {
+    rhs: T | HasFilterMetadata,
+    mapper: ((x: T) => string) | undefined): Filter {
 
-    const mappableRhs = typeof rhs === "number"
-        ? new MappableType<number>(rhs, x => x.toString())
-        : rhs;
+    const metadata = getOperableTypeInfo(lhs);
+    const mappableRhs = typeof (rhs as any)?.$$oDataQueryObjectType === "string"
+        ? rhs as HasFilterMetadata
+        : new MappableType<T>(
+            rhs as T,
+            mapper || ((x: T) => serialize(x, metadata.typeRef, metadata.root)));
 
-    const outputT: ODataTypeRef = {
-        isCollection: false,
-        name: result || guessAritmeticOutputType(lhs, operator, rhs),
-        namespace: "Edm"
-    }
-
-    return infixOp(lhs, operator, mappableRhs, outputT)
+    return infixOp(lhs, operator, mappableRhs, bool)
 }
 
 function combineFilterStrings(
     operator: string,
     output: ODataTypeRef,
-    root: ODataServiceTypes,
+    root: ODataServiceTypes | undefined,
     ...filters: string[]): Filter {
 
     const result = filters
@@ -372,7 +409,7 @@ function eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string
 function makeCollectionMapper<T>(mapper: ((x: T) => string) | undefined, metadata: TypeLookup) {
 
     return (mapper && ((xs: T[]) => xs?.map(mapper!).join(",")))
-        || ((xs: T[]) => serialize(xs, { isCollection: true, collectionType: metadata.typeRef }, metadata.root))
+        || ((xs: T[]) => serialize(xs, metadata.typeRef && { isCollection: true, collectionType: metadata.typeRef }, metadata.root))
 }
 
 function isIn<T>(lhs: Operable<T>, rhs: T[] | OperableCollection<T>, mapper?: (x: T) => string): Filter {
@@ -383,7 +420,7 @@ function isIn<T>(lhs: Operable<T>, rhs: T[] | OperableCollection<T>, mapper?: (x
         ? getFilterString(rhs, makeCollectionMapper(mapper, metadata), null)
         : getOperableFilterString(rhs);
 
-    return combineFilterStrings("in", bool, metadata.root, lhsS, rhsS)
+    return combineFilterStrings(" in ", bool, metadata.root, lhsS, rhsS)
 }
 
 function ne<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter {
@@ -462,19 +499,18 @@ function collectionFunction<TArrayType>(
     mapper?: (x: TArrayType) => string): Filter {
 
     const metadata = getOperableTypeInfo(collection);
-    throw new Error("TODO: is the next line correct?")
-    // const singleTypeRef = metadata.typeRef.isCollection
-    //     ? metadata.typeRef.collectionType
-    //     : undefined;
+    const singleTypeRef = metadata.typeRef && metadata.typeRef.isCollection
+        ? metadata.typeRef.collectionType
+        : undefined;
 
-    // const firstArg = getOperableFilterString(collection);
+    const firstArg = getOperableFilterString(collection);
 
-    // const secondArg = mapper
-    //     ? values.map(mapper)
-    //     : values.map(x => serialize(x, singleTypeRef, metadata.root))
+    const secondArg = mapper
+        ? values.map(mapper)
+        : values.map(x => serialize(x, singleTypeRef, metadata.root))
 
-    // return combineFilterStrings("", bool,
-    //     metadata.root, `${functionName}(${firstArg},${secondArg.join(",")})`);
+    return combineFilterStrings("", bool,
+        metadata.root, `${functionName}(${firstArg},[${secondArg.join(",")}])`);
 }
 
 function any<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
@@ -498,11 +534,7 @@ function count(collection: QueryArray<any, any>, countUnit = IntegerTypes.Int32)
         $$oDataQueryMetadata: {
             type: QueryObjectType.QueryPrimitive,
             root: collection.$$oDataQueryMetadata.root,
-            typeRef: {
-                isCollection: false,
-                namespace: "Edm",
-                name: countUnit
-            },
+            typeRef: resolveOutputYType(countUnit),
             path: [
                 ...collection.$$oDataQueryMetadata.path,
                 {
@@ -551,7 +583,7 @@ function concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => st
     // return infixOp(lhs, "mod", rhs, mapper);
 }
 
-export interface IFilterUtils {
+export type IFilterUtils = {
     /**
      * Do a custom filter operation. If mixing this operation with other
      * filtering operations, it is best to include an output type so that values
@@ -566,7 +598,7 @@ export interface IFilterUtils {
      * 
      * @example op("property eq 'hello'")
      */
-    op(filter: string, outputType: xxx): Filter;
+    op(filter: string, outputType?: OutputTypes | undefined): Filter;
 
     /**
      * Do a custom filter operation using the path of an item.
@@ -586,7 +618,7 @@ export interface IFilterUtils {
      * 
      * @example op(my.property, p => `${p} eq 'hello'`)
      */
-    op(obj: QueryObject<any>, filter: (path: string) => string, outputType: xxx): Filter;
+    op(obj: QueryObject<any>, filter: (path: string) => string, outputType?: OutputTypes | undefined): Filter;
 
     /**
      * Do a custom filter operation with a given operator. The result of the operation should be a boolean
@@ -827,11 +859,11 @@ export interface IFilterUtils {
      * 
      * @param rhs  The right operand
      * 
-     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
+     * @param resultType  The expected type of the result. Default: choose the most appropriate type based on the input types.
      * 
      * @example add(my.property, 4)
      */
-    add(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
+    add(lhs: Operable<number>, rhs: Operable<number> | number, resultType?: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "-" operation
@@ -840,11 +872,11 @@ export interface IFilterUtils {
      * 
      * @param rhs  The right operand
      * 
-     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
+     * @param resultType  The expected type of the result. Default: choose the most appropriate type based on the input types.
      * 
      * @example sub(my.property, 4)
      */
-    sub(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
+    sub(lhs: Operable<number>, rhs: Operable<number> | number, resultType?: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "*" operation
@@ -853,11 +885,11 @@ export interface IFilterUtils {
      * 
      * @param rhs  The right operand
      * 
-     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
+     * @param resultType  The expected type of the result. Default: choose the most appropriate type based on the input types.
      * 
      * @example mul(my.property, 4)
      */
-    mul(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
+    mul(lhs: Operable<number>, rhs: Operable<number> | number, resultType?: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "/" operation on integers
@@ -866,11 +898,11 @@ export interface IFilterUtils {
      * 
      * @param rhs  The right operand
      * 
-     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
+     * @param resultType  The expected type of the result. Default: choose the most appropriate type based on the input types.
      * 
      * @example div(my.property, 4)
      */
-    div(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
+    div(lhs: Operable<number>, rhs: Operable<number> | number, resultType?: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "/" operation on decimals
@@ -879,11 +911,11 @@ export interface IFilterUtils {
      * 
      * @param rhs  The right operand
      * 
-     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
+     * @param resultType  The expected type of the result. Default: choose the most appropriate type based on the input types.
      * 
      * @example divby(my.property, 4)
      */
-    divby(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
+    divby(lhs: Operable<number>, rhs: Operable<number> | number, resultType?: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "%" operation on decimals
@@ -892,11 +924,11 @@ export interface IFilterUtils {
      * 
      * @param rhs  The right operand
      * 
-     * @param rhs  The expected type of the result. Default: choose the most appropriate type based on the input types
+     * @param resultType  The expected type of the result. Default: choose the most appropriate type based on the input types.
      * 
      * @example mod(my.property, 4)
      */
-    mod(lhs: Operable<number>, rhs: Operable<number> | number, resultType: RealNumberTypes | undefined): Filter;
+    mod(lhs: Operable<number>, rhs: Operable<number> | number, resultType?: RealNumberTypes | undefined): Filter;
 
     /**
      * An OData "concat" operation
@@ -915,7 +947,7 @@ export interface IFilterUtils {
 export function newUtils(): IFilterUtils {
     return {
         op,
-        infixOp,
+        logicalOp: logicalInfixOp,
         eq,
         isIn,
         ne,
@@ -927,7 +959,7 @@ export function newUtils(): IFilterUtils {
         group,
         and,
         or,
-        collection,
+        collectionFilter,
         collectionFunction,
         any,
         all,
