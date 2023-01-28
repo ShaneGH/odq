@@ -11,6 +11,7 @@ export type Filter = {
 
 export type Operable<T> = QueryPrimitive<T> | QueryEnum<T> | Filter
 
+// TODO: this type is a bit of a hack. Make a more cohesive type system
 export type HasFilterMetadata = Filter
     | {
         $$oDataQueryObjectType: QueryObjectType.QueryArray
@@ -62,7 +63,7 @@ export function getOperableFilterString(operable: HasFilterMetadata) {
 
 export function combineFilterStrings(
     operator: string,
-    output: ODataTypeRef,
+    output: ODataTypeRef | undefined,
     root: ODataServiceTypes | undefined,
     ...filters: string[]): Filter {
 

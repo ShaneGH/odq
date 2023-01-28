@@ -687,11 +687,53 @@ describe("Query.Filter Operators", function () {
         }
     });
 
-    const { filter: { hassubset, collectionFunction, divby, eq, group } } = queryUtils();
+    testCase("concat", function () {
+
+        describe("string", () => {
+            it("Should work correctly (success)", execute.bind(null, true));
+            it("Should work correctly (failure)", execute.bind(null, false))
+
+            async function execute(success: boolean) {
+
+                const ctxt = await addFullUserChain();
+                const title = success ? ctxt.blogPost.Name : "invalid"
+                const searchString = title + "s"
+
+                const result = await client.BlogPosts
+                    .withQuery((q, { filter: { eq, and, concat } }) => q
+                        .filter(bp => and(
+                            eq(bp.Id, ctxt.blogPost.Id),
+                            eq(concat(bp.Name, "s"), searchString))))
+                    .get();
+
+                if (success) {
+                    expect(result.value.length).toBe(1);
+                    expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+                } else {
+                    expect(result.value.length).toBe(0);
+                }
+            }
+        });
+
+
+        describe("collection (TODO: make work with server)", () => {
+            it("Should work correctly (success)", () => {
+
+                const { filter: { eq, concat } } = queryUtils();
+                const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
+                    .filter(bp =>
+                        eq(concat(bp.Words, ["s"]), ["w1", "s"]))
+                    .toQueryParts(false);
+
+                expect(q["$filter"]).toBe("concat(Words,['s']) eq ['w1','s']");
+            });
+        });
+    });
 
     testCase("hassubset", function () {
 
         it("Should build filter (server can't process)", () => {
+            const { filter: { hassubset } } = queryUtils();
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(bp => hassubset(bp.Words, ["something"]))
                 .toQueryParts(false);
@@ -703,6 +745,7 @@ describe("Query.Filter Operators", function () {
     testCase("collectionFunction", function () {
 
         it("Should build filter (server can't process)", () => {
+            const { filter: { collectionFunction } } = queryUtils();
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(bp => collectionFunction("hassubset", bp.Words, ["something"]))
                 .toQueryParts(false);
@@ -714,6 +757,7 @@ describe("Query.Filter Operators", function () {
     testCase("divby", function () {
 
         it("Should build filter (server can't process)", () => {
+            const { filter: { divby, eq, group } } = queryUtils();
             const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                 .filter(u => eq(u.Likes, group(divby(u.Likes, 2.1))))
                 .toQueryParts(false);
@@ -721,23 +765,23 @@ describe("Query.Filter Operators", function () {
             expect(q["$filter"]).toBe("Likes eq (Likes divby 2.1)");
         });
 
-        async function execute(success: boolean) {
+        // async function execute(success: boolean) {
 
-            const ctxt = await addFullUserChain();
-            const likes = success ? 1 : 2.1;
+        //     const ctxt = await addFullUserChain();
+        //     const likes = success ? 1 : 2.1;
 
-            const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, divby, group } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, divby(u.Likes, likes)))))
-                .get();
+        //     const result = await client.BlogPosts
+        //         .withQuery((q, { filter: { eq, and, divby, group } }) => q
+        //             .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, divby(u.Likes, likes)))))
+        //         .get();
 
-            if (success) {
-                expect(result.value.length).toBe(1);
-                expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
-            } else {
-                expect(result.value.length).toBe(0);
-            }
-        }
+        //     if (success) {
+        //         expect(result.value.length).toBe(1);
+        //         expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+        //     } else {
+        //         expect(result.value.length).toBe(0);
+        //     }
+        // }
     });
 });
 

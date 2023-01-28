@@ -1,6 +1,6 @@
-import { infixOp, MappableType } from "./op.js";
-import { Filter, getOperableTypeInfo, Operable } from "./operable.js";
-import { DecimalNumberTypes, IntegerTypes, RealNumberTypes, resolveOutputType } from "./queryPrimitiveTypes.js";
+import { infixOp, MappableType } from "./op1.js";
+import { Filter, getOperableTypeInfo, Operable } from "./operable0.js";
+import { DecimalNumberTypes, IntegerTypes, RealNumberTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 const integerTypes = Object.keys(IntegerTypes);
 function isInteger(item: Operable<number> | number) {

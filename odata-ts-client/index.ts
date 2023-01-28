@@ -17,7 +17,7 @@ export {
     RealNumberTypes,
     NonNumericTypes,
     OutputTypes
-} from "./src/query/queryPrimitiveTypes.js"
+} from "./src/query/queryPrimitiveTypes0.js"
 
 export {
     utils as queryUtils

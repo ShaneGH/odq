@@ -1,4 +1,4 @@
-import { Filter } from "./query/operable.js";
+import { Filter } from "./query/operable0.js";
 import { PathSegment, QueryPath } from "./typeRefBuilder.js";
 
 

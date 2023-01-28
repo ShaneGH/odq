@@ -544,7 +544,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             headers: {
                 "Content-Type": "application/json; charset=utf-8",
                 "Accept": "application/json",
-                "OData-Version": "46"
+                "OData-Version": "4"
             }
         });
 

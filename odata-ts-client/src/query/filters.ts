@@ -1,18 +1,11 @@
 import { QueryArray, QueryObject, QueryPrimitive } from "../typeRefBuilder.js";
-import { add, div, divby, mod, mul, sub } from "./arithmetic.js";
-import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection.js";
-import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical.js";
-import { op } from "./op.js";
-import { Filter, Operable } from "./operable.js";
-import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveTypes.js";
-
-
-type Concatable<T> = QueryPrimitive<string> | Filter | string | QueryArray<QueryObject<T>, T>
-
-function concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter {
-    throw new Error("NotImplemented");
-    // return infixOp(lhs, "mod", rhs, mapper);
-}
+import { add, div, divby, mod, mul, sub } from "./arithmetic2.js";
+import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection1.js";
+import { concat } from "./stringOrCollection.js";
+import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
+import { op } from "./op1.js";
+import { Filter, Operable } from "./operable0.js";
+import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveTypes0.js";
 
 export type IFilterUtils = {
     /**
@@ -368,11 +361,46 @@ export type IFilterUtils = {
      * 
      * @param rhs  The second value to concatenate
      * 
+     * @example concat(my.property, "hello")
+     */
+    concat(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+
+    /**
+     * An OData "concat" operation
+     *
+     * @param lhs  The first value to concatenate
+     * 
+     * @param rhs  The second value to concatenate
+     * 
+     * @example concat("hello", my.property)
+     */
+    concat(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+
+    /**
+     * An OData "concat" operation
+     *
+     * @param lhs  The first value to concatenate
+     * 
+     * @param rhs  The second value to concatenate
+     * 
      * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
      * 
-     * @example concat(my.property, "some string"); concat(-1, 2], my.property)
+     * @example concat(my.property, [1, 2, 3])
      */
-    concat<T>(lhs: Concatable<T>, rhs: Concatable<T>, mapper?: (x: T) => string): Filter;
+    concat<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter;
+
+    /**
+     * An OData "concat" operation
+     *
+     * @param lhs  The first value to concatenate
+     * 
+     * @param rhs  The second value to concatenate
+     * 
+     * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
+     * 
+     * @example concat([1, 2, 3], my.property)
+     */
+    concat<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
 }
 
 export function newUtils(): IFilterUtils {

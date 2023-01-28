@@ -1,7 +1,7 @@
 import { ODataTypeRef } from "odata-ts-client-shared";
 import { PathSegment, QueryObject } from "../typeRefBuilder.js";
-import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable.js";
-import { OutputTypes, resolveOutputType } from "./queryPrimitiveTypes.js";
+import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
+import { OutputTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 // using a class here because they play ywell with type deconstruction
 export class MappableType<T> {
