@@ -15,37 +15,44 @@ export type PathSegment = {
     navigationProperty: boolean
 }
 
-export interface QueryPath {
+export type QueryObjectMetadata = {
+    typeRef: ODataTypeRef
+    root: ODataServiceTypes
     path: PathSegment[]
 }
 
-export interface QueryObjectMetadata<T extends QueryObjectType> extends QueryPath {
-    type: T
-    typeRef: ODataTypeRef
-    root: ODataServiceTypes
-}
-
-export interface HasQueryObjectMetadata<T extends QueryObjectType> {
-    $$oDataQueryObjectType: T
-    $$oDataQueryMetadata: QueryObjectMetadata<T>
+// T is not used, but adds strong typing to FilterUtils
+export type QueryPrimitive<T> = {
+    $$oDataQueryObjectType: QueryObjectType.QueryPrimitive
+    $$oDataQueryMetadata: QueryObjectMetadata
 }
 
 // T is not used, but adds strong typing to FilterUtils
-export interface QueryPrimitive<T> extends HasQueryObjectMetadata<QueryObjectType.QueryPrimitive> { }
-
-// T is not used, but adds strong typing to FilterUtils
-export interface QueryEnum<T> extends HasQueryObjectMetadata<QueryObjectType.QueryEnum> {
+export type QueryEnum<T> = {
+    $$oDataQueryObjectType: QueryObjectType.QueryEnum
+    $$oDataQueryMetadata: QueryObjectMetadata
     $$oDataEnumType: ODataEnum
 }
 
 // TODO: rename to Collection
 // type def is recursive for this type: "TQueryObj extends QueryObject<...". Cannot be a "type"
-export interface QueryArray<TQueryObj extends QueryObject<TArrayType>, TArrayType> extends HasQueryObjectMetadata<QueryObjectType.QueryArray> {
+export interface QueryArray<TQueryObj extends QueryObject<TArrayType>, TArrayType> {
+    $$oDataQueryObjectType: QueryObjectType.QueryArray
+    $$oDataQueryMetadata: QueryObjectMetadata
     childObjConfig: TQueryObj
     childObjAlias: string
 }
 
-export type QueryComplexObject<T> = HasQueryObjectMetadata<QueryObjectType.QueryObject> & T
+export type QueryComplexObjectBase = {
+    $$oDataQueryObjectType: QueryObjectType.QueryObject
+    $$oDataQueryMetadata: QueryObjectMetadata
+}
+
+export type HasODataQueryMetadata = {
+    $$oDataQueryMetadata: QueryObjectMetadata
+}
+
+export type QueryComplexObject<T> = T & QueryComplexObjectBase
 
 export type QueryObject<T> = QueryPrimitive<T> | QueryArray<QueryObject<T>, T> | QueryComplexObject<T> | QueryEnum<T>
 
@@ -53,16 +60,16 @@ function buildAlias(forName: string) {
 
     const parts = [];
 
-    // create anronym from camelCase, PascalCase and 
+    // create acronym from camelCase, PascalCase and 
     // snake_case or a combination of all 3
     const rx = /(^[a-zA-Z])|([A-Z])|((?<=_)[a-z])/g;    // TODO: test
     let result: RegExpExecArray | null;
-    while (result = rx.exec(forName || "")) {
+    while (parts.length < 5 && (result = rx.exec(forName || ""))) {
         parts.push(result[0]);
     }
 
     return parts.length
-        ? parts.slice(0, 5).join("").toLowerCase()
+        ? parts.join("").toLowerCase()
         : "x";
 }
 
@@ -101,7 +108,6 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         return {
             $$oDataQueryObjectType: QueryObjectType.QueryArray,
             $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryArray,
                 path: path,
                 root,
                 typeRef: type
@@ -116,7 +122,6 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         return {
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
             $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryPrimitive,
                 path: path,
                 root,
                 typeRef: type
@@ -135,7 +140,6 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataEnumType: tLookup.type,
             $$oDataQueryObjectType: QueryObjectType.QueryEnum,
             $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryEnum,
                 path: path,
                 root,
                 typeRef: type
@@ -144,11 +148,10 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
     }
 
     const complexType = tLookup.type
-    const base: HasQueryObjectMetadata<QueryObjectType.QueryObject> = {
+    const base: QueryComplexObjectBase = {
         $$oDataQueryObjectType: QueryObjectType.QueryObject,
         $$oDataQueryMetadata: {
             path: path,
-            type: QueryObjectType.QueryObject,
             root,
             typeRef: type
         }

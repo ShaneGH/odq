@@ -687,7 +687,7 @@ describe("Query.Filter Operators", function () {
         }
     });
 
-    testCase("concat", function () {
+    testCase("concatString", function () {
 
         describe("string", () => {
             it("Should work correctly (success)", execute.bind(null, true));
@@ -700,10 +700,10 @@ describe("Query.Filter Operators", function () {
                 const searchString = title + "s"
 
                 const result = await client.BlogPosts
-                    .withQuery((q, { filter: { eq, and, concat } }) => q
+                    .withQuery((q, { filter: { eq, and, concatString } }) => q
                         .filter(bp => and(
                             eq(bp.Id, ctxt.blogPost.Id),
-                            eq(concat(bp.Name, "s"), searchString))))
+                            eq(concatString(bp.Name, "s"), searchString))))
                     .get();
 
                 if (success) {
@@ -713,22 +713,123 @@ describe("Query.Filter Operators", function () {
                     expect(result.value.length).toBe(0);
                 }
             }
-        });
 
+            describe("reversed args", () => {
+                it("Should work correctly (success)", execute.bind(null, true));
+                it("Should work correctly (failure)", execute.bind(null, false))
 
-        describe("collection (TODO: make work with server)", () => {
-            it("Should work correctly (success)", () => {
+                async function execute(success: boolean) {
 
-                const { filter: { eq, concat } } = queryUtils();
-                const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
-                    .filter(bp =>
-                        eq(concat(bp.Words as any, ["s"] as any), ["w1", "s"]))
-                    .toQueryParts(false);
+                    const ctxt = await addFullUserChain();
+                    const title = success ? ctxt.blogPost.Name : "invalid"
+                    const searchString = "s" + title
 
-                expect(q["$filter"]).toBe("concat(Words,['s']) eq ['w1','s']");
+                    const result = await client.BlogPosts
+                        .withQuery((q, { filter: { eq, and, concatString } }) => q
+                            .filter(bp => and(
+                                eq(bp.Id, ctxt.blogPost.Id),
+                                eq(concatString("s", bp.Name), searchString))))
+                        .get();
+
+                    if (success) {
+                        expect(result.value.length).toBe(1);
+                        expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+                    } else {
+                        expect(result.value.length).toBe(0);
+                    }
+                }
             });
         });
     });
+
+    testCase("containsString", function () {
+
+        describe("string", () => {
+            it("Should work correctly (success)", execute.bind(null, true));
+            it("Should work correctly (failure)", execute.bind(null, false))
+
+            async function execute(success: boolean) {
+
+                const ctxt = await addFullUserChain();
+                const searchString = success ? ctxt.blogPost.Name.substring(5) : "invalid"
+
+                const result = await client.BlogPosts
+                    .withQuery((q, { filter: { eq, and, containsString } }) => q
+                        .filter(bp => and(
+                            eq(bp.Id, ctxt.blogPost.Id),
+                            containsString(bp.Name, searchString))))
+                    .get();
+
+                if (success) {
+                    expect(result.value.length).toBe(1);
+                    expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+                } else {
+                    expect(result.value.length).toBe(0);
+                }
+            }
+
+            describe("reversed args", () => {
+                it("Should work correctly (success)", execute.bind(null, true));
+                it("Should work correctly (failure)", execute.bind(null, false))
+
+                async function execute(success: boolean) {
+
+                    const ctxt = await addFullUserChain();
+                    const searchString = success
+                        ? ctxt.blogPost.Name + "aa"
+                        : "invalid"
+
+                    const result = await client.BlogPosts
+                        .withQuery((q, { filter: { eq, and, containsString } }) => q
+                            .filter(bp => and(
+                                eq(bp.Id, ctxt.blogPost.Id),
+                                containsString(searchString, bp.Name))))
+                        .get();
+
+                    if (success) {
+                        expect(result.value.length).toBe(1);
+                        expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+                    } else {
+                        expect(result.value.length).toBe(0);
+                    }
+                }
+            });
+        });
+    });
+
+
+    // testCase("concatCollection (TODO: make work with server)", function () {
+    //     // + add caes for all overloads
+    // });
+
+    // testCase("containsCollection (TODO: make work with server)", function () {
+    //     // + add caes for all overloads
+
+    //     describe("string", () => {
+    //         it("Should work correctly (success)", execute.bind(null, true));
+    //         it("Should work correctly (failure)", execute.bind(null, false))
+
+    //         async function execute(success: boolean) {
+
+    //             const ctxt = await addFullUserChain();
+    //             const searchString = success ? ctxt.blogPost.Name.split(" ")[0] : "invalid"
+
+    //             const result = await client.BlogPosts
+    //                 .withQuery((q, { filter: { eq, and, containsCollection } }) => q
+    //                     .filter(bp => and(
+    //                         eq(bp.Id, ctxt.blogPost.Id),
+    //                         containsCollection(bp.Words, searchString))))
+    //                 .get();
+
+    //             if (success) {
+    //                 expect(result.value.length).toBe(1);
+    //                 expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+    //             } else {
+    //                 expect(result.value.length).toBe(0);
+    //             }
+    //         }
+    //     });
+    // });
 
     testCase("hassubset", function () {
 

@@ -1,11 +1,15 @@
 import { QueryArray, QueryObject, QueryObjectType, QueryPrimitive } from "../typeRefBuilder.js";
 import { serialize } from "../valueSerializer.js";
-import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo } from "./operable0.js";
+import { combineFilterStrings, Filter, getFilterString, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
 import { IntegerTypes, NonNumericTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 export type OperableCollection<T> = QueryArray<QueryObject<T>, T> | Filter
 
 const bool = resolveOutputType(NonNumericTypes.Boolean)
+
+function collectionMapper<T>(mapper: ((x: T) => string) | undefined) {
+    return mapper && ((xs: T[]) => `[${xs.map(mapper).join(",")}]`);
+}
 
 export function collectionFilter<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
     collection: QueryArray<TQueryObj, TArrayType>,
@@ -62,7 +66,6 @@ export function count(collection: QueryArray<any, any>, countUnit = IntegerTypes
     return {
         $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
         $$oDataQueryMetadata: {
-            type: QueryObjectType.QueryPrimitive,
             root: collection.$$oDataQueryMetadata.root,
             typeRef: resolveOutputType(countUnit),
             path: [
@@ -82,4 +85,70 @@ export function hassubset<TArrayType>(
     mapper?: (x: TArrayType) => string): Filter {
 
     return collectionFunction("hassubset", collection, values, mapper);
+}
+
+export function concatCollection<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter;
+export function concatCollection<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
+export function concatCollection<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter {
+
+    if (Array.isArray(lhs)) {
+        if (Array.isArray(rhs)) {
+            throw new Error("Invalid method overload");
+        }
+
+        return _concatCollection(rhs, lhs, mapper, true);
+    }
+
+    return _concatCollection(lhs, rhs, mapper, false);
+}
+
+function _concatCollection<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper: undefined | ((x: T) => string), swap: boolean): Filter {
+    const metadata = getOperableTypeInfo(lhs)
+    let lhsS = getOperableFilterString(lhs)
+    let rhsS = getFilterString(rhs, collectionMapper(mapper), metadata)
+
+    if (swap) {
+        const x = lhsS
+        lhsS = rhsS
+        rhsS = x
+    }
+
+    return combineFilterStrings("", metadata.typeRef, metadata.root, `concat(${lhsS},${rhsS})`);
+}
+
+function asHasFilterMetadata(x: any): HasFilterMetadata | undefined {
+    return (typeof x.$$oDataQueryObjectType === "string" && x) || undefined
+}
+
+export function contains<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T, mapper?: (x: T) => string): Filter;
+export function contains<T>(lhs: OperableCollection<T> | T, rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
+export function contains<T>(lhs: OperableCollection<T> | T, rhs: OperableCollection<T> | T, mapper?: (x: T) => string): Filter {
+
+    if (!asHasFilterMetadata(lhs) && !asHasFilterMetadata(rhs)) {
+        throw new Error("Invalid method overload");
+    }
+
+    const { nonArr, possibleArr, rev } = !asHasFilterMetadata(lhs)
+        ? {
+            nonArr: rhs as OperableCollection<T>,
+            possibleArr: lhs,
+            rev: true
+        } : {
+            nonArr: lhs as OperableCollection<T>,
+            possibleArr: rhs,
+            rev: false
+        }
+
+
+    const metadata = getOperableTypeInfo(nonArr)
+    let lhsS = getOperableFilterString(nonArr)
+    let rhsS = getFilterString(possibleArr, mapper, metadata);
+
+    if (rev) {
+        const x = lhsS
+        lhsS = rhsS
+        rhsS = x
+    }
+
+    return combineFilterStrings("", bool, metadata.root, `contains(${lhsS}, ${rhsS})`);
 }

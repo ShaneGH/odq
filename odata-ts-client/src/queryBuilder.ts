@@ -1,5 +1,5 @@
 import { Filter } from "./query/operable0.js";
-import { PathSegment, QueryPath } from "./typeRefBuilder.js";
+import { PathSegment } from "./typeRefBuilder.js";
 
 
 type Dict<T> = { [key: string]: T }
@@ -24,13 +24,13 @@ export interface IQueryBulder {
 
 export interface ISingletonQueryBulder<T> extends IQueryBulder {
 
-    expand(q: Expand | ((t: T) => QueryPath)): ISingletonQueryBulder<T>;
+    expand(q: Expand | ((t: T) => PathSegment[])): ISingletonQueryBulder<T>;
 }
 
 export interface ICollectionQueryBulder<T> extends IQueryBulder {
 
     filter(q: Filter | ((t: T) => Filter)): ICollectionQueryBulder<T>;
-    expand(q: Expand | ((t: T) => QueryPath)): ICollectionQueryBulder<T>;
+    expand(q: Expand | ((t: T) => PathSegment[])): ICollectionQueryBulder<T>;
     count(): ICollectionQueryBulder<T>;
     top(top: number): ICollectionQueryBulder<T>;
     skip(skip: number): ICollectionQueryBulder<T>;
@@ -110,18 +110,18 @@ export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
         });
     }
 
-    expand(q: Expand | ((t: TQInput) => QueryPath)): QueryBuilder<T, TQInput> {
+    expand(q: Expand | ((t: TQInput) => PathSegment[])): QueryBuilder<T, TQInput> {
         if (this.state.expand) {
             throw new Error("This query is alread expanded");
         }
 
         if (typeof q !== "function") {
-            return this.expand(() => ({ path: q.expand }));
+            return this.expand(() => q.expand);
         }
 
         return new QueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
-            expand: { expand: q(this.typeRef).path }
+            expand: { expand: q(this.typeRef) }
         });
 
     }

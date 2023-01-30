@@ -448,7 +448,6 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         const typeRef: QueryPrimitive<TEntity> = {
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
             $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryPrimitive,
                 typeRef: {
                     isCollection: false,
                     ...type
@@ -480,7 +479,6 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             $$oDataEnumType: type,
             $$oDataQueryObjectType: QueryObjectType.QueryEnum,
             $$oDataQueryMetadata: {
-                type: QueryObjectType.QueryEnum,
                 root: this.root.types,
                 typeRef: {
                     isCollection: false,

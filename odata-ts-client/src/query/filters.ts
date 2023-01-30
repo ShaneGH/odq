@@ -1,7 +1,7 @@
 import { QueryArray, QueryObject, QueryPrimitive } from "../typeRefBuilder.js";
 import { add, div, divby, mod, mul, sub } from "./arithmetic2.js";
 import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection1.js";
-import { concat } from "./stringOrCollection.js";
+import { concat as concatString, contains as containsString } from "./string.js";
 import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
 import { FilterablePaths, FilterableProps, op } from "./op1.js";
 import { Filter, Operable } from "./operable0.js";
@@ -23,6 +23,7 @@ export type IFilterUtils = {
      * @param outputType  Add this parameter if you are using 
      * the output of this filter with some of the other built in filters:
      * e.g. eq(my.val1, op(my.val2, p => `${p} add 1`, OutputTypes.Int32)). 
+     * e.g. lt(my.minAge, op(`age add 1`, OutputTypes.Int32)). 
      * This will help the filter utils to serialize data correctly.
      * 
      * @example op("property eq 'hello'")
@@ -42,7 +43,7 @@ export type IFilterUtils = {
      * 
      * @param outputType  Add this parameter if you are using 
      * the output of this filter with some of the other built in filters:
-     * e.g. eq(my.val1, op(my.val2, p => `${p} add 1`, OutputTypes.Int32)). 
+     * e.g. lt(my.minAge, op({ age: my.age }, p => `${p.age} add 1`, OutputTypes.Int32)). 
      * This will help the filter utils to serialize data correctly.
      * 
      * @example op({ property: my.property }, p => `${p.property} eq 'hello'`)
@@ -366,9 +367,9 @@ export type IFilterUtils = {
      * 
      * @param rhs  The second value to concatenate
      * 
-     * @example concat(my.property, "hello")
+     * @example concatString(my.property, "hello")
      */
-    concat(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+    concatString(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
 
     /**
      * An OData "concat" operation
@@ -377,9 +378,31 @@ export type IFilterUtils = {
      * 
      * @param rhs  The second value to concatenate
      * 
-     * @example concat("hello", my.property)
+     * @example concatString("hello", my.property)
      */
-    concat(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+    concatString(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+
+    /**
+     * An OData "contains" operation
+     *
+     * @param lhs  The value to test for the existence of rhs
+     * 
+     * @param rhs  The value to test lhs for the existence of
+     * 
+     * @example containsString(my.fullName, "Bob")
+     */
+    containsString(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+
+    /**
+     * An OData "contains" operation
+     * 
+     * @param lhs  The value to test rhs for the existence of
+     *
+     * @param rhs  The value to test for the existence of lhs
+     * 
+     * @example containsString("Bob Jones", my.firstName)
+     */
+    containsString(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
 
     // TODO: need server test to verify this functionality. (query string test is passing) 
     // /**
@@ -391,9 +414,9 @@ export type IFilterUtils = {
     //  * 
     //  * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
     //  * 
-    //  * @example concat(my.property, [1, 2, 3])
+    //  * @example concatCollection(my.property, [1, 2, 3])
     //  */
-    // concat<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter;
+    // concatCollection<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter;
 
     // /**
     //  * An OData "concat" operation
@@ -404,9 +427,31 @@ export type IFilterUtils = {
     //  * 
     //  * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
     //  * 
-    //  * @example concat([1, 2, 3], my.property)
+    //  * @example concatCollection([1, 2, 3], my.property)
     //  */
-    // concat<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
+    // concatCollection<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
+
+    // /**
+    //  * An OData "contains" operation
+    //  *
+    //  * @param lhs  The value to test for the existence of rhs
+    //  * 
+    //  * @param rhs  The value to test lhs for the existence of
+    //  * 
+    //  * @example containsCollection(my.values, 1)
+    //  */
+    // containsCollection<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T, mapper?: (x: T) => string): Filter;
+
+    // /**
+    //  * An OData "contains" operation
+    //  * 
+    //  * @param lhs  The value to test rhs for the existence of
+    //  *
+    //  * @param rhs  The value to test for the existence of lhs
+    //  * 
+    //  * @example containsCollection([1, 2, 3], my.value)
+    //  */
+    // containsCollection<T>(lhs: OperableCollection<T> | T, rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
 }
 
 export function newUtils(): IFilterUtils {
@@ -436,6 +481,7 @@ export function newUtils(): IFilterUtils {
         div,
         divby,
         mod,
-        concat
+        concatString,
+        containsString
     }
 }

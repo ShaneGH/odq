@@ -1,5 +1,5 @@
 import { ODataTypeRef } from "odata-ts-client-shared";
-import { PathSegment, QueryObject } from "../typeRefBuilder.js";
+import { HasODataQueryMetadata, PathSegment, QueryObject, QueryObjectMetadata } from "../typeRefBuilder.js";
 import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
 import { OutputTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
@@ -13,7 +13,7 @@ export class MappableType<T> {
 }
 
 export type FilterableProps = {
-    [key: string]: QueryObject<any>
+    [key: string]: HasODataQueryMetadata
 }
 
 export type FilterablePaths = {
@@ -23,9 +23,6 @@ export type FilterablePaths = {
 export function op(filter: string, outputType?: OutputTypes | undefined): Filter;
 export function op(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
 export function op(arg1: string | FilterableProps, arg2?: ((path: FilterablePaths) => string) | OutputTypes, arg3?: OutputTypes | undefined): Filter {
-
-    // WARNING: ts is having a hard time resolving types here
-    // take care modifying this method
 
     if (typeof arg1 === "string") {
         if (typeof arg2 === "function" || arg3) {
@@ -48,7 +45,7 @@ export function op(arg1: string | FilterableProps, arg2?: ((path: FilterablePath
         .keys(arg1)
         .reduce((s, x) => ({
             ...s,
-            [x]: arg1[x].$$oDataQueryMetadata.path.map((x: PathSegment) => x.path).join("/") || "$it"
+            [x]: arg1[x].$$oDataQueryMetadata.path.map(x => x.path).join("/") || "$it"
         }), {} as FilterablePaths);
 
     return {

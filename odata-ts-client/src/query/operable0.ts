@@ -15,15 +15,15 @@ export type Operable<T> = QueryPrimitive<T> | QueryEnum<T> | Filter
 export type HasFilterMetadata = Filter
     | {
         $$oDataQueryObjectType: QueryObjectType.QueryArray
-        $$oDataQueryMetadata: QueryObjectMetadata<QueryObjectType.QueryArray>
+        $$oDataQueryMetadata: QueryObjectMetadata
     }
     | {
         $$oDataQueryObjectType: QueryObjectType.QueryPrimitive
-        $$oDataQueryMetadata: QueryObjectMetadata<QueryObjectType.QueryPrimitive>
+        $$oDataQueryMetadata: QueryObjectMetadata
     }
     | {
         $$oDataQueryObjectType: QueryObjectType.QueryEnum
-        $$oDataQueryMetadata: QueryObjectMetadata<QueryObjectType.QueryEnum>
+        $$oDataQueryMetadata: QueryObjectMetadata
     }
 
 export type TypeLookup = { typeRef?: ODataTypeRef, root?: ODataServiceTypes }

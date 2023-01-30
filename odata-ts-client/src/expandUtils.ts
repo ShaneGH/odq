@@ -1,7 +1,8 @@
-import { QueryArray, QueryObject, QueryPath } from "./typeRefBuilder.js";
+import { PathSegment, QueryArray, QueryObject } from "./typeRefBuilder.js";
 
 // TODO: rename to collection
-export function array<TQueryObj extends QueryObject<TArrayType>, TArrayType, TCollectionItem>(array: QueryArray<TQueryObj, TArrayType>, prop: ((t: TQueryObj) => QueryObject<TCollectionItem>)): QueryPath {
+export function array<TQueryObj extends QueryObject<TArrayType>, TArrayType, TCollectionItem>(
+    array: QueryArray<TQueryObj, TArrayType>, prop: ((t: TQueryObj) => QueryObject<TCollectionItem>)): PathSegment[] {
 
     // TODO: audit all anys
     let innerPath = prop(array.childObjConfig)?.$$oDataQueryMetadata.path;
@@ -17,7 +18,6 @@ export function array<TQueryObj extends QueryObject<TArrayType>, TArrayType, TCo
         throw new Error(`Element ${innerPath} does not belong to array ${array.$$oDataQueryMetadata.path}`);
     }
 
-    return {
-        path: array.$$oDataQueryMetadata.path.concat(innerPath.slice(1))
-    };
+    return array.$$oDataQueryMetadata.path
+        .concat(innerPath.slice(1));
 }
