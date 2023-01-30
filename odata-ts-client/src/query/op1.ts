@@ -12,9 +12,17 @@ export class MappableType<T> {
     }
 }
 
+export type FilterableProps = {
+    [key: string]: QueryObject<any>
+}
+
+export type FilterablePaths = {
+    [key: string]: string
+}
+
 export function op(filter: string, outputType?: OutputTypes | undefined): Filter;
-export function op(obj: QueryObject<any>, filter: (path: string) => string, outputType?: OutputTypes | undefined): Filter;
-export function op(arg1: string | QueryObject<any>, arg2?: ((path: string) => string) | OutputTypes, arg3?: OutputTypes | undefined): Filter {
+export function op(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
+export function op(arg1: string | FilterableProps, arg2?: ((path: FilterablePaths) => string) | OutputTypes, arg3?: OutputTypes | undefined): Filter {
 
     // WARNING: ts is having a hard time resolving types here
     // take care modifying this method
@@ -36,12 +44,18 @@ export function op(arg1: string | QueryObject<any>, arg2?: ((path: string) => st
         throw new Error("Invalid overload args");
     }
 
-    const path: PathSegment[] = arg1.$$oDataQueryMetadata.path
+    const paths = Object
+        .keys(arg1)
+        .reduce((s, x) => ({
+            ...s,
+            [x]: arg1[x].$$oDataQueryMetadata.path.map((x: PathSegment) => x.path).join("/") || "$it"
+        }), {} as FilterablePaths);
+
     return {
         $$oDataQueryObjectType: "Filter",
         $$output: arg3 && resolveOutputType(arg3),
         $$root: undefined,
-        $$filter: arg2(path.map(x => x.path).join("/") || "$it")
+        $$filter: arg2(paths)
     }
 }
 

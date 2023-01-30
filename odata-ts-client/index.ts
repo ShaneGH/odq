@@ -12,6 +12,11 @@ export {
 } from "./src/queryBuilder.js"
 
 export {
+    FilterableProps,
+    FilterablePaths
+} from "./src/query/op1.js"
+
+export {
     IntegerTypes,
     DecimalNumberTypes,
     RealNumberTypes,

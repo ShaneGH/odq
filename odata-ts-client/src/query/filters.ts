@@ -3,9 +3,14 @@ import { add, div, divby, mod, mul, sub } from "./arithmetic2.js";
 import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection1.js";
 import { concat } from "./stringOrCollection.js";
 import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
-import { op } from "./op1.js";
+import { FilterablePaths, FilterableProps, op } from "./op1.js";
 import { Filter, Operable } from "./operable0.js";
 import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveTypes0.js";
+
+// TODO: remove mappers from functions which will not use them. e.g.
+//      eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
+//      => eq<T>(lhs: Operable<T>, rhs: Operable<T>): Filter;
+//      => eq<T>(lhs: Operable<T>, rhs: T, mapper?: (x: T) => string): Filter;
 
 export type IFilterUtils = {
     /**
@@ -40,9 +45,9 @@ export type IFilterUtils = {
      * e.g. eq(my.val1, op(my.val2, p => `${p} add 1`, OutputTypes.Int32)). 
      * This will help the filter utils to serialize data correctly.
      * 
-     * @example op(my.property, p => `${p} eq 'hello'`)
+     * @example op({ property: my.property }, p => `${p.property} eq 'hello'`)
      */
-    op(obj: QueryObject<any>, filter: (path: string) => string, outputType?: OutputTypes | undefined): Filter;
+    op(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
 
     /**
      * Do a custom filter operation with a given operator. The result of the operation should be a boolean
@@ -376,31 +381,32 @@ export type IFilterUtils = {
      */
     concat(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
 
-    /**
-     * An OData "concat" operation
-     *
-     * @param lhs  The first value to concatenate
-     * 
-     * @param rhs  The second value to concatenate
-     * 
-     * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
-     * 
-     * @example concat(my.property, [1, 2, 3])
-     */
-    concat<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter;
+    // TODO: need server test to verify this functionality. (query string test is passing) 
+    // /**
+    //  * An OData "concat" operation
+    //  *
+    //  * @param lhs  The first value to concatenate
+    //  * 
+    //  * @param rhs  The second value to concatenate
+    //  * 
+    //  * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
+    //  * 
+    //  * @example concat(my.property, [1, 2, 3])
+    //  */
+    // concat<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T[], mapper?: (x: T) => string): Filter;
 
-    /**
-     * An OData "concat" operation
-     *
-     * @param lhs  The first value to concatenate
-     * 
-     * @param rhs  The second value to concatenate
-     * 
-     * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
-     * 
-     * @example concat([1, 2, 3], my.property)
-     */
-    concat<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
+    // /**
+    //  * An OData "concat" operation
+    //  *
+    //  * @param lhs  The first value to concatenate
+    //  * 
+    //  * @param rhs  The second value to concatenate
+    //  * 
+    //  * @param mapper  An optional mapper to map any primitives to a string. The mapper should return values unencoded
+    //  * 
+    //  * @example concat([1, 2, 3], my.property)
+    //  */
+    // concat<T>(lhs: OperableCollection<T> | T[], rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
 }
 
 export function newUtils(): IFilterUtils {

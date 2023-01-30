@@ -77,7 +77,7 @@ describe("Query.Filter Operators", function () {
 
                 const result = await client.Users
                     .withQuery((q, { filter: { eq, and, op } }) => q
-                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op(u.Name, x => `${x} eq '${name}'`))))
+                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op({ n: u.Name }, x => `${x.n} eq '${name}'`))))
                     .get();
 
                 if (success) {
@@ -722,7 +722,7 @@ describe("Query.Filter Operators", function () {
                 const { filter: { eq, concat } } = queryUtils();
                 const q = qb<My.Odata.Entities.QueryableBlogPost>("My.Odata.Entities.BlogPost")
                     .filter(bp =>
-                        eq(concat(bp.Words, ["s"]), ["w1", "s"]))
+                        eq(concat(bp.Words as any, ["s"] as any), ["w1", "s"]))
                     .toQueryParts(false);
 
                 expect(q["$filter"]).toBe("concat(Words,['s']) eq ['w1','s']");

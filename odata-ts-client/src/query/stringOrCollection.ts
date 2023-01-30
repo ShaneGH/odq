@@ -1,4 +1,4 @@
-import { QueryArray, QueryObject, QueryPrimitive } from "../typeRefBuilder.js";
+import { QueryArray, QueryObject, QueryObjectType, QueryPrimitive } from "../typeRefBuilder.js";
 import { serialize } from "../valueSerializer.js";
 import { OperableCollection } from "./collection1.js";
 import { combineFilterStrings, Filter, getOperableTypeInfo, Operable, TypeLookup } from "./operable0.js";
@@ -65,19 +65,43 @@ function _concat<T>(lhs: Concatable<T>, rhs: Concatable<T> | T[] | string, mappe
     return combineFilterStrings("", metadata.typeRef, metadata.root, `concat(${lhsS},${rhsS})`);
 }
 
-// type CollectionFreeForAll<T> = Concatable<T> | string | T[]
+type CollectionFreeForAll<T> = Concatable<T> | string | T
 
 // export function contains(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
-// export function contains<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T, mapper?: (x: T) => string): Filter;
-// export function contains<T>(lhs: ConcatFreeForAll<T>, rhs: ConcatFreeForAll<T>, mapper?: (x: T) => string): Filter {
+// export function contains<T>(lhs: OperableCollection<T>, rhs: QueryPrimitive<T> | T, mapper?: (x: T) => string): Filter;
+// export function contains<T>(
+//     lhs: Operable<string> | OperableCollection<T>,
+//     rhs: CollectionFreeForAll<T>,
+//     mapper?: (x: T) => string): Filter {
 
-//     if (typeof lhs === "string" || Array.isArray(lhs)) {
-//         if (typeof rhs === "string" || Array.isArray(rhs)) {
+//     if (lhs.$$oDataQueryObjectType === QueryObjectType.QueryPrimitive) {
+//         if (mapper) {
 //             throw new Error("Invalid method overload");
 //         }
 
-//         return _concat(rhs, lhs, mapper, true);
+//         return stringContains(lhs, rhs as any);
 //     }
 
-//     return _concat(lhs, rhs, mapper, false);
+//     return collectionContains(lhs as any, rhs as any, mapper);
+
+// }
+
+// const bool = resolveOutputType(NonNumericTypes.Boolean)
+
+// function stringContains(lhs: Operable<string>, rhs: Operable<string> | string) {
+//     const metadata = getOperableTypeInfo(lhs)
+//     let lhsS = filterString(lhs, metadata, undefined)
+//     let rhsS = filterString(rhs, metadata, undefined)
+
+//     return combineFilterStrings("", bool, metadata.root, `contains(${lhsS},${rhsS})`);
+
+// }
+
+// function collectionContains<T>(lhs: OperableCollection<T>, rhs: OperableCollection<T> | T, mapper?: (x: T) => string) {
+//     const metadata = getOperableTypeInfo(lhs)
+//     let lhsS = filterString(lhs, metadata, undefined)
+//     let rhsS = filterString(rhs, metadata, undefined)
+
+//     return combineFilterStrings("", bool, metadata.root, `contains(${lhsS},${rhsS})`);
+
 // }
