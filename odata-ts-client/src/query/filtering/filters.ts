@@ -15,7 +15,7 @@ import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveType
 //      => eq<T>(lhs: Operable<T>, rhs: Operable<T>): Filter;
 //      => eq<T>(lhs: Operable<T>, rhs: T, mapper?: (x: T) => string): Filter;
 
-export type IFilterUtils = {
+export type FilterUtils = {
     /**
      * Do a custom filter operation. If mixing this operation with other
      * filtering operations, it is best to include an output type so that values
@@ -578,7 +578,7 @@ export type IFilterUtils = {
     // containsCollection<T>(lhs: OperableCollection<T> | T, rhs: OperableCollection<T>, mapper?: (x: T) => string): Filter;
 }
 
-export function newUtils(): IFilterUtils {
+export function newUtils(): FilterUtils {
     return {
         op,
         logicalOp: logicalInfixOp,

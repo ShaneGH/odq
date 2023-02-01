@@ -68,7 +68,7 @@ describe("Query.Select", function () {
             const result = await client.Users
                 .withKey(ctxt.blogUser.Id)
                 .withQuery((q, { select: { select } }) => q
-                    .select(x => select("Name,Score")))
+                    .select(_ => select("Name,Score")))
                 .get();
 
             expect(result.Name).toBe(ctxt.blogUser.Name);

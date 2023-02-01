@@ -1,9 +1,7 @@
 import { Select } from "../../queryBuilder.js"
-import { QueryEnum, QueryObject, QueryPrimitive } from "../../typeRefBuilder.js"
+import { QueryObject } from "../../typeRefBuilder.js"
 
-type Selectable = QueryPrimitive<any> | QueryEnum<any>
-
-export type ISelectUtils = {
+export type SelectUtils = {
     /**
      * Select a list of properties
      * NOTE: if you enter a navigation property here, you may get back some unexpected results
@@ -45,7 +43,7 @@ function select(customSelect: string): Select {
     }
 }
 
-export function newUtils(): ISelectUtils {
+export function newUtils(): SelectUtils {
     return {
         props,
         select

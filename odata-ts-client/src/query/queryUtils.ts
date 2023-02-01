@@ -1,9 +1,9 @@
-import { IFilterUtils, newUtils as filter } from "./filtering/filters.js";
-import { ISelectUtils, newUtils as select } from "./selecting/select.js";
+import { FilterUtils, newUtils as filter } from "./filtering/filters.js";
+import { SelectUtils, newUtils as select } from "./selecting/select.js";
 
 export type Utils = {
-    filter: IFilterUtils
-    select: ISelectUtils
+    filter: FilterUtils
+    select: SelectUtils
 }
 
 export function utils(): Utils {
