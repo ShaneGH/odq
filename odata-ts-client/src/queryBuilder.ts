@@ -13,7 +13,7 @@ export type QueryParts = Partial<{
 }>
 
 export type Expand = {
-    expand: PathSegment[]
+    $$expand: string
 }
 
 export type Select = {
@@ -31,27 +31,6 @@ export interface ISingletonQueryBulder<T> extends IQueryBulder {
     expand(q: Expand | ((t: T) => PathSegment[])): ISingletonQueryBulder<T>;
 }
 
-function expand(pathSegment: PathSegment[] | undefined): string | undefined {
-    if (!pathSegment?.length) return undefined;
-
-    const head = pathSegment[0].path;
-    const tail = pathSegment.slice(1);
-    const next = expand(tail);
-    if (next == undefined) {
-        return head;
-    }
-
-    return tail[0].navigationProperty
-        ? `${head}($expand=${next})`
-        : `${head}/${next}`;
-}
-
-function select(pathSegment: PathSegment[][] | undefined): string | undefined {
-    if (!pathSegment?.length) return undefined;
-
-    return pathSegment.map(xs => xs.map(x => x.path).join("/")).join(",")
-}
-
 export class QueryStringBuilder implements IQueryBulder {
 
     constructor(protected state: QueryParts) {
@@ -61,7 +40,7 @@ export class QueryStringBuilder implements IQueryBulder {
 
         return [
             param("$filter", this.state.filter?.$$filter),
-            param("$expand", expand(this.state.expand?.expand)),
+            param("$expand", this.state.expand?.$$expand),
             param("$select", this.state.select?.$$select),
             param("$count", this.state.count ? "true" : undefined),
             param("$top", this.state.top?.toString()),
@@ -127,18 +106,18 @@ export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
         });
     }
 
-    expand(q: Expand | ((t: TQInput) => PathSegment[])): QueryBuilder<T, TQInput> {
+    expand(q: Expand | ((t: TQInput) => Expand)): QueryBuilder<T, TQInput> {
         if (this.state.expand) {
             throw new Error("This query is alread expanded");
         }
 
         if (typeof q !== "function") {
-            return this.expand(() => q.expand);
+            return this.expand(() => q);
         }
 
         return new QueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
-            expand: { expand: q(this.typeRef) }
+            expand: q(this.typeRef)
         });
     }
 

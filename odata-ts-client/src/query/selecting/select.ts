@@ -16,9 +16,9 @@ export type SelectUtils = {
     /**
      * Add a custom select statement
      * 
-     * @example select("property1,property2")
+     * @example selectRaw("property1,property2")
      */
-    select(customSelect: string): Select
+    selectRaw(customSelect: string): Select
 }
 
 // not particularly useful, but helps the typescript compiler
@@ -36,7 +36,7 @@ function props(...props: QueryObject<any>[]): Select {
     }
 }
 
-function select(customSelect: string): Select {
+function selectRaw(customSelect: string): Select {
 
     return {
         $$select: customSelect
@@ -46,6 +46,6 @@ function select(customSelect: string): Select {
 export function newUtils(): SelectUtils {
     return {
         props,
-        select
+        selectRaw
     }
 }

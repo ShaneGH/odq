@@ -6,7 +6,7 @@ import {
     endsWith as endsWithString, indexOf as indexOfString, length as lengthString, subString
 } from "./string1.js";
 import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
-import { FilterablePaths, FilterableProps, op } from "./op1.js";
+import { FilterablePaths, FilterableProps, filterRaw } from "./op1.js";
 import { Filter, Operable } from "./operable0.js";
 import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveTypes0.js";
 
@@ -31,7 +31,7 @@ export type FilterUtils = {
      * 
      * @example op("property eq 'hello'")
      */
-    op(filter: string, outputType?: OutputTypes | undefined): Filter;
+    filterRaw(filter: string, outputType?: OutputTypes | undefined): Filter;
 
     /**
      * Do a custom filter operation using the path of an item.
@@ -51,7 +51,7 @@ export type FilterUtils = {
      * 
      * @example op({ property: my.property }, p => `${p.property} eq 'hello'`)
      */
-    op(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
+    filterRaw(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
 
     /**
      * Do a custom filter operation with a given operator. The result of the operation should be a boolean
@@ -580,7 +580,7 @@ export type FilterUtils = {
 
 export function newUtils(): FilterUtils {
     return {
-        op,
+        filterRaw,
         logicalOp: logicalInfixOp,
         eq,
         isIn,

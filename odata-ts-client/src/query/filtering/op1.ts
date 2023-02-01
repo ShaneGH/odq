@@ -20,9 +20,9 @@ export type FilterablePaths = {
     [key: string]: string
 }
 
-export function op(filter: string, outputType?: OutputTypes | undefined): Filter;
-export function op(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
-export function op(arg1: string | FilterableProps, arg2?: ((path: FilterablePaths) => string) | OutputTypes, arg3?: OutputTypes | undefined): Filter {
+export function filterRaw(filter: string, outputType?: OutputTypes | undefined): Filter;
+export function filterRaw(obj: FilterableProps, filter: (path: FilterablePaths) => string, outputType?: OutputTypes | undefined): Filter;
+export function filterRaw(arg1: string | FilterableProps, arg2?: ((path: FilterablePaths) => string) | OutputTypes, arg3?: OutputTypes | undefined): Filter {
 
     if (typeof arg1 === "string") {
         if (typeof arg2 === "function" || arg3) {

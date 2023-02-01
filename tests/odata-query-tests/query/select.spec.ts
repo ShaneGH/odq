@@ -61,14 +61,14 @@ describe("Query.Select", function () {
         return describe(name, test)
     }
 
-    testCase("select", function () {
+    testCase("selectRaw", function () {
         it("Should work correctly", async () => {
 
             const ctxt = await addFullUserChain();
             const result = await client.Users
                 .withKey(ctxt.blogUser.Id)
-                .withQuery((q, { select: { select } }) => q
-                    .select(_ => select("Name,Score")))
+                .withQuery((q, { select: { selectRaw } }) => q
+                    .select(_ => selectRaw("Name,Score")))
                 .get();
 
             expect(result.Name).toBe(ctxt.blogUser.Name);

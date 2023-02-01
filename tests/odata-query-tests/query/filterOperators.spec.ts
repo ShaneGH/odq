@@ -77,7 +77,7 @@ describe("Query.Filter Operators", function () {
         });
     });
 
-    testCase("op", function () {
+    testCase("filterRaw", function () {
 
         describe("overload1", () => {
 
@@ -92,8 +92,8 @@ describe("Query.Filter Operators", function () {
                     : uniqueString("FilterByWord");
 
                 const result = await client.Users
-                    .withQuery((q, { filter: { eq, and, op } }) => q
-                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op({ n: u.Name }, x => `${x.n} eq '${name}'`))))
+                    .withQuery((q, { filter: { eq, and, filterRaw } }) => q
+                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), filterRaw({ n: u.Name }, x => `${x.n} eq '${name}'`))))
                     .get();
 
                 if (success) {
@@ -120,8 +120,8 @@ describe("Query.Filter Operators", function () {
                     : uniqueString("FilterByWord");
 
                 const result = await client.Users
-                    .withQuery((q, { filter: { eq, and, op } }) => q
-                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), op(`Name eq '${name}'`, addTypeInfo ? NonNumericTypes.Boolean : undefined))))
+                    .withQuery((q, { filter: { eq, and, filterRaw } }) => q
+                        .filter(u => and(eq(u.Id, ctxt.blogUser.Id), filterRaw(`Name eq '${name}'`, addTypeInfo ? NonNumericTypes.Boolean : undefined))))
                     .get();
 
                 if (success) {
@@ -592,8 +592,8 @@ describe("Query.Filter Operators", function () {
                 : ctxt.blogPost.Likes;
 
             const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, add, op } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, add(op(likes.toString()), 1)))))
+                .withQuery((q, { filter: { eq, and, add, filterRaw } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, add(filterRaw(likes.toString()), 1)))))
                 .get();
 
             if (success) {
@@ -618,8 +618,8 @@ describe("Query.Filter Operators", function () {
                 : ctxt.blogPost.Likes;
 
             const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, sub, op } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, sub(op(likes.toString()), 1)))))
+                .withQuery((q, { filter: { eq, and, sub, filterRaw } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(u.Likes, sub(filterRaw(likes.toString()), 1)))))
                 .get();
 
             if (success) {
@@ -690,8 +690,8 @@ describe("Query.Filter Operators", function () {
             const likes = success ? 1 : 10000000;
 
             const result = await client.BlogPosts
-                .withQuery((q, { filter: { eq, and, mod, op } }) => q
-                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(op("0"), mod(u.Likes, likes)))))
+                .withQuery((q, { filter: { eq, and, mod, filterRaw } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogPost.Id), eq(filterRaw("0"), mod(u.Likes, likes)))))
                 .get();
 
             if (success) {
