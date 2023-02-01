@@ -11,9 +11,9 @@ const bool = resolveOutputType(NonNumericTypes.Boolean)
  * which return a boolean
  */
 export function logicalInfixOp<T>(
-    lhs: HasFilterMetadata,
+    lhs: Operable<T>,
     operator: string,
-    rhs: T | HasFilterMetadata,
+    rhs: T | Operable<T>,
     mapper: ((x: T) => string) | undefined): Filter {
 
     const metadata = getOperableTypeInfo(lhs);

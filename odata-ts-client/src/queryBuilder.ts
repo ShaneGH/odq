@@ -123,7 +123,6 @@ export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
             ...this.state,
             expand: { expand: q(this.typeRef) }
         });
-
     }
 
     count(): QueryBuilder<T, TQInput> {

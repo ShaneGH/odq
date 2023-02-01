@@ -1,9 +1,11 @@
+import { ODataTypeRef } from "../../index.js";
 import { serialize } from "../valueSerializer.js";
 import { combineFilterStrings, Filter, getFilterString, getOperableFilterString, getOperableTypeInfo, Operable } from "./operable0.js";
-import { NonNumericTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
+import { IntegerTypes, NonNumericTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 const stringT = resolveOutputType(NonNumericTypes.String)
 const boolT = resolveOutputType(NonNumericTypes.Boolean)
+const int32T = resolveOutputType(IntegerTypes.Int32)
 
 export function concat(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
 export function concat(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
@@ -34,9 +36,7 @@ function _concat(lhs: Operable<string>, rhs: Operable<string> | string, swap: bo
     return combineFilterStrings("", stringT, metadata.root, `concat(${lhsS},${rhsS})`);
 }
 
-export function contains(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
-export function contains(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
-export function contains(lhs: Operable<string> | string, rhs: Operable<string> | string): Filter {
+function stringFunction(name: string, lhs: Operable<string> | string, rhs: Operable<string> | string, result: ODataTypeRef): Filter {
 
     if (typeof lhs === "string" && typeof rhs === "string") {
         throw new Error("Invalid method overload");
@@ -66,5 +66,59 @@ export function contains(lhs: Operable<string> | string, rhs: Operable<string> |
         rhsS = x
     }
 
-    return combineFilterStrings("", boolT, metadata.root, `contains(${lhsS},${rhsS})`);
+    return combineFilterStrings("", result, metadata.root, `${name}(${lhsS},${rhsS})`);
+}
+
+export function contains(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+export function contains(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+export function contains(lhs: Operable<string> | string, rhs: Operable<string> | string): Filter {
+
+    return stringFunction("contains", lhs, rhs, boolT);
+}
+
+export function startsWith(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+export function startsWith(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+export function startsWith(lhs: Operable<string> | string, rhs: Operable<string> | string): Filter {
+
+    return stringFunction("startswith", lhs, rhs, boolT);
+}
+
+export function endsWith(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+export function endsWith(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+export function endsWith(lhs: Operable<string> | string, rhs: Operable<string> | string): Filter {
+
+    return stringFunction("endswith", lhs, rhs, boolT);
+}
+
+export function indexOf(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+export function indexOf(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+export function indexOf(lhs: Operable<string> | string, rhs: Operable<string> | string): Filter {
+
+    return stringFunction("indexof", lhs, rhs, int32T);
+}
+
+export function length(lhs: Operable<string>): Filter {
+
+    const metadata = getOperableTypeInfo(lhs)
+    let lhsS = getOperableFilterString(lhs)
+
+    return combineFilterStrings("", int32T, metadata.root, `length(${lhsS})`);
+}
+
+export function subString(lhs: Operable<string>, length: number): Filter;
+export function subString(lhs: string, length: Operable<number>): Filter;
+export function subString(lhs: Operable<string> | string, length: Operable<number> | number): Filter {
+
+    if (typeof lhs === "string" && typeof length === "number") {
+        throw new Error("Invalid method overload");
+    }
+
+    const metadata = typeof lhs !== "string"
+        ? getOperableTypeInfo(lhs)
+        : getOperableTypeInfo(length as Operable<number>);
+
+    const lhsS = getFilterString(lhs, undefined, { ...metadata, typeRef: stringT })
+    const lengthS = getFilterString(length, undefined, { ...metadata, typeRef: int32T })
+
+    return combineFilterStrings("", stringT, metadata.root, `substring(${lhsS},${lengthS})`);
 }

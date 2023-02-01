@@ -1,7 +1,10 @@
 import { QueryArray, QueryObject, QueryPrimitive } from "../typeRefBuilder.js";
 import { add, div, divby, mod, mul, sub } from "./arithmetic2.js";
 import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection1.js";
-import { concat as concatString, contains as containsString } from "./string.js";
+import {
+    concat as concatString, contains as containsString, startsWith as startsWithString,
+    endsWith as endsWithString, indexOf as indexOfString, length as lengthString, subString
+} from "./string.js";
 import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
 import { FilterablePaths, FilterableProps, op } from "./op1.js";
 import { Filter, Operable } from "./operable0.js";
@@ -404,6 +407,103 @@ export type IFilterUtils = {
      */
     containsString(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
 
+    /**
+     * An OData "startswith" operation
+     *
+     * @param lhs  The value to test for the existence of rhs
+     * 
+     * @param rhs  The value to test lhs for the existence of
+     * 
+     * @example startsWithString(my.fullName, "B")
+     */
+    startsWithString(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+
+    /**
+     * An OData "startswith" operation
+     * 
+     * @param lhs  The value to test rhs for the existence of
+     *
+     * @param rhs  The value to test for the existence of lhs
+     * 
+     * @example startsWithString("Bob Jones", my.firstName)
+     */
+    startsWithString(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+
+    /**
+     * An OData "endswith" operation
+     *
+     * @param lhs  The value to test for the existence of rhs
+     * 
+     * @param rhs  The value to test lhs for the existence of
+     * 
+     * @example endsWithString(my.fullName, "Jones")
+     */
+    endsWithString(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+
+    /**
+     * An OData "endswith" operation
+     * 
+     * @param lhs  The value to test rhs for the existence of
+     *
+     * @param rhs  The value to test for the existence of lhs
+     * 
+     * @example endsWithString("Bob Jones", my.lastName)
+     */
+    endsWithString(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+
+    /**
+     * An OData "indexof" operation
+     *
+     * @param lhs  The value to test for the existence of rhs
+     * 
+     * @param rhs  The value to test lhs for the existence of
+     * 
+     * @example indexOfString(my.fullName, "Bob")
+     */
+    indexOfString(lhs: Operable<string>, rhs: Operable<string> | string): Filter;
+
+    /**
+     * An OData "indexof" operation
+     * 
+     * @param lhs  The value to test rhs for the existence of
+     *
+     * @param rhs  The value to test for the existence of lhs
+     * 
+     * @example indexOfString("Bob Jones", my.firstName)
+     */
+    indexOfString(lhs: Operable<string> | string, rhs: Operable<string>): Filter;
+
+    /**
+     * An OData "length" operation
+     * 
+     * @param lhs The string property to measure
+     * 
+     * @example length(my.firstName)
+     */
+    lengthString(lhs: Operable<string>): Filter;
+
+    /**
+     * An OData "substring" operation
+     * 
+     * @param lhs The string property to divide
+     * 
+     * @param length The position to start the division
+     * 
+     * @example subString(my.firstName, 5)
+     */
+    subString(lhs: Operable<string>, length: number): Filter;
+
+    /**
+     * An OData "substring" operation
+     * 
+     * @param lhs The string property to divide
+     * 
+     * @param length The position to start the division
+     * 
+     * @example subString("Bob Jones", my.stringDivider)
+     */
+    subString(lhs: string, length: Operable<number>): Filter;
+
     // TODO: need server test to verify this functionality. (query string test is passing) 
     // /**
     //  * An OData "concat" operation
@@ -482,6 +582,11 @@ export function newUtils(): IFilterUtils {
         divby,
         mod,
         concatString,
-        containsString
+        containsString,
+        startsWithString,
+        endsWithString,
+        indexOfString,
+        lengthString,
+        subString
     }
 }

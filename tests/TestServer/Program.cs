@@ -35,6 +35,15 @@ public class Program
 
         App = builder.Build();
 
+        var i = 0;
+        App.Use(req => ctxt =>
+        {
+            if (ctxt.Request.Method == "GET")
+                Console.WriteLine($"GET Req: {Interlocked.Increment(ref i)}");
+
+            return req(ctxt);
+        });
+
         App.UseODataRouteDebug();
         App.UseRouting();
 
