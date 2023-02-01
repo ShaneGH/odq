@@ -116,5 +116,14 @@ public class EntityDbContext : DbContext
             .Entity<CommentTag>()
             .HasMany(b => b.Comments)
             .WithMany(u => u.Tags);
+
+        modelBuilder
+            .Entity<CommentMood>()
+            .HasKey(u => u.Key);
+
+        modelBuilder
+            .Entity<CommentMood>()
+            .HasOne(b => b.Comment)
+            .WithOne(u => u.Mood);
     }
 }

@@ -117,6 +117,7 @@ public class Program
         builder.EntitySet<BlogPost>("BlogPosts2");
         builder.EntitySet<Comment>("Comments");
         builder.ComplexType<CommentTag>();
+        builder.ComplexType<CommentMood>();
 
         builder.EntitySet<CompositeKeyItem>("CompositeKeyItems");
 

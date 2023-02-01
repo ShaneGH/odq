@@ -530,6 +530,15 @@ public class CommentsController : ODataControllerBase<Comment>
             .Where(x => x.Id == key)
             .SelectMany(x => x.Tags);
     }
+
+    [HttpGet("Comments({key})")]
+    [EnableQuery(MaxAnyAllExpressionDepth = 100, MaxExpansionDepth = 100)]
+    public SingleResult<Comment> GetComment([FromRoute] string key)
+    {
+        return _inMemoryDb.Comments
+            .Where(x => x.Id == key)
+            .AsSingleResult();
+    }
 }
 
 public static class Utils

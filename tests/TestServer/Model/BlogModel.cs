@@ -155,14 +155,35 @@ public class Comment : HasId
     public User User { get; set; }
     public IQueryable<string> Words => Regex.Split(Text, @"\s").Where(x => !string.IsNullOrWhiteSpace(x)).AsQueryable();
     public IList<CommentTag> Tags { get; set; }
+    public CommentMood? Mood { get; set; }
 }
 
+// registered as odata complex type (not entity)
 public class CommentTag : IHasMutableId
 {
     [Key]
     public string Tag { get; set; }
     public IList<Comment> Comments { get; set; }
     string IHasMutableId.Id { get => Tag; set => Tag = value; }
+}
+
+public enum Mood
+{
+    Happy = 1,
+    Sad
+}
+
+// registered as odata complex type (not entity)
+public class CommentMood
+{
+    [Key]
+    public string Key { get; set; }
+
+    [Required]
+    public Mood Mood { get; set; }
+
+    public string CommentId { get; set; }
+    public Comment Comment { get; set; }
 }
 
 public static class Utils

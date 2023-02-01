@@ -7,7 +7,6 @@ export {
 
 export {
     QueryBuilder,
-    ICollectionQueryBulder,
     ISingletonQueryBulder
 } from "./src/queryBuilder.js"
 
@@ -30,7 +29,7 @@ export {
 
 export * as ExpandUtils from "./src/expandUtils.js"
 
-export * as FilterUtils from "./src/query/filters.js"
+export * as FilterUtils from "./src/query/filtering/filters.js"
 
 export {
     ODataAnnotatedResult,

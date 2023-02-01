@@ -9,7 +9,8 @@
         "enumType": {
             "default": "Number",
             "stringEnums": [
-                "My.Odata.Entities.UserProfileType"
+                "My.Odata.Entities.UserProfileType",
+                "My.Odata.Entities.Mood"
             ]
         }
     },

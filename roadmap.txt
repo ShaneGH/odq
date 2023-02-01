@@ -37,6 +37,8 @@ Evaluated: v0
      * need to cast twice (e.g. ~/Cast.To.Child/Cast.To.GrandChild)
  * $value endpoint (e.g. http://localhost:5432/odata/test-entities/Users('f27f6026-cbb9-4234-a8e5-82584eb276ae')/UserType/$value)
      * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingaPropertysRawValueusingval
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect
+     * GET http://host/service/Products?$select=DemoService.* ????
 
 Evaluated: v1
  * What is the default value of Nullable for properties in $metadata

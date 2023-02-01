@@ -17,7 +17,6 @@ export type Keywords = {
     ODataTypeRef: string
     _httpClientArgs: string,
     ISingletonQueryBulder: string,
-    ICollectionQueryBulder: string,
     ODataAnnotatedResult: string
     ODataResult: string
     Internal: string
@@ -62,7 +61,6 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         ODataUriParts: getKeyword("ODataUriParts"),
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
         ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),
-        ICollectionQueryBulder: getKeyword("ICollectionQueryBulder"),
         ODataAnnotatedResult: getKeyword("ODataAnnotatedResult"),
         ODataResult: getKeyword("ODataResult"),
         _httpClientArgs: getKeyword("_httpClientArgs"),
@@ -100,7 +98,6 @@ ${tab(importWithAlias("SubPathSelection"))},
 ${tab(importWithAlias("ODataUriParts"))},
 ${tab(importWithAlias("QueryPrimitive"))},
 ${tab(importWithAlias("QueryArray"))},
-${tab(importWithAlias("ICollectionQueryBulder"))},
 ${tab(importWithAlias("ISingletonQueryBulder"))},
 ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))},

@@ -7,6 +7,7 @@ type Blog = My.Odata.Entities.Blog
 type BlogPost = My.Odata.Entities.BlogPost
 type Comment = My.Odata.Entities.Comment
 type CommentTag = My.Odata.Entities.CommentTag
+type CommentMood = My.Odata.Entities.CommentMood
 
 // for debug
 export async function drain() {
@@ -31,6 +32,7 @@ export type AddFullUserChainArgs = Partial<{
     userType: My.Odata.Entities.UserType
     userScore: number
     userProfileType: My.Odata.Entities.UserProfileType
+    commentMood: My.Odata.Entities.Mood
     blogPostContent: string
     blogPostLikes: number
     commentTags: CommentTag[]
@@ -65,7 +67,13 @@ export async function addFullUserChain(settings?: AddFullUserChainArgs): Promise
     const blogPost = await addBlogPost(blog.Id!, settings?.blogPostContent, settings?.blogPostLikes);
 
     const commentUser = await commentUserP;
-    const comment = await addComment(blogPost.Id!, commentUser.Id!, settings.commentTags || []);
+    const mood: Partial<My.Odata.Entities.CommentMood> | undefined = settings.commentMood == null
+        ? undefined
+        : {
+            Key: uniqueString("Comment_Mood_Id_"),
+            Mood: settings.commentMood,
+        }
+    const comment = await addComment(blogPost.Id!, commentUser.Id!, settings.commentTags || [], mood as CommentMood);
 
     return {
         blogUser,
@@ -124,9 +132,17 @@ export function postComment(val: Partial<Comment>) {
     return post<Comment>("Comments", val as Comment);
 }
 
-export async function addComment(blogPostId: string, userId: string, tags: CommentTag[]) {
+export async function addComment(blogPostId: string, userId: string, tags: CommentTag[], mood?: CommentMood) {
 
-    const blogComment: Partial<Comment> = { Title: uniqueString("Comment Title "), Text: uniqueString("Comment text "), BlogPostId: blogPostId, UserId: userId, Tags: tags }
+    const blogComment: Partial<Comment> = {
+        Title: uniqueString("Comment Title "),
+        Text: uniqueString("Comment text "),
+        BlogPostId: blogPostId,
+        UserId: userId,
+        Tags: tags,
+        Mood: mood
+    }
+
     return await postComment(blogComment)
 }
 
@@ -147,18 +163,19 @@ export async function addCompositeKeyItem(compositeKeyItem?: Partial<My.Odata.En
 
 function post<T>(entityName: string, value: T) {
     const uri = `http://localhost:5432/odata/test-entities/${entityName}`;
+    const method = "POST"
     return fetch(uri, {
-        method: "POST",
+        method,
         body: JSON.stringify(value),
         headers: {
             "Content-Type": "application/json"
         }
     })
         .then(x => x.status < 200 || x.status >= 300
-            ? x.text().then(err => handleError(uri, entityName, err, x, value)) as Promise<T>
+            ? x.text().then(err => handleError(uri, method, entityName, err, x, value)) as Promise<T>
             : x.json() as Promise<T>);
 }
 
-function handleError<T>(uri: string, entityName: string, error: any, resp: Response, reqPayload: any): T {
-    throw new Error(JSON.stringify({ uri, entityName, error, status: resp.status, headers: resp.headers, reqPayload }, null, 2));
+function handleError<T>(uri: string, method: string, entityName: string, error: any, resp: Response, reqPayload: any): T {
+    throw new Error(JSON.stringify({ uri, method, entityName, error, status: resp.status, headers: resp.headers, reqPayload }, null, 2));
 }

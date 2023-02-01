@@ -3,16 +3,21 @@ import { PathSegment } from "./typeRefBuilder.js";
 
 type Dict<T> = { [key: string]: T }
 
-export type QueryParts = {
-    filter?: Filter | undefined
-    expand?: Expand | undefined,
-    count?: boolean | undefined,
-    skip?: number | undefined,
-    top?: number | undefined
-}
+export type QueryParts = Partial<{
+    select: Select
+    filter: Filter
+    expand: Expand,
+    count: boolean,
+    skip: number,
+    top: number
+}>
 
 export type Expand = {
     expand: PathSegment[]
+}
+
+export type Select = {
+    $$select: string
 }
 
 export interface IQueryBulder {
@@ -24,15 +29,6 @@ export interface IQueryBulder {
 export interface ISingletonQueryBulder<T> extends IQueryBulder {
 
     expand(q: Expand | ((t: T) => PathSegment[])): ISingletonQueryBulder<T>;
-}
-
-export interface ICollectionQueryBulder<T> extends IQueryBulder {
-
-    filter(q: Filter | ((t: T) => Filter)): ICollectionQueryBulder<T>;
-    expand(q: Expand | ((t: T) => PathSegment[])): ICollectionQueryBulder<T>;
-    count(): ICollectionQueryBulder<T>;
-    top(top: number): ICollectionQueryBulder<T>;
-    skip(skip: number): ICollectionQueryBulder<T>;
 }
 
 function expand(pathSegment: PathSegment[] | undefined): string | undefined {
@@ -50,6 +46,12 @@ function expand(pathSegment: PathSegment[] | undefined): string | undefined {
         : `${head}/${next}`;
 }
 
+function select(pathSegment: PathSegment[][] | undefined): string | undefined {
+    if (!pathSegment?.length) return undefined;
+
+    return pathSegment.map(xs => xs.map(x => x.path).join("/")).join(",")
+}
+
 export class QueryStringBuilder implements IQueryBulder {
 
     constructor(protected state: QueryParts) {
@@ -60,6 +62,7 @@ export class QueryStringBuilder implements IQueryBulder {
         return [
             param("$filter", this.state.filter?.$$filter),
             param("$expand", expand(this.state.expand?.expand)),
+            param("$select", this.state.select?.$$select),
             param("$count", this.state.count ? "true" : undefined),
             param("$top", this.state.top?.toString()),
             param("$skip", this.state.skip?.toString())
@@ -92,6 +95,21 @@ export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
         state?: QueryParts | undefined) {
 
         super(state || {});
+    }
+
+    select(q: Select | ((t: TQInput) => Select)): QueryBuilder<T, TQInput> {
+        if (this.state.select) {
+            throw new Error("This query already has a select clause");
+        }
+
+        if (typeof q !== "function") {
+            return this.select(() => q);
+        }
+
+        return new QueryBuilder<T, TQInput>(this.typeRef, {
+            ...this.state,
+            select: q(this.typeRef)
+        });
     }
 
     filter(q: Filter | ((t: TQInput) => Filter)): QueryBuilder<T, TQInput> {
