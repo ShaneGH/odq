@@ -1,5 +1,5 @@
 import { ODataTypeRef } from "odata-ts-client-shared";
-import { HasODataQueryMetadata, PathSegment, QueryObject, QueryObjectMetadata } from "../typeRefBuilder.js";
+import { HasODataQueryMetadata } from "../../typeRefBuilder.js";
 import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
 import { OutputTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 

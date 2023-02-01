@@ -553,7 +553,7 @@ describe("Query.Filter Operators", function () {
                     .filter(u => and(
                         eq(u.Id, ctxt.blogUser.Id),
                         eq(count(u.Blogs), itemCount))))
-                .get({ fetch: loggingFetcher });
+                .get();
 
             if (success) {
                 expect(result.value.length).toBe(1);

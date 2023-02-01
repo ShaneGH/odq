@@ -14,7 +14,7 @@ export {
 export {
     FilterableProps,
     FilterablePaths
-} from "./src/query/op1.js"
+} from "./src/query/filtering/op1.js"
 
 export {
     IntegerTypes,
@@ -22,7 +22,7 @@ export {
     RealNumberTypes,
     NonNumericTypes,
     OutputTypes
-} from "./src/query/queryPrimitiveTypes0.js"
+} from "./src/query/filtering/queryPrimitiveTypes0.js"
 
 export {
     utils as queryUtils
