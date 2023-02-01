@@ -17,9 +17,6 @@ TODO: evaluate
 
 Evaluated: v0
 
- * What is the default value of Nullable for properties in $metadata
- * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionfilter
-     * read all sections thoroughly . Not just function names in tables
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionselect
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby
@@ -42,6 +39,7 @@ Evaluated: v0
      * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_RequestingaPropertysRawValueusingval
 
 Evaluated: v1
+ * What is the default value of Nullable for properties in $metadata
  * Dynamic properties (and open types)
  * http://docs.oasis-open.org/odata/odata-data-aggregation-ext/v4.0/odata-data-aggregation-ext-v4.0.html
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncompute
@@ -69,6 +67,9 @@ Evaluated: v1
     * Collection functions + 
     * collection versions of string + collection functions
     * date and time functions
+    * type functions (requires code gen for types)
+    * geo functions 
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_ParameterAliases
  * IsFlags
     * https://devblogs.microsoft.com/odata/tutorial-sample-use-enumeration-types-in-odata/
     * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_BuiltinFilterOperations "has" operator

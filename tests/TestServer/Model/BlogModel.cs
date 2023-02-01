@@ -85,6 +85,9 @@ public class User : HasId
     public UserType UserType { get; set; }
 
     [Required]
+    public double Score { get; set; }
+
+    [Required]
     public UserProfileType UserProfileType { get; set; }
 
     public IList<Blog> Blogs { get; set; }

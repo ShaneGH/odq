@@ -1,6 +1,5 @@
-import { Filter } from "./query/operable0.js";
+import { Filter } from "./query/filtering/operable0.js";
 import { PathSegment } from "./typeRefBuilder.js";
-
 
 type Dict<T> = { [key: string]: T }
 

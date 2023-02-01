@@ -1,4 +1,4 @@
-import { serialize } from "../valueSerializer.js";
+import { serialize } from "../../valueSerializer.js";
 import { OperableCollection } from "./collection1.js";
 import { infixOp, MappableType } from "./op1.js";
 import { combineFilterStrings, Filter, getFilterString, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata, Operable, TypeLookup } from "./operable0.js";

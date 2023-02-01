@@ -1,5 +1,5 @@
-import { QueryArray, QueryObject, QueryObjectType, QueryPrimitive } from "../typeRefBuilder.js";
-import { serialize } from "../valueSerializer.js";
+import { QueryArray, QueryObject, QueryObjectType, QueryPrimitive } from "../../typeRefBuilder.js";
+import { serialize } from "../../valueSerializer.js";
 import { combineFilterStrings, Filter, getFilterString, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
 import { IntegerTypes, NonNumericTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 

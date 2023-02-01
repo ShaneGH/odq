@@ -29,6 +29,7 @@ export async function drain() {
 export type AddFullUserChainArgs = Partial<{
     userName: string
     userType: My.Odata.Entities.UserType
+    userScore: number
     userProfileType: My.Odata.Entities.UserProfileType
     blogPostContent: string
     blogPostLikes: number
@@ -59,7 +60,7 @@ export async function addFullUserChain(settings?: AddFullUserChainArgs): Promise
         commentUserP = addUser();
     }
 
-    const blogUser = await addUser({ UserType: settings?.userType, UserProfileType: settings?.userProfileType });
+    const blogUser = await addUser({ UserType: settings?.userType, UserProfileType: settings?.userProfileType, Score: settings?.userScore });
     const blog = await addBlog(blogUser.Id!);
     const blogPost = await addBlogPost(blog.Id!, settings?.blogPostContent, settings?.blogPostLikes);
 

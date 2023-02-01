@@ -1,5 +1,5 @@
-import { ODataTypeRef } from "../../index.js";
-import { serialize } from "../valueSerializer.js";
+import { ODataTypeRef } from "odata-ts-client-shared";
+import { serialize } from "../../valueSerializer.js";
 import { combineFilterStrings, Filter, getFilterString, getOperableFilterString, getOperableTypeInfo, Operable } from "./operable0.js";
 import { IntegerTypes, NonNumericTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
@@ -105,20 +105,11 @@ export function length(lhs: Operable<string>): Filter {
     return combineFilterStrings("", int32T, metadata.root, `length(${lhsS})`);
 }
 
-export function subString(lhs: Operable<string>, length: number): Filter;
-export function subString(lhs: string, length: Operable<number>): Filter;
-export function subString(lhs: Operable<string> | string, length: Operable<number> | number): Filter {
+export function subString(lhs: Operable<string>, start: number, length?: number): Filter {
 
-    if (typeof lhs === "string" && typeof length === "number") {
-        throw new Error("Invalid method overload");
-    }
+    const metadata = getOperableTypeInfo(lhs);
+    const lhsS = getOperableFilterString(lhs)
 
-    const metadata = typeof lhs !== "string"
-        ? getOperableTypeInfo(lhs)
-        : getOperableTypeInfo(length as Operable<number>);
-
-    const lhsS = getFilterString(lhs, undefined, { ...metadata, typeRef: stringT })
-    const lengthS = getFilterString(length, undefined, { ...metadata, typeRef: int32T })
-
-    return combineFilterStrings("", stringT, metadata.root, `substring(${lhsS},${lengthS})`);
+    const filter = length == null ? `substring(${lhsS},${start})` : `substring(${lhsS},${start},${length})`;
+    return combineFilterStrings("", stringT, metadata.root, filter);
 }

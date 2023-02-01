@@ -1,6 +1,8 @@
-import { infixOp, MappableType } from "./op1.js";
-import { Filter, getOperableTypeInfo, Operable } from "./operable0.js";
-import { DecimalNumberTypes, IntegerTypes, RealNumberTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
+import { infixOp, MappableType } from "../op1.js";
+import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, Operable } from "../operable0.js";
+import { DecimalNumberTypes, IntegerTypes, RealNumberTypes, resolveOutputType } from "../queryPrimitiveTypes0.js";
+
+const int32T = resolveOutputType(IntegerTypes.Int32)
 
 const integerTypes = Object.keys(IntegerTypes);
 function isInteger(item: Operable<number> | number) {
@@ -63,4 +65,28 @@ export function divby(lhs: Operable<number>, rhs: Operable<number> | number, res
 
 export function mod(lhs: Operable<number>, rhs: Operable<number> | number, result: RealNumberTypes | undefined): Filter {
     return arithmeticInfixOp(lhs, "mod", rhs, result);
+}
+
+function roundingFunctionCall(
+    functionName: string,
+    lhs: Operable<number>,
+    result: IntegerTypes | undefined): Filter {
+
+    const metadata = getOperableTypeInfo(lhs);
+    const lhsS = getOperableFilterString(lhs)
+    const resultT = (result && resolveOutputType(result)) || int32T
+
+    return combineFilterStrings("", resultT, metadata.root, `${functionName}(${lhsS})`);
+}
+
+export function ceiling(lhs: Operable<number>, result?: IntegerTypes | undefined): Filter {
+    return roundingFunctionCall("ceiling", lhs, result);
+}
+
+export function floor(lhs: Operable<number>, result?: IntegerTypes | undefined): Filter {
+    return roundingFunctionCall("floor", lhs, result);
+}
+
+export function round(lhs: Operable<number>, result?: IntegerTypes | undefined): Filter {
+    return roundingFunctionCall("round", lhs, result);
 }

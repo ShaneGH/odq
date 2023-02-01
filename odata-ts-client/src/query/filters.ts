@@ -1,14 +1,14 @@
 import { QueryArray, QueryObject, QueryPrimitive } from "../typeRefBuilder.js";
-import { add, div, divby, mod, mul, sub } from "./arithmetic2.js";
-import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection1.js";
+import { add, ceiling, div, divby, floor, mod, mul, round, sub } from "./filtering/arithmetic2.js";
+import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./filtering/collection1.js";
 import {
     concat as concatString, contains as containsString, startsWith as startsWithString,
     endsWith as endsWithString, indexOf as indexOfString, length as lengthString, subString
-} from "./string.js";
-import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
-import { FilterablePaths, FilterableProps, op } from "./op1.js";
-import { Filter, Operable } from "./operable0.js";
-import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveTypes0.js";
+} from "./filtering/string1.js";
+import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./filtering/logical2.js";
+import { FilterablePaths, FilterableProps, op } from "./filtering/op1.js";
+import { Filter, Operable } from "./filtering/operable0.js";
+import { IntegerTypes, OutputTypes, RealNumberTypes } from "./filtering/queryPrimitiveTypes0.js";
 
 // TODO: remove mappers from functions which will not use them. e.g.
 //      eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;
@@ -487,22 +487,46 @@ export type IFilterUtils = {
      * 
      * @param lhs The string property to divide
      * 
-     * @param length The position to start the division
+     * @param start The position to start the division
      * 
-     * @example subString(my.firstName, 5)
+     * @param length The length of the substring
+     * 
+     * @example subString(my.firstName, 5, 6)
      */
-    subString(lhs: Operable<string>, length: number): Filter;
+    subString(lhs: Operable<string>, start: number, end?: number): Filter;
 
     /**
-     * An OData "substring" operation
+     * An OData "ceiling" operation
      * 
-     * @param lhs The string property to divide
+     * @param lhs The number to execute a ceiling operation on
      * 
-     * @param length The position to start the division
+     * @param result The expected result type. Default: Int32
      * 
-     * @example subString("Bob Jones", my.stringDivider)
+     * @example ceiling(my.score)
      */
-    subString(lhs: string, length: Operable<number>): Filter;
+    ceiling(lhs: Operable<number>, result?: IntegerTypes | undefined): Filter;
+
+    /**
+     * An OData "floor" operation
+     * 
+     * @param lhs The number to execute a floor operation on
+     * 
+     * @param result The expected result type. Default: Int32
+     * 
+     * @example floor(my.score)
+     */
+    floor(lhs: Operable<number>, result?: IntegerTypes | undefined): Filter;
+
+    /**
+     * An OData "round" operation
+     * 
+     * @param lhs The number to execute a round operation on
+     * 
+     * @param result The expected result type. Default: Int32
+     * 
+     * @example round(my.score)
+     */
+    round(lhs: Operable<number>, result?: IntegerTypes | undefined): Filter;
 
     // TODO: need server test to verify this functionality. (query string test is passing) 
     // /**
@@ -587,6 +611,9 @@ export function newUtils(): IFilterUtils {
         endsWithString,
         indexOfString,
         lengthString,
-        subString
+        subString,
+        ceiling,
+        floor,
+        round
     }
 }

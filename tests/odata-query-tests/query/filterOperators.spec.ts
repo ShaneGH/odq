@@ -61,6 +61,22 @@ describe("Query.Filter Operators", function () {
         return describe(name, test)
     }
 
+    testCase("null", function () {
+
+        it("Should work correctly", async () => {
+
+            const ctxt = await addFullUserChain();
+
+            const result = await client.Users
+                .withQuery((q, { filter: { eq, and } }) => q
+                    .filter(u => and(eq(u.Id, ctxt.blogUser.Id), eq(u.Name, null))))
+                .get();
+
+            // just a non failure is fine
+            expect(result.value.length).toBe(0);
+        });
+    });
+
     testCase("op", function () {
 
         describe("overload1", () => {
@@ -537,7 +553,7 @@ describe("Query.Filter Operators", function () {
                     .filter(u => and(
                         eq(u.Id, ctxt.blogUser.Id),
                         eq(count(u.Blogs), itemCount))))
-                .get();
+                .get({ fetch: loggingFetcher });
 
             if (success) {
                 expect(result.value.length).toBe(1);
@@ -1006,6 +1022,86 @@ describe("Query.Filter Operators", function () {
             } else {
                 expect(result.value.length).toBe(0);
             }
+        }
+
+        testCase("2 args", function () {
+
+            it("Should work correctly (success)", execute.bind(null, true));
+            it("Should work correctly (failure)", execute.bind(null, false))
+
+            async function execute(success: boolean) {
+
+                const ctxt = await addFullUserChain();
+                const partial = success ? ctxt.blogPost.Name.substring(5, 7) : "invalid"
+
+                const result = await client.BlogPosts
+                    .withQuery((q, { filter: { eq, and, subString } }) => q
+                        .filter(bp => and(
+                            eq(bp.Id, ctxt.blogPost.Id),
+                            eq(subString(bp.Name, 5, 2), partial))))
+                    .get();
+
+                if (success) {
+                    expect(result.value.length).toBe(1);
+                    expect(result.value[0].Content).toBe(ctxt.blogPost.Content);
+                } else {
+                    expect(result.value.length).toBe(0);
+                }
+            }
+        });
+    });
+
+    testCase("ceiling", function () {
+
+        it("Should work correctly", async () => {
+
+            const ctxt = await addFullUserChain({ userScore: 1.2 });
+            const result = await client.Users
+                .withQuery((q, { filter: { eq, and, ceiling } }) => q
+                    .filter(u => and(
+                        eq(u.Id, ctxt.blogUser.Id),
+                        eq(ceiling(u.Score), 2))))
+                .get();
+
+            expect(result.value.length).toBe(1);
+            expect(result.value[0].Name).toBe(ctxt.blogUser.Name);
+        });
+    });
+
+    testCase("floor", function () {
+
+        it("Should work correctly", async () => {
+
+            const ctxt = await addFullUserChain({ userScore: 1.2 });
+            const result = await client.Users
+                .withQuery((q, { filter: { eq, and, floor } }) => q
+                    .filter(u => and(
+                        eq(u.Id, ctxt.blogUser.Id),
+                        eq(floor(u.Score), 1))))
+                .get();
+
+            expect(result.value.length).toBe(1);
+            expect(result.value[0].Name).toBe(ctxt.blogUser.Name);
+        });
+    });
+
+    testCase("round", function () {
+
+        it("Should work correctly (round up)", execute.bind(null, true));
+        it("Should work correctly (round down)", execute.bind(null, false));
+
+        async function execute(roundUp: boolean) {
+
+            const ctxt = await addFullUserChain({ userScore: roundUp ? 1.6 : 1.2 });
+            const result = await client.Users
+                .withQuery((q, { filter: { eq, and, round } }) => q
+                    .filter(u => and(
+                        eq(u.Id, ctxt.blogUser.Id),
+                        eq(round(u.Score), roundUp ? 2 : 1))))
+                .get();
+
+            expect(result.value.length).toBe(1);
+            expect(result.value[0].Name).toBe(ctxt.blogUser.Name);
         }
     });
 
