@@ -77,15 +77,15 @@ describe("Query.Select", function () {
         });
     });
 
-    testCase("props", function () {
+    testCase("select", function () {
         describe("primitives", function () {
             it("Should work correctly", async () => {
 
                 const ctxt = await addFullUserChain();
                 const result = await client.Users
                     .withKey(ctxt.blogUser.Id)
-                    .withQuery((q, { select: { props } }) => q
-                        .select(x => props(x.Name, x.Score)))
+                    .withQuery((q, { select: { select } }) => q
+                        .select(x => select(x.Name, x.Score)))
                     .get();
 
                 expect(result.Name).toBe(ctxt.blogUser.Name);
@@ -101,8 +101,8 @@ describe("Query.Select", function () {
                 const ctxt = await addFullUserChain({ commentMood: My.Odata.Entities.Mood.Happy });
                 const result = await client.Comments
                     .withKey(ctxt.comment.Id)
-                    .withQuery((q, { select: { props } }) => q
-                        .select(x => props(x.Mood)))
+                    .withQuery((q, { select: { select } }) => q
+                        .select(x => select(x.Mood)))
                     .get();
 
                 expect(result.Mood!.Key).toBe(ctxt.comment.Mood!.Key);
@@ -117,8 +117,8 @@ describe("Query.Select", function () {
                 const ctxt = await addFullUserChain({ commentMood: My.Odata.Entities.Mood.Happy });
                 const result = await client.Comments
                     .withKey(ctxt.comment.Id)
-                    .withQuery((q, { select: { props } }) => q
-                        .select(x => props(x.Mood.Mood)))
+                    .withQuery((q, { select: { select } }) => q
+                        .select(x => select(x.Mood.Mood)))
                     .get();
 
                 expect(result.Mood!.Key).toBeUndefined();

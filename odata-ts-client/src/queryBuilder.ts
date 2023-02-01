@@ -13,10 +13,12 @@ export type QueryParts = Partial<{
 }>
 
 export type Expand = {
+    $$oDataQueryObjectType: "Expand"
     $$expand: string
 }
 
 export type Select = {
+    $$oDataQueryObjectType: "Select"
     $$select: string
 }
 

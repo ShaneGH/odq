@@ -68,6 +68,7 @@ export function count(collection: QueryArray<any, any>, countUnit = IntegerTypes
         $$oDataQueryMetadata: {
             root: collection.$$oDataQueryMetadata.root,
             typeRef: resolveOutputType(countUnit),
+            queryAliases: collection.$$oDataQueryMetadata.queryAliases,
             path: [
                 ...collection.$$oDataQueryMetadata.path,
                 {

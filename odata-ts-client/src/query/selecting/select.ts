@@ -9,9 +9,9 @@ export type SelectUtils = {
      * 
      * @param props The properties to select
      * 
-     * @example props(my.property1, my.property2)
+     * @example select(my.property1, my.property2)
      */
-    props(...props: QueryObject<any>[]): Select
+    select(...props: QueryObject<any>[]): Select
 
     /**
      * Add a custom select statement
@@ -26,12 +26,13 @@ function path<T>(x: QueryObject<T>) {
     return x.$$oDataQueryMetadata.path
 }
 
-function props(...props: QueryObject<any>[]): Select {
+function select(...props: QueryObject<any>[]): Select {
     if (!props?.length) {
         throw new Error("You must specify at least one property to select");
     }
 
     return {
+        $$oDataQueryObjectType: "Select",
         $$select: props.map(path).map(ps => ps.map(p => p.path).join("/")).join(",")
     }
 }
@@ -39,13 +40,14 @@ function props(...props: QueryObject<any>[]): Select {
 function selectRaw(customSelect: string): Select {
 
     return {
+        $$oDataQueryObjectType: "Select",
         $$select: customSelect
     }
 }
 
 export function newUtils(): SelectUtils {
     return {
-        props,
+        select,
         selectRaw
     }
 }

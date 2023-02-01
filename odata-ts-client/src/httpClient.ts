@@ -452,6 +452,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
                     isCollection: false,
                     ...type
                 },
+                queryAliases: {},
                 root: this.root.types,
                 path: [{
                     path: "$it",
@@ -485,6 +486,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
                     namespace: type.namespace,
                     name: type.name
                 },
+                queryAliases: {},
                 path: [{
                     path: "$it",
                     navigationProperty: false

@@ -1,23 +1,30 @@
-import { Expand } from "../../queryBuilder.js"
-import { PathSegment, QueryArray, QueryObject } from "../../typeRefBuilder.js"
+import { Expand, Select } from "../../queryBuilder.js"
+import { PathSegment, QueryArray, QueryComplexObject, QueryEnum, QueryObject, QueryObjectType, reContext } from "../../typeRefBuilder.js"
+import { Filter } from "../filtering/operable0.js"
 
 export type ExpandUtils = {
 
     /**
      * Add a custom expand string
      * 
-     * @example expand("property1")
+     * @example expandRaw("property1")
      */
     expandRaw(expand: string): Expand
 
     /**
-     * Expand an object or array of objects
+     * Expand an object or array of objects. 
      * 
-     * @param obj The properties to select
+     * @param obj An object to expand. 
+     * Entities can be deeply expanded by inputting nested properties. 
+     * Entities in a collection will need to use the second arg of this method for deep expansion
      * 
-     * @example expand(my.property1)
+     * @param and A list of further expansions, transforms and filters to apply
+     * 
+     * @example expand(my.user)
+     * @example expand(my.user.blogPosts)
+     * @example expand(my.user.blogPosts, p => gt(p.likes, 10), p => select(p.title))
      */
-    expand<T>(obj: QueryObject<T>): Expand
+    expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => Expand | Filter | Select)[]): Expand;
 
     /**
      * Combine multiple expanded properties
@@ -25,42 +32,55 @@ export type ExpandUtils = {
      * @example combine(expand(my.property1), expand(my.property2))
      */
     combine(...expansions: Expand[]): Expand
-
-    expandAndTODO<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
-        obj: QueryArray<TQueryObj, TArrayType>, and: (x: TQueryObj) => Expand): Expand;
 }
 
-function expand<T>(obj: QueryObject<T>): Expand {
+function expandRaw(expand: string): Expand {
+
+    return {
+        $$oDataQueryObjectType: "Expand",
+        $$expand: expand
+    }
+}
+
+function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => Expand | Filter | Select)[]): Expand {
 
     const $$expand = _expand(obj.$$oDataQueryMetadata.path);
     if (!$$expand) {
         throw new Error("Object cannot be expanded");
     }
 
-    return { $$expand }
-}
-
-function expandRaw(expand: string): Expand {
-
-    return { $$expand: expand }
-}
-
-// this method is a hack. Need to see how the "and" function evolves
-function expandAndTODO<TQueryObj extends QueryObject<TArrayType>, TArrayType>(
-    obj: QueryArray<TQueryObj, TArrayType>, and: (x: TQueryObj) => Expand): Expand {
-
-    const outerExpand = _expand(obj.$$oDataQueryMetadata.path);
-    if (!outerExpand) {
-        throw new Error("Object cannot be expanded");
+    if (!and.length) {
+        return {
+            $$oDataQueryObjectType: "Expand",
+            $$expand
+        }
     }
 
-    const innerExpand = and(obj.childObjConfig);
-    let inner = innerExpand.$$expand;
-    if (inner.startsWith(obj.childObjAlias)) {
-        inner = inner.substring(obj.childObjAlias.length)
-    }
+    const reContexted = obj.$$oDataQueryObjectType === QueryObjectType.QueryArray
+        ? reContext(obj.childObjConfig)
+        : reContext(obj);
 
-    return { $$expand: `${outerExpand}${inner}` }
+    const inner = and
+        .map(f => executeInnerContext(reContexted, f))
+        .join(",");
+
+    return {
+        $$oDataQueryObjectType: "Expand",
+        $$expand: `${$$expand}(${inner})`
+    }
+}
+
+function executeInnerContext<T>(
+    reContextedObj: QueryComplexObject<T>,
+    and: (x: QueryComplexObject<T>) => Filter | Select | Expand
+) {
+    const result = and(reContextedObj)
+
+    return result.$$oDataQueryObjectType === "Expand"
+        ? `$expand=${result.$$expand}`
+        : result.$$oDataQueryObjectType === "Filter"
+            ? `$filter=${result.$$filter}`
+            : `$select=${result.$$select}`;
 }
 
 function _expand(pathSegment: PathSegment[]): string | null {
@@ -80,6 +100,7 @@ function _expand(pathSegment: PathSegment[]): string | null {
 
 function combine(...expansions: Expand[]): Expand {
     return {
+        $$oDataQueryObjectType: "Expand",
         $$expand: expansions.map(x => x.$$expand).join(",")
     }
 }
@@ -88,7 +109,6 @@ export function newUtils(): ExpandUtils {
     return {
         expand,
         combine,
-        expandRaw,
-        expandAndTODO
+        expandRaw
     }
 }

@@ -1,10 +1,7 @@
 
 import { addFullUserChain } from "../utils/client.js";
-import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
-import { FilterUtils as F, QueryBuilder, QueryComplexObject, queryUtils } from "odata-ts-client";
-import { uniqueString } from "../utils/utils.js";
-import { buildComplexTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
-import { NonNumericTypes } from "odata-ts-client/dist/src/filterUtils.js";
+import { ODataClient, rootConfigExporter } from "../generatedCode.js";
+import { queryUtils } from "odata-ts-client";
 
 const rootConfig = rootConfigExporter();
 
@@ -88,17 +85,26 @@ describe("Query.Expand", function () {
             expect(result.Blog!.Name).toBe(ctxt.blog.Name);
         });
 
-        it("Should work correctly with multiple single entities", async () => {
+        describe("multiple single entities", () => {
 
-            const ctxt = await addFullUserChain();
-            const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
-                .withQuery((q, { expand: { expand } }) => q
-                    .expand(p => expand(p.Blog.User)))
-                .get();
+            it("Should work correctly (1)", execute.bind(null, true));
+            it("Should work correctly (2)", execute.bind(null, false));
 
-            expect(result.Blog!.Name).toBe(ctxt.blog.Name);
-            expect(result.Blog!.User!.Name).toBe(ctxt.blogUser.Name);
+            async function execute(twoCalls: boolean) {
+
+                const ctxt = await addFullUserChain();
+                const result = await client.BlogPosts
+                    .withKey(ctxt.blogPost.Id)
+                    .withQuery((q, { expand: { expand } }) => {
+                        return twoCalls
+                            ? q.expand(p => expand(p.Blog, b => expand(b.User)))
+                            : q.expand(p => expand(p.Blog.User));
+                    })
+                    .get();
+
+                expect(result.Blog!.Name).toBe(ctxt.blog.Name);
+                expect(result.Blog!.User!.Name).toBe(ctxt.blogUser.Name);
+            }
         });
 
         it("Should work correctly with entity collection", async () => {
@@ -112,21 +118,101 @@ describe("Query.Expand", function () {
 
             expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
         });
-    });
-
-    testCase("expandAndTODO", () => {
 
         it("Should work correctly with multiple entity collections", async () => {
 
             const ctxt = await addFullUserChain();
             const result = await client.Users
                 .withKey(ctxt.blogUser.Id)
-                .withQuery((q, { expand: { expandAndTODO, expand } }) => q
-                    .expand(p => expandAndTODO(p.Blogs, b => expand(b.Posts))))
+                .withQuery((q, { expand: { expand } }) => q
+                    .expand(p => expand(p.Blogs, b => expand(b.Posts))))
                 .get();
 
             expect(result.Blogs![0].Name).toBe(ctxt.blog.Name);
             expect(result.Blogs![0].Posts![0].Name).toBe(ctxt.blogPost.Name);
+        });
+
+        it("Should work correctly with single entity + expand", () => {
+            // see: multiple single entities
+        });
+
+        it("Should work correctly with single entity + select", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((q, { expand: { expand }, select: { select } }) => q
+                    .expand(p => expand(p.Blog, b => select(b.Name))))
+                .get();
+
+            expect(result.Blog!.Name).toBe(ctxt.blog.Name);
+            expect(result.Blog!.Id).toBeUndefined();
+        });
+
+        describe("Single entity + filter", () => {
+            // not sure this is possible
+
+            // it("Should return something", execute.bind(null, true));
+            // it("Should return nothing", execute.bind(null, false));
+
+            // async function execute(returnSomething: boolean) {
+
+            //     const ctxt = await addFullUserChain();
+            //     const result = await client.BlogPosts
+            //         .withKey(ctxt.blogPost.Id)
+            //         .withQuery((q, { expand: { expand }, filter: { eq, ne } }) => q
+            //             .expand(p => expand(p.Blog, c => returnSomething
+            //                 ? eq(c.Name, ctxt.blog.Name)
+            //                 : ne(c.Name, ctxt.blog.Name))))
+            //         .get({ fetch: loggingFetcher });
+
+            //     if (returnSomething) {
+            //         expect(result.Blog!.Id).toBe(ctxt.blog.Id);
+            //     } else {
+            //         expect(result.Blog).toBeUndefined();
+            //     }
+            // }
+        });
+
+        it("Should work correctly with multiple entity + select", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((q, { expand: { expand }, select: { select } }) => q
+                    .expand(p => expand(p.Comments, b => select(b.Title))))
+                .get();
+
+            expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
+            expect(result.Comments![0].Id).toBeUndefined();
+        });
+
+        it("Should work correctly with multiple entity + expand", async () => {
+
+            // see: Should work correctly with multiple entity collections
+        });
+
+        describe("Multiple entities + filter", () => {
+            it("Should return something", execute.bind(null, true));
+            it("Should return nothing", execute.bind(null, false));
+
+            async function execute(returnSomething: boolean) {
+
+                const ctxt = await addFullUserChain();
+                const result = await client.BlogPosts
+                    .withKey(ctxt.blogPost.Id)
+                    .withQuery((q, { expand: { expand }, filter: { eq, ne } }) => q
+                        .expand(p => expand(p.Comments, c => returnSomething
+                            ? eq(c.Title, ctxt.comment.Title)
+                            : ne(c.Title, ctxt.comment.Title))))
+                    .get();
+
+                if (returnSomething) {
+                    expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
+                } else {
+                    expect(result.Comments?.length).toBe(0);
+                }
+            }
         });
     });
 

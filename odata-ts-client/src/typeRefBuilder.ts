@@ -15,10 +15,15 @@ export type PathSegment = {
     navigationProperty: boolean
 }
 
+export type MutableQueryObjectMetadata = {
+    usedAliases: Dict<boolean>
+}
+
 export type QueryObjectMetadata = {
     typeRef: ODataTypeRef
     root: ODataServiceTypes
     path: PathSegment[]
+    queryAliases: Dict<boolean>
 }
 
 // T is not used, but adds strong typing to FilterUtils
@@ -90,14 +95,14 @@ function addAlias(aliasFor: string, aliases: Dict<boolean>) {
     };
 }
 
-function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, path: PathSegment[], usedAliases: Dict<boolean>): QueryObject<T> {
+function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, path: PathSegment[], queryAliases: Dict<boolean>): QueryObject<T> {
 
     if (type.isCollection) {
         if (!path.length) {
             throw new Error("The top level object cannot be a collection");
         }
 
-        const newAliases = addAlias(path[path.length - 1].path, usedAliases);
+        const newAliases = addAlias(path[path.length - 1].path, queryAliases);
         const newRootPath = {
             path: newAliases.newAlias,
 
@@ -110,7 +115,8 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataQueryMetadata: {
                 path: path,
                 root,
-                typeRef: type
+                typeRef: type,
+                queryAliases: newAliases.aliases
             },
             childObjConfig: buildPropertyTypeRef<T>(type.collectionType, root, [newRootPath], newAliases.aliases),
             childObjAlias: newAliases.newAlias
@@ -124,7 +130,8 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataQueryMetadata: {
                 path: path,
                 root,
-                typeRef: type
+                typeRef: type,
+                queryAliases
             }
         };
     }
@@ -142,7 +149,8 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             $$oDataQueryMetadata: {
                 path: path,
                 root,
-                typeRef: type
+                typeRef: type,
+                queryAliases
             }
         };
     }
@@ -153,7 +161,8 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
         $$oDataQueryMetadata: {
             path: path,
             root,
-            typeRef: type
+            typeRef: type,
+            queryAliases
         }
     }
 
@@ -203,7 +212,7 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
                                 navigationProperty: x.value.navigationProperty
                             }];
 
-                        return propertyCache = buildPropertyTypeRef(x.value.type, root, propPath, usedAliases);
+                        return propertyCache = buildPropertyTypeRef(x.value.type, root, propPath, queryAliases);
                     }
                 });
 
@@ -218,6 +227,25 @@ export function buildComplexTypeRef<T>(type: ODataComplexType, root: ODataServic
         namespace: type.namespace,
         isCollection: false
     }, root, [], {});
+
+    if (typeRef.$$oDataQueryObjectType !== QueryObjectType.QueryObject) {
+        throw new Error("TODO: try to simulate this error");
+    }
+
+    return typeRef;
+}
+
+export function reContext<T>(obj: QueryComplexObject<T>): QueryComplexObject<T> {
+
+    if (obj.$$oDataQueryMetadata.typeRef.isCollection) {
+        throw new Error("Complex object has collection type ref");
+    }
+
+    const typeRef = buildPropertyTypeRef<T>({
+        name: obj.$$oDataQueryMetadata.typeRef.name,
+        namespace: obj.$$oDataQueryMetadata.typeRef.namespace,
+        isCollection: false
+    }, obj.$$oDataQueryMetadata.root, [], obj.$$oDataQueryMetadata.queryAliases);
 
     if (typeRef.$$oDataQueryObjectType !== QueryObjectType.QueryObject) {
         throw new Error("TODO: try to simulate this error");
