@@ -87,6 +87,14 @@ function executeInnerContext<T>(
         return `$orderBy=${result.$$orderBy}`
     }
 
+    if (result.$$oDataQueryObjectType === "Search") {
+        return `$search=${result.$$search}`
+    }
+
+    if (result.$$oDataQueryObjectType === "Custom") {
+        return `${result.$$key}=${result.$$value}`
+    }
+
     if (result.$$oDataQueryObjectType === "Paging") {
         return [
             result.$$top != null ? `$top=${result.$$top}` : null,

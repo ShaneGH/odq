@@ -41,7 +41,7 @@ function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
     }
 }
 
-describe("Query.Paging", function () {
+describe("Query.Custom", function () {
 
     afterAll(() => {
         // only 1 test
@@ -59,7 +59,7 @@ describe("Query.Paging", function () {
         return describe(name, test)
     }
 
-    testCase("paging", function () {
+    testCase("custom", function () {
         it("Should work correctly", async function () {
 
             const ctxt = await addFullUserChain({ addFullChainToCommentUser: {} });
@@ -70,10 +70,12 @@ describe("Query.Paging", function () {
             ].sort()
 
             const result = await client.Users
-                .withQuery((u, { paging, filter: { isIn }, orderBy: { orderBy } }) => [
+                .withQuery((u, { custom, filter: { isIn }, orderBy: { orderBy } }) => [
                     isIn(u.Id, userIds),
                     orderBy(u.Id),
-                    paging(1, 1, true)
+                    custom("$skip", "1"),
+                    custom("$top", "1"),
+                    custom("$count", "true")
                 ])
                 .get();
 

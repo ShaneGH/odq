@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.OData;
+using Microsoft.AspNetCore.OData.Query.Expressions;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using TestServer.Controllers;
@@ -25,7 +26,8 @@ public class Program
             })
             .AddOData(opt => opt
                 .EnableQueryFeatures()
-                .AddRouteComponents(OdataRoot, GetEdmModel()));
+                .AddRouteComponents(OdataRoot, GetEdmModel(), services => services.Add(
+                    new ServiceDescriptor(typeof(ISearchBinder), _ => new TestServer.Controllers.BlogSearchBinder(), ServiceLifetime.Singleton))));
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         // builder.Services.AddEndpointsApiExplorer(); // http://localhost:5432/swagger/index.html

@@ -226,6 +226,18 @@ describe("Query.Expand", function () {
             expect(result.Comments?.length).toBe(0);
         });
 
+        it("Should work correctly with multiple entity + custom", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((p, { expand: { expand }, custom }) =>
+                    expand(p.Comments, b => custom("$top", "0")))
+                .get();
+
+            expect(result.Comments?.length).toBe(0);
+        });
+
         it("Should work correctly with multiple entity + expand", async () => {
 
             // see: Should work correctly with multiple entity collections

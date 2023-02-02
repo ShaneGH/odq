@@ -27,9 +27,20 @@ export type OrderBy = {
     $$orderBy: string
 }
 
+export type Custom = {
+    $$oDataQueryObjectType: "Custom"
+    $$key: string
+    $$value: string
+}
+
 export type Select = {
     $$oDataQueryObjectType: "Select"
     $$select: string
+}
+
+export type Search = {
+    $$oDataQueryObjectType: "Search"
+    $$search: string
 }
 
 export type Filter = {
@@ -39,7 +50,7 @@ export type Filter = {
     $$root?: ODataServiceTypes
 }
 
-export type Query = Paging | Expand | OrderBy | Select | Filter
+export type Query = Paging | Expand | OrderBy | Select | Filter | Custom | Search
 
 function hasOwnProperty(s: Dict<string>, prop: string) {
     return Object.prototype.hasOwnProperty.call(s, prop)
@@ -86,13 +97,22 @@ export function buildQuery(q: Query | Query[]): Dict<string> {
                 return maybeAdd(s, "$select", x.$$select, "Multiple select clauses detected");
             }
 
+            if (x.$$oDataQueryObjectType === "Custom") {
+                return maybeAdd(s, x.$$key, x.$$value, "Multiple select clauses detected");
+            }
+
+            if (x.$$oDataQueryObjectType === "Search") {
+                return maybeAdd(s, "$search", x.$$search, "Multiple select clauses detected");
+            }
+
             if (hasOwnProperty(s, "$count") || hasOwnProperty(s, "$skip") || hasOwnProperty(s, "$top")) {
                 throw new Error("Multiple paging clauses detected")
             }
 
-            s = maybeAdd(s, "$skip", x.$$skip?.toString(), "Multiple paging clauses detected")
-            s = maybeAdd(s, "$top", x.$$top?.toString(), "Multiple paging clauses detected")
-            return maybeAdd(s, "$count", (x.$$count || undefined) && "true", "Multiple paging clauses detected")
+            const err = "Multiple paging clauses detected. If using a count and paging, both must use the same \"paging(...)\" function call"
+            s = maybeAdd(s, "$skip", x.$$skip?.toString(), err)
+            s = maybeAdd(s, "$top", x.$$top?.toString(), err)
+            return maybeAdd(s, "$count", (x.$$count || undefined) && "true", err)
         }, {} as Dict<string>);
 }
 
