@@ -22,9 +22,9 @@ export type ExpandUtils = {
      * 
      * @example expand(my.user)
      * @example expand(my.user.blogPosts)
-     * @example expand(my.user.blogPosts, p => gt(p.likes, 10), p => select(p.title))
+     * @example expand(my.user.blogPosts, p => gt(p.likes, 10), p => select(p.title), _ => "$count")
      */
-    expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => Expand | Filter | Select)[]): Expand;
+    expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => ExtraExpansionResult)[]): Expand;
 
     /**
      * Combine multiple expanded properties
@@ -42,7 +42,9 @@ function expandRaw(expand: string): Expand {
     }
 }
 
-function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => Expand | Filter | Select)[]): Expand {
+type ExtraExpansionResult = "$count" | Expand | Filter | Select
+
+function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => ExtraExpansionResult)[]): Expand {
 
     const $$expand = _expand(obj.$$oDataQueryMetadata.path);
     if (!$$expand) {
@@ -62,7 +64,7 @@ function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>
 
     const inner = and
         .map(f => executeInnerContext(reContexted, f))
-        .join(",");
+        .join(";");
 
     return {
         $$oDataQueryObjectType: "Expand",
@@ -72,15 +74,23 @@ function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>
 
 function executeInnerContext<T>(
     reContextedObj: QueryComplexObject<T>,
-    and: (x: QueryComplexObject<T>) => Filter | Select | Expand
+    and: (x: QueryComplexObject<T>) => ExtraExpansionResult
 ) {
     const result = and(reContextedObj)
 
-    return result.$$oDataQueryObjectType === "Expand"
-        ? `$expand=${result.$$expand}`
-        : result.$$oDataQueryObjectType === "Filter"
-            ? `$filter=${result.$$filter}`
-            : `$select=${result.$$select}`;
+    if (result === "$count") {
+        return `$count=true`
+    }
+
+    if (result.$$oDataQueryObjectType === "Expand") {
+        return `$expand=${result.$$expand}`
+    }
+
+    if (result.$$oDataQueryObjectType === "Filter") {
+        return `$filter=${result.$$filter}`
+    }
+
+    return `$select=${result.$$select}`;
 }
 
 function _expand(pathSegment: PathSegment[]): string | null {

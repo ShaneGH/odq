@@ -113,9 +113,10 @@ describe("Query.Expand", function () {
             const result = await client.BlogPosts
                 .withKey(ctxt.blogPost.Id)
                 .withQuery((q, { expand: { expand } }) => q
-                    .expand(p => expand(p.Comments)))
+                    .expand(p => expand(p.Comments, _ => "$count")))
                 .get();
 
+            expect((result as any)["Comments@odata.count"]).toBe(1);
             expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
         });
 
@@ -147,6 +148,20 @@ describe("Query.Expand", function () {
 
             expect(result.Blog!.Name).toBe(ctxt.blog.Name);
             expect(result.Blog!.Id).toBeUndefined();
+        });
+
+        it("Should work correctly with multiple entities + select twice", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((q, { expand: { expand }, select: { select } }) => q
+                    .expand(p => expand(p.Comments, b => select(b.Title), _ => "$count")))
+                .get();
+
+            expect((result as any)["Comments@odata.count"]).toBe(1);
+            expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
+            expect(result.Comments![0].Id).toBeUndefined();
         });
 
         describe("Single entity + filter", () => {
