@@ -18,9 +18,6 @@ TODO: evaluate
 Evaluated: v0
 
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand
- * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby
-     * Services SHOULD order language-dependent strings according to the content-language of the response, and SHOULD annotate string properties with language-dependent order with the term Core.IsLanguageDependent, see [OData-VocCore].
-     * A type cast using the qualified entity type name is required to order by a property defined on a derived type
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptioncount
     * Count on inner props
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionsearch
@@ -79,6 +76,9 @@ Evaluated: v1
  * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionexpand
     * /$ref
     * /$count
+ * http://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html#sec_SystemQueryOptionorderby
+     * Services SHOULD order language-dependent strings according to the content-language of the response, and SHOULD annotate string properties with language-dependent order with the term Core.IsLanguageDependent, see [OData-VocCore].
+     * A type cast using the qualified entity type name is required to order by a property defined on a derived type
 
 Evaluated: vNext
  

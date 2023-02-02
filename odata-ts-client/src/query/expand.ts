@@ -1,4 +1,4 @@
-import { Expand, Select } from "../queryBuilder.js"
+import { Expand, OrderBy, Select } from "../queryBuilder.js"
 import { PathSegment, QueryArray, QueryComplexObject, QueryEnum, QueryObject, QueryObjectType, reContext } from "../typeRefBuilder.js"
 import { Filter } from "./filtering/operable0.js"
 
@@ -42,7 +42,7 @@ function expandRaw(expand: string): Expand {
     }
 }
 
-type ExtraExpansionResult = "$count" | Expand | Filter | Select
+type ExtraExpansionResult = "$count" | Expand | Filter | Select | OrderBy
 
 function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => ExtraExpansionResult)[]): Expand {
 
@@ -88,6 +88,10 @@ function executeInnerContext<T>(
 
     if (result.$$oDataQueryObjectType === "Filter") {
         return `$filter=${result.$$filter}`
+    }
+
+    if (result.$$oDataQueryObjectType === "OrderBy") {
+        return `$orderBy=${result.$$orderBy}`
     }
 
     return `$select=${result.$$select}`;

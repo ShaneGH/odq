@@ -42,6 +42,7 @@ export type QueryEnum<T> = {
 // TODO: rename to Collection
 // type def is recursive for this type: "TQueryObj extends QueryObject<...". Cannot be a "type"
 export interface QueryArray<TQueryObj extends QueryObject<TArrayType>, TArrayType> {
+    $count: QueryPrimitive<number>
     $$oDataQueryObjectType: QueryObjectType.QueryArray
     $$oDataQueryMetadata: QueryObjectMetadata
     childObjConfig: TQueryObj
@@ -95,6 +96,18 @@ function addAlias(aliasFor: string, aliases: Dict<boolean>) {
     };
 }
 
+function buildArrayCount(arrayMetadata: QueryObjectMetadata): QueryPrimitive<number> {
+    return {
+        $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
+        $$oDataQueryMetadata: {
+            typeRef: { name: "Int32", namespace: "Edm", isCollection: false },
+            root: arrayMetadata.root,
+            path: [...arrayMetadata.path, { navigationProperty: false, path: "$count" }],
+            queryAliases: arrayMetadata.queryAliases
+        }
+    };
+}
+
 function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, path: PathSegment[], queryAliases: Dict<boolean>): QueryObject<T> {
 
     if (type.isCollection) {
@@ -110,14 +123,17 @@ function buildPropertyTypeRef<T>(type: ODataTypeRef, root: ODataServiceTypes, pa
             navigationProperty: false
         }
 
+        const $$oDataQueryMetadata = {
+            path: path,
+            root,
+            typeRef: type,
+            queryAliases: newAliases.aliases
+        }
+
         return {
+            $count: buildArrayCount($$oDataQueryMetadata),
             $$oDataQueryObjectType: QueryObjectType.QueryArray,
-            $$oDataQueryMetadata: {
-                path: path,
-                root,
-                typeRef: type,
-                queryAliases: newAliases.aliases
-            },
+            $$oDataQueryMetadata,
             childObjConfig: buildPropertyTypeRef<T>(type.collectionType, root, [newRootPath], newAliases.aliases),
             childObjAlias: newAliases.newAlias
         };

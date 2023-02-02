@@ -7,14 +7,25 @@ export type QueryParts = Partial<{
     select: Select
     filter: Filter
     expand: Expand,
-    count: boolean,
-    skip: number,
-    top: number
+    orderBy: OrderBy,
+    paging: Paging
 }>
+
+export type Paging = {
+    $$oDataQueryObjectType: "Paging"
+    $$top: number | undefined
+    $$skip: number | undefined
+    $$count: boolean | undefined
+}
 
 export type Expand = {
     $$oDataQueryObjectType: "Expand"
     $$expand: string
+}
+
+export type OrderBy = {
+    $$oDataQueryObjectType: "OrderBy"
+    $$orderBy: string
 }
 
 export type Select = {
@@ -44,9 +55,10 @@ export class QueryStringBuilder implements IQueryBulder {
             param("$filter", this.state.filter?.$$filter),
             param("$expand", this.state.expand?.$$expand),
             param("$select", this.state.select?.$$select),
-            param("$count", this.state.count ? "true" : undefined),
-            param("$top", this.state.top?.toString()),
-            param("$skip", this.state.skip?.toString())
+            param("$orderBy", this.state.orderBy?.$$orderBy),
+            param("$count", this.state.paging?.$$count ? "true" : undefined),
+            param("$top", this.state.paging?.$$top?.toString()),
+            param("$skip", this.state.paging?.$$skip?.toString())
         ]
             .reduce((s: Dict<string>, x) => x ? { ...s, ...x } : s, {} as Dict<string>);
 
@@ -123,39 +135,33 @@ export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
         });
     }
 
-    count(): QueryBuilder<T, TQInput> {
+    orderBy(q: OrderBy | ((t: TQInput) => OrderBy)): QueryBuilder<T, TQInput> {
+        if (this.state.orderBy) {
+            throw new Error("This query is alread ordered");
+        }
 
-        if (this.state.count != null) {
-            throw new Error("This query already has a count");
+        if (typeof q !== "function") {
+            return this.orderBy(() => q);
         }
 
         return new QueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
-            count: true
+            orderBy: q(this.typeRef)
         });
     }
 
-    top(top: number): QueryBuilder<T, TQInput> {
+    page(q: Paging | (() => Paging)): QueryBuilder<T, TQInput> {
+        if (this.state.paging) {
+            throw new Error("This query already has paging");
+        }
 
-        if (this.state.top != null) {
-            throw new Error("This query already has a top");
+        if (typeof q !== "function") {
+            return this.page(() => q);
         }
 
         return new QueryBuilder<T, TQInput>(this.typeRef, {
             ...this.state,
-            top
-        });
-    }
-
-    skip(skip: number): QueryBuilder<T, TQInput> {
-
-        if (this.state.skip != null) {
-            throw new Error("This query already has a skip");
-        }
-
-        return new QueryBuilder<T, TQInput>(this.typeRef, {
-            ...this.state,
-            skip
+            paging: q()
         });
     }
 }

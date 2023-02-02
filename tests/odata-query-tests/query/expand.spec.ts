@@ -202,6 +202,18 @@ describe("Query.Expand", function () {
             expect(result.Comments![0].Id).toBeUndefined();
         });
 
+        it("Should work correctly with multiple entity + orderBy", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((q, { expand: { expand }, orderBy: { orderBy } }) => q
+                    .expand(p => expand(p.Comments, b => orderBy(b.Title))))
+                .get();
+
+            expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
+        });
+
         it("Should work correctly with multiple entity + expand", async () => {
 
             // see: Should work correctly with multiple entity collections
