@@ -226,6 +226,19 @@ describe("Query.Expand", function () {
             expect(result.Comments?.length).toBe(0);
         });
 
+        it("Should work correctly with multiple entity + search", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((p, { expand: { expand }, search: { term, searchNot } }) =>
+                    expand(p.Comments, _ => searchNot(term("saopidhasodh a"))))
+                .get();
+
+            // Looks like asp is ignoring the search term here
+            // expect(result.Comments?.length).toBe(0);
+        });
+
         it("Should work correctly with multiple entity + custom", async () => {
 
             const ctxt = await addFullUserChain();

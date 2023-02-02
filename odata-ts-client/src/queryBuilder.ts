@@ -56,7 +56,7 @@ function hasOwnProperty(s: Dict<string>, prop: string) {
     return Object.prototype.hasOwnProperty.call(s, prop)
 }
 
-function maybeAdd(s: Dict<string>, stateProp: string, inputProp: string | undefined, errorMessage: string) {
+function maybeAdd(encode: boolean, s: Dict<string>, stateProp: string, inputProp: string | undefined, errorMessage: string) {
 
     if (s[stateProp]) {
         throw new Error(errorMessage);
@@ -65,44 +65,46 @@ function maybeAdd(s: Dict<string>, stateProp: string, inputProp: string | undefi
     return inputProp !== undefined
         ? {
             ...s,
-            [stateProp]: inputProp
+            [stateProp]: encode
+                ? encodeURIComponent(inputProp)
+                : inputProp
         }
         : s
 
 }
 
-export function buildQuery(q: Query | Query[]): Dict<string> {
+export function buildQuery(q: Query | Query[], encode = true): Dict<string> {
     if (!Array.isArray(q)) {
-        return buildQuery([q])
+        return buildQuery([q], encode)
     }
 
     return q
         .reduce((s, x) => {
 
             if (x.$$oDataQueryObjectType === "Expand") {
-                return maybeAdd(s, "$expand", x.$$expand,
+                return maybeAdd(encode, s, "$expand", x.$$expand,
                     "Multiple expansions detected. Combine multipe expansions with the expand.combine util");
             }
 
             if (x.$$oDataQueryObjectType === "Filter") {
-                return maybeAdd(s, "$filter", x.$$filter,
+                return maybeAdd(encode, s, "$filter", x.$$filter,
                     "Multiple filters detected. Combine multipe expansions with the filter.and or filter.or utils");
             }
 
             if (x.$$oDataQueryObjectType === "OrderBy") {
-                return maybeAdd(s, "$orderBy", x.$$orderBy, "Multiple order by clauses detected");
+                return maybeAdd(encode, s, "$orderBy", x.$$orderBy, "Multiple order by clauses detected");
             }
 
             if (x.$$oDataQueryObjectType === "Select") {
-                return maybeAdd(s, "$select", x.$$select, "Multiple select clauses detected");
+                return maybeAdd(encode, s, "$select", x.$$select, "Multiple select clauses detected");
             }
 
             if (x.$$oDataQueryObjectType === "Custom") {
-                return maybeAdd(s, x.$$key, x.$$value, "Multiple select clauses detected");
+                return maybeAdd(encode, s, x.$$key, x.$$value, "Multiple select clauses detected");
             }
 
             if (x.$$oDataQueryObjectType === "Search") {
-                return maybeAdd(s, "$search", x.$$search, "Multiple select clauses detected");
+                return maybeAdd(encode, s, "$search", x.$$search, "Multiple select clauses detected");
             }
 
             if (hasOwnProperty(s, "$count") || hasOwnProperty(s, "$skip") || hasOwnProperty(s, "$top")) {
@@ -110,9 +112,9 @@ export function buildQuery(q: Query | Query[]): Dict<string> {
             }
 
             const err = "Multiple paging clauses detected. If using a count and paging, both must use the same \"paging(...)\" function call"
-            s = maybeAdd(s, "$skip", x.$$skip?.toString(), err)
-            s = maybeAdd(s, "$top", x.$$top?.toString(), err)
-            return maybeAdd(s, "$count", (x.$$count || undefined) && "true", err)
+            s = maybeAdd(encode, s, "$skip", x.$$skip?.toString(), err)
+            s = maybeAdd(encode, s, "$top", x.$$top?.toString(), err)
+            return maybeAdd(encode, s, "$count", (x.$$count || undefined) && "true", err)
         }, {} as Dict<string>);
 }
 

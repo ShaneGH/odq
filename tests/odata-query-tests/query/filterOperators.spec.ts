@@ -575,7 +575,7 @@ describe("Query.Filter Operators", function () {
         }
 
         const typeRef: QueryComplexObject<T> = buildComplexTypeRef(type.type, rootConfig.types);
-        return buildQuery(q(typeRef))
+        return buildQuery(q(typeRef), false)
     }
 
     testCase("add", function () {
