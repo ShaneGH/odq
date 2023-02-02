@@ -564,7 +564,6 @@ describe("Query.Filter Operators", function () {
         }
     });
 
-
     function qb<T>(fullName: string, q: (x: QueryComplexObject<T>) => Query | Query[]) {
 
         const dot = fullName.lastIndexOf(".");

@@ -52,10 +52,7 @@ function buildGetComplexCasterProps(
                 const generics = {
                     tEntity: resultType,
                     tKey: getKeyType(t, true),
-                    tQuery: {
-                        isComplex: true,
-                        fullyQualifiedQueryableName: fullyQualifiedTsType(typeRef, getQueryableName)
-                    },
+                    tQueryable: fullyQualifiedTsType(typeRef, getQueryableName),
                     tCaster: `${caster}.${casterType}`,
                     tSingleCaster: `${caster}.Single`,
                     tSubPath: singleCasterType ? `${subProps}` : keywords.CollectionsCannotBeTraversed,

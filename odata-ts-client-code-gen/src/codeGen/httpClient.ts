@@ -131,10 +131,7 @@ ${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
         return {
             tEntity: resultType,
             tKey: idType,
-            tQuery: {
-                isComplex: true,
-                fullyQualifiedQueryableName: queryableType
-            },
+            tQueryable: queryableType,
             tCaster: `${casterType}.Collection`,
             tSingleCaster: `${casterType}.Single`,
             tSubPath: keywords.CollectionsCannotBeTraversed,
@@ -155,10 +152,7 @@ ${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
         return {
             tEntity: resultType,
             tKey: keywords.SingleItemsCannotBeQueriedByKey,
-            tQuery: {
-                isComplex: true,
-                fullyQualifiedQueryableName: queryableType
-            },
+            tQueryable: queryableType,
             tCaster: `${casterType}.Single`,
             tSingleCaster: `${casterType}.Single`,
             tSubPath: subPathType,

@@ -58,7 +58,7 @@ function buildGetSubPathProps(
                 const generics = {
                     tEntity,
                     tKey: getPropertyKeyType(entityInfo) || keywords.SingleItemsCannotBeQueriedByKey,
-                    tQuery: getTQuery(entityInfo),
+                    tQueryable: getTQuery(entityInfo),
                     tCaster: getTCaster(entityInfo),
                     tSingleCaster: getTCaster(entityInfo, true),
                     tSubPath: entityInfo.collectionDepth ? keywords.CollectionsCannotBeTraversed : getTSubPath(entityInfo, false),
@@ -113,34 +113,22 @@ function buildGetSubPathProps(
     function getTQuery(info: EntityTypeInfo) {
 
         if (info.collectionDepth > 1) {
-            return {
-                isComplex: info.type.objectType === ObjectType.ComplexType,
-                fullyQualifiedQueryableName: keywords.QueryingOnCollectionsOfCollectionsIsNotSupported
-            };
+            return keywords.QueryingOnCollectionsOfCollectionsIsNotSupported
         }
 
         if (info.type.objectType === ObjectType.PrimitiveType) {
-            return {
-                isComplex: false,
-                fullyQualifiedQueryableName: `${info.type.primitiveType.namespace && `${info.type.primitiveType.namespace}.`}${info.type.primitiveType.name}`
-            };
+            return `QueryPrimitive<${info.type.primitiveType.namespace && `${info.type.primitiveType.namespace}.`}${info.type.primitiveType.name}>`
         }
 
         if (info.type.objectType === ObjectType.EnumType) {
-            return {
-                isComplex: false,
-                fullyQualifiedQueryableName: `${info.type.enumType.namespace && `${info.type.enumType.namespace}.`}${info.type.enumType.name}`
-            };
+            return `QueryEnum<${info.type.enumType.namespace && `${info.type.enumType.namespace}.`}${info.type.enumType.name}>`
         }
 
-        return {
-            isComplex: true,
-            fullyQualifiedQueryableName: fullyQualifiedTsType({
-                isCollection: false,
-                namespace: info.type.complexType.namespace,
-                name: info.type.complexType.name
-            }, getQueryableName)
-        };
+        return fullyQualifiedTsType({
+            isCollection: false,
+            namespace: info.type.complexType.namespace,
+            name: info.type.complexType.name
+        }, getQueryableName)
     }
 
     function getPropertyKeyType(type: EntityTypeInfo) {

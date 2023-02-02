@@ -195,10 +195,7 @@ export const buildGetTypeString = (settings: CodeGenConfig | null | undefined) =
 export type HttpClientGenerics = {
     tEntity: string,
     tKey: string,
-    tQuery: {
-        fullyQualifiedQueryableName: string
-        isComplex: boolean
-    },
+    tQueryable: string,
     tCaster: string,
     tSingleCaster: string,
     tSubPath: string,
@@ -214,11 +211,10 @@ const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x
 
 export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {
 
-    const tQueryType = generics.tQuery.fullyQualifiedQueryableName;
     const gs = [
         generics.tEntity,
         generics.tKey,
-        tQueryType,
+        generics.tQueryable,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,
