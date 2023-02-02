@@ -1,7 +1,5 @@
 import { ODataEnum, ODataServiceTypes, ODataTypeRef } from "odata-ts-client-shared";
 
-
-
 export function enumMemberName(enumDef: ODataEnum, value: number): string {
     const name = Object
         .keys(enumDef.members)
@@ -29,7 +27,6 @@ export function serialize(value: any, type?: ODataTypeRef, serviceConfig?: OData
 
     if (Array.isArray(value)) {
         type = type?.isCollection ? type.collectionType : type
-        // TODO test
         return `[${value.map(x => serialize(x, type, serviceConfig))}]`
     }
 

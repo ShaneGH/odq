@@ -2,14 +2,31 @@ import { Search } from "../queryBuilder.js"
 
 export type SearchUtils = {
 
+    /**
+     * Search for a term
+     */
     term(term: string): Search
 
+    /**
+     * Combine search terms with an AND separator
+     */
     searchAnd(...terms: Search[]): Search
 
+    /**
+     * Combine search terms with an OR separator
+     */
     searchOr(...terms: Search[]): Search
 
+    /**
+     * Negate a search term with NOT
+     */
     searchNot(term: Search): Search
 
+    /**
+     * Add a custom search term
+     * 
+     * @example searchRaw('NOT "bob"')
+     */
     searchRaw(searchString: string): Search
 }
 

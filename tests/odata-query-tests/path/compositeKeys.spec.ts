@@ -63,7 +63,7 @@ describe("Composite Keys", function () {
         const item = await addCompositeKeyItem();
         const result = await client.CompositeKeyItems
             .withKey({ Id1: item.Id1! + "a", Id2: item.Id2! })
-            .getAs<number>({ responseInterceptor: x => x.status });
+            .get<number>({ responseInterceptor: x => x.status });
 
         expect(result).toBe(404);
     });
@@ -72,7 +72,7 @@ describe("Composite Keys", function () {
         const item = await addCompositeKeyItem();
         const result = await client.CompositeKeyItems
             .withKey({ Id1: item.Id2!, Id2: item.Id1! })
-            .getAs<number>({ responseInterceptor: x => x.status });
+            .get<number>({ responseInterceptor: x => x.status });
 
         expect(result).toBe(404);
     });

@@ -492,11 +492,20 @@ export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSub
         return queryBuilder(typeRef, queryUtils());
     }
 
-    get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
-        return this.getAs<TResult>(overrideRequestTools)
-    }
+    /**
+     * Execute a get request
+     * @param overrideRequestTools Override any request tools needed
+     */
+    get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult>;
 
-    getAs<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools>): Promise<TOverrideResultType> {
+    /**
+     * Execute a get request, casting the result to something custom
+     * @param overrideRequestTools Override any request tools needed
+     */
+    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools>): Promise<TOverrideResultType>;
+
+
+    get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
         return this.fetch(this.path(), overrideRequestTools)
     }
 
