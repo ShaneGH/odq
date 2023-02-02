@@ -1,6 +1,6 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
 import { utils as queryUtils, Utils } from "./query/queryUtils.js";
-import { QueryBuilder, QueryStringBuilder } from "./queryBuilder.js";
+import { buildQuery, Query } from "./queryBuilder.js";
 import { ODataUriParts, RequestTools } from "./requestTools.js";
 import { buildComplexTypeRef, QueryComplexObject, QueryEnum, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
@@ -33,7 +33,7 @@ type Dict<T> = { [key: string]: T }
 
 type EntityQueryState = {
     path: string[]
-    query?: Dict<string>
+    query?: Query | Query[]
 }
 
 export type CastSelection<TNewEntityQuery> = {
@@ -286,14 +286,9 @@ function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType, servi
     }
 }
 
-type ComplexQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryComplexObject<TEntity>>, utils: Utils) => QueryBuilder<TEntity, QueryComplexObject<TEntity>>
-type PrimitiveQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryPrimitive<TEntity>>, utils: Utils) => QueryBuilder<TEntity, QueryPrimitive<TEntity>>
-type EnumQueryBuilder<TEntity> = (q: QueryBuilder<TEntity, QueryEnum<TEntity>>, utils: Utils) => QueryBuilder<TEntity, QueryEnum<TEntity>>
-
-type QB<TEntity> =
-    | QueryBuilder<TEntity, QueryComplexObject<TEntity>>
-    | QueryBuilder<TEntity, QueryPrimitive<TEntity>>
-    | QueryBuilder<TEntity, QueryEnum<TEntity>>
+type ComplexQueryBuilder<TEntity> = (entity: QueryComplexObject<TEntity>, utils: Utils) => Query | Query[]
+type PrimitiveQueryBuilder<TEntity> = (entity: QueryPrimitive<TEntity>, utils: Utils) => Query | Query[]
+type EnumQueryBuilder<TEntity> = (entity: QueryEnum<TEntity>, utils: Utils) => Query | Query[]
 
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
@@ -302,7 +297,7 @@ type QB<TEntity> =
 
 // NOTE: these generic type names are copy pasted into code gen project \src\codeGen\utils.ts
 // NOTE: make sure that they stay in sync
-export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQueryable>, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
+export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
 
     state: EntityQueryState
 
@@ -352,7 +347,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
                 keyPath.value
             ]
 
-        return new EntityQuery<TEntity, never, TQueryable, TQueryBuilder, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataResult<TEntity>>(
+        return new EntityQuery<TEntity, never, TQueryable, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataResult<TEntity>>(
             this.requestTools,
             this.type.collectionType,
             this.entitySet,
@@ -374,7 +369,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
             newT.type,
             this.entitySet,
@@ -403,7 +398,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         const path = this.state.path?.length ? [...this.state.path, newT.propertyName] : [newT.propertyName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
             prop,
             this.entitySet,
@@ -413,7 +408,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
 
     // TODO: this allows the user to do illegal queries on singletons:
     //  The query specified in the URI is not valid. The requested resource is not a collection. Query options $filter, $orderby, $count, $skip, and $top can be applied only on collections
-    withQuery(queryBuilder: (q: TQueryBuilder, utils: Utils) => TQueryBuilder, urlEncode = true) {
+    withQuery(queryBuilder: (entity: TQueryable, utils: Utils) => Query | Query[], urlEncode = true) {
 
         if (this.state.query) {
             throw new Error("This request already has a query");
@@ -427,23 +422,23 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
         // There is a lot of trust in these 2 lines of code.
         // trust that the TEntity lines up with a typeRef in terms of being complex, primitive or enum
         const t = lookup(typeRef, this.root.types)
-        const queryObjBuilder = t.flag === "Complex"
+        const query = t.flag === "Complex"
             ? this.executeComplexQueryBuilder(t.type, queryBuilder as any)
             : t.flag === "Primitive"
                 ? this.executePrimitiveQueryBuilder(t.type, queryBuilder as any)
                 : this.executeEnumQueryBuilder(t.type, queryBuilder as any);
 
-        return new EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
+        return new EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,
             this.root,
-            { ...this.state, query: queryObjBuilder.toQueryParts(urlEncode) });
+            { ...this.state, query });
     }
 
     private executePrimitiveQueryBuilder(
         type: ODataTypeName,
-        queryBuilder: PrimitiveQueryBuilder<TEntity>): QueryStringBuilder {
+        queryBuilder: PrimitiveQueryBuilder<TEntity>): Query | Query[] {
 
         const typeRef: QueryPrimitive<TEntity> = {
             $$oDataQueryObjectType: QueryObjectType.QueryPrimitive,
@@ -461,20 +456,20 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             }
         };
 
-        return queryBuilder(new QueryBuilder<TEntity, QueryPrimitive<TEntity>>(typeRef), queryUtils());
+        return queryBuilder(typeRef, queryUtils());
     }
 
     private executeComplexQueryBuilder(
         type: ODataComplexType,
-        queryBuilder: ComplexQueryBuilder<TEntity>): QueryStringBuilder {
+        queryBuilder: ComplexQueryBuilder<TEntity>): Query | Query[] {
 
         const typeRef: QueryComplexObject<TEntity> = buildComplexTypeRef(type, this.root.types);
-        return queryBuilder(new QueryBuilder<TEntity, QueryComplexObject<TEntity>>(typeRef), queryUtils());
+        return queryBuilder(typeRef, queryUtils());
     }
 
     private executeEnumQueryBuilder(
         type: ODataEnum,
-        queryBuilder: EnumQueryBuilder<TEntity>): QueryStringBuilder {
+        queryBuilder: EnumQueryBuilder<TEntity>): Query | Query[] {
 
         const typeRef: QueryEnum<TEntity> = {
             $$oDataEnumType: type,
@@ -494,7 +489,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             }
         };
 
-        return queryBuilder(new QueryBuilder<TEntity, QueryEnum<TEntity>>(typeRef), queryUtils());
+        return queryBuilder(typeRef, queryUtils());
     }
 
     get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
@@ -537,7 +532,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TQueryBuilder extends QB<TQu
             entitySetContainerName: this.entitySet.namespace || null,
             entitySetName: this.entitySet.name,
             relativePath: relativePath,
-            query: this.state.query || {}
+            query: buildQuery(this.state.query || [])
         });
 
         let init: RequestInit = tools.requestInterceptor!(uri, {

@@ -6,11 +6,6 @@ export {
 } from "odata-ts-client-shared"
 
 export {
-    QueryBuilder,
-    ISingletonQueryBulder
-} from "./src/queryBuilder.js"
-
-export {
     FilterableProps,
     FilterablePaths
 } from "./src/query/filtering/op1.js"

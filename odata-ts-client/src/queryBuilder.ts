@@ -1,5 +1,4 @@
-import { Filter } from "./query/filtering/operable0.js";
-import { PathSegment } from "./typeRefBuilder.js";
+import { ODataServiceTypes, ODataTypeRef } from "odata-ts-client-shared";
 
 type Dict<T> = { [key: string]: T }
 
@@ -33,135 +32,178 @@ export type Select = {
     $$select: string
 }
 
-export interface IQueryBulder {
-
-    toQueryParts(urlEncode: boolean): Dict<string>;
-    toQueryString(urlEncode: boolean, addLeadingQuestionMark: boolean): string
+export type Filter = {
+    $$oDataQueryObjectType: "Filter"
+    $$filter: string
+    $$output?: ODataTypeRef
+    $$root?: ODataServiceTypes
 }
 
-export interface ISingletonQueryBulder<T> extends IQueryBulder {
+export type Query = Paging | Expand | OrderBy | Select | Filter
 
-    expand(q: Expand | ((t: T) => PathSegment[])): ISingletonQueryBulder<T>;
+function hasOwnProperty(s: Dict<string>, prop: string) {
+    return Object.prototype.hasOwnProperty.call(s, prop)
 }
 
-export class QueryStringBuilder implements IQueryBulder {
+function maybeAdd(s: Dict<string>, stateProp: string, inputProp: string | undefined, errorMessage: string) {
 
-    constructor(protected state: QueryParts) {
+    if (s[stateProp]) {
+        throw new Error(errorMessage);
     }
 
-    toQueryParts(urlEncode = true): Dict<string> {
-
-        return [
-            param("$filter", this.state.filter?.$$filter),
-            param("$expand", this.state.expand?.$$expand),
-            param("$select", this.state.select?.$$select),
-            param("$orderBy", this.state.orderBy?.$$orderBy),
-            param("$count", this.state.paging?.$$count ? "true" : undefined),
-            param("$top", this.state.paging?.$$top?.toString()),
-            param("$skip", this.state.paging?.$$skip?.toString())
-        ]
-            .reduce((s: Dict<string>, x) => x ? { ...s, ...x } : s, {} as Dict<string>);
-
-        function param(name: string, value: string | undefined): Dict<string> | null {
-            return value != undefined
-                ? { [name]: urlEncode ? encodeURIComponent(value) : value }
-                : null;
+    return inputProp !== undefined
+        ? {
+            ...s,
+            [stateProp]: inputProp
         }
-    }
+        : s
 
-    toQueryString(urlEncode = true, addLeadingQuestionMark = false): string {
-
-        const qParts = this.toQueryParts(urlEncode);
-        const output = Object
-            .keys(qParts)
-            .map(name => `${name}=${qParts[name]}`)
-            .join("&");
-
-        return addLeadingQuestionMark ? `?${output}` : output;
-    }
 }
 
-export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
-
-    constructor(
-        private typeRef: TQInput,
-        state?: QueryParts | undefined) {
-
-        super(state || {});
+export function buildQuery(q: Query | Query[]): Dict<string> {
+    if (!Array.isArray(q)) {
+        return buildQuery([q])
     }
 
-    select(q: Select | ((t: TQInput) => Select)): QueryBuilder<T, TQInput> {
-        if (this.state.select) {
-            throw new Error("This query already has a select clause");
-        }
+    return q
+        .reduce((s, x) => {
 
-        if (typeof q !== "function") {
-            return this.select(() => q);
-        }
+            if (x.$$oDataQueryObjectType === "Expand") {
+                return maybeAdd(s, "$expand", x.$$expand,
+                    "Multiple expansions detected. Combine multipe expansions with the expand.combine util");
+            }
 
-        return new QueryBuilder<T, TQInput>(this.typeRef, {
-            ...this.state,
-            select: q(this.typeRef)
-        });
-    }
+            if (x.$$oDataQueryObjectType === "Filter") {
+                return maybeAdd(s, "$filter", x.$$filter,
+                    "Multiple filters detected. Combine multipe expansions with the filter.and or filter.or utils");
+            }
 
-    filter(q: Filter | ((t: TQInput) => Filter)): QueryBuilder<T, TQInput> {
-        if (this.state.filter) {
-            throw new Error("This query is alread filtered");
-        }
+            if (x.$$oDataQueryObjectType === "OrderBy") {
+                return maybeAdd(s, "$orderBy", x.$$orderBy, "Multiple order by clauses detected");
+            }
 
-        if (typeof q !== "function") {
-            return this.filter(() => q);
-        }
+            if (x.$$oDataQueryObjectType === "Select") {
+                return maybeAdd(s, "$select", x.$$select, "Multiple select clauses detected");
+            }
 
-        return new QueryBuilder<T, TQInput>(this.typeRef, {
-            ...this.state,
-            filter: q(this.typeRef)
-        });
-    }
+            if (hasOwnProperty(s, "$count") || hasOwnProperty(s, "$skip") || hasOwnProperty(s, "$top")) {
+                throw new Error("Multiple paging clauses detected")
+            }
 
-    expand(q: Expand | ((t: TQInput) => Expand)): QueryBuilder<T, TQInput> {
-        if (this.state.expand) {
-            throw new Error("This query is alread expanded");
-        }
-
-        if (typeof q !== "function") {
-            return this.expand(() => q);
-        }
-
-        return new QueryBuilder<T, TQInput>(this.typeRef, {
-            ...this.state,
-            expand: q(this.typeRef)
-        });
-    }
-
-    orderBy(q: OrderBy | ((t: TQInput) => OrderBy)): QueryBuilder<T, TQInput> {
-        if (this.state.orderBy) {
-            throw new Error("This query is alread ordered");
-        }
-
-        if (typeof q !== "function") {
-            return this.orderBy(() => q);
-        }
-
-        return new QueryBuilder<T, TQInput>(this.typeRef, {
-            ...this.state,
-            orderBy: q(this.typeRef)
-        });
-    }
-
-    page(q: Paging | (() => Paging)): QueryBuilder<T, TQInput> {
-        if (this.state.paging) {
-            throw new Error("This query already has paging");
-        }
-
-        if (typeof q !== "function") {
-            return this.page(() => q);
-        }
-
-        return new QueryBuilder<T, TQInput>(this.typeRef, {
-            ...this.state,
-            paging: q()
-        });
-    }
+            s = maybeAdd(s, "$skip", x.$$skip?.toString(), "Multiple paging clauses detected")
+            s = maybeAdd(s, "$top", x.$$top?.toString(), "Multiple paging clauses detected")
+            return maybeAdd(s, "$count", (x.$$count || undefined) && "true", "Multiple paging clauses detected")
+        }, {} as Dict<string>);
 }
+
+// export interface IQueryBulder {
+
+//     toQueryParts(urlEncode: boolean): Dict<string>;
+//     toQueryString(urlEncode: boolean, addLeadingQuestionMark: boolean): string
+// }
+
+// export interface ISingletonQueryBulder<T> extends IQueryBulder {
+
+//     expand(q: Expand | ((t: T) => PathSegment[])): ISingletonQueryBulder<T>;
+// }
+
+// export class QueryStringBuilder implements IQueryBulder {
+
+//     constructor(protected state: QueryParts) {
+//     }
+
+//     toQueryParts(urlEncode = true): Dict<string> {
+
+//         return [
+//             param("$filter", this.state.filter?.$$filter),
+//             param("$expand", this.state.expand?.$$expand),
+//             param("$select", this.state.select?.$$select),
+//             param("$orderBy", this.state.orderBy?.$$orderBy),
+//             param("$count", this.state.paging?.$$count ? "true" : undefined),
+//             param("$top", this.state.paging?.$$top?.toString()),
+//             param("$skip", this.state.paging?.$$skip?.toString())
+//         ]
+//             .reduce((s: Dict<string>, x) => x ? { ...s, ...x } : s, {} as Dict<string>);
+
+//         function param(name: string, value: string | undefined): Dict<string> | null {
+//             return value != undefined
+//                 ? { [name]: urlEncode ? encodeURIComponent(value) : value }
+//                 : null;
+//         }
+//     }
+
+//     toQueryString(urlEncode = true, addLeadingQuestionMark = false): string {
+
+//         const qParts = this.toQueryParts(urlEncode);
+//         const output = Object
+//             .keys(qParts)
+//             .map(name => `${name}=${qParts[name]}`)
+//             .join("&");
+
+//         return addLeadingQuestionMark ? `?${output}` : output;
+//     }
+// }
+
+// export class QueryBuilder<T, TQInput> extends QueryStringBuilder {
+
+//     constructor(
+//         state?: QueryParts | undefined) {
+
+//         super(state || {});
+//     }
+
+//     select(q: Select): QueryBuilder<T, TQInput> {
+//         if (this.state.select) {
+//             throw new Error("This query already has a select clause");
+//         }
+
+//         return new QueryBuilder<T, TQInput>({
+//             ...this.state,
+//             select: q
+//         });
+//     }
+
+//     filter(q: Filter): QueryBuilder<T, TQInput> {
+//         if (this.state.filter) {
+//             throw new Error("This query is alread filtered");
+//         }
+
+//         return new QueryBuilder<T, TQInput>({
+//             ...this.state,
+//             filter: q
+//         });
+//     }
+
+//     expand(q: Expand): QueryBuilder<T, TQInput> {
+//         if (this.state.expand) {
+//             throw new Error("This query is alread expanded");
+//         }
+
+//         return new QueryBuilder<T, TQInput>({
+//             ...this.state,
+//             expand: q
+//         });
+//     }
+
+//     orderBy(q: OrderBy): QueryBuilder<T, TQInput> {
+//         if (this.state.orderBy) {
+//             throw new Error("This query is alread ordered");
+//         }
+
+//         return new QueryBuilder<T, TQInput>({
+//             ...this.state,
+//             orderBy: q
+//         });
+//     }
+
+//     page(q: Paging): QueryBuilder<T, TQInput> {
+//         if (this.state.paging) {
+//             throw new Error("This query already has paging");
+//         }
+
+//         return new QueryBuilder<T, TQInput>({
+//             ...this.state,
+//             paging: q
+//         });
+//     }
+// }

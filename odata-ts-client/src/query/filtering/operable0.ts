@@ -1,13 +1,7 @@
 import { ODataServiceTypes, ODataTypeRef } from "odata-ts-client-shared";
+import { Filter } from "../../queryBuilder.js";
 import { QueryEnum, QueryObjectMetadata, QueryObjectType, QueryPrimitive } from "../../typeRefBuilder.js";
 import { serialize } from "../../valueSerializer.js";
-
-export type Filter = {
-    $$oDataQueryObjectType: "Filter"
-    $$filter: string
-    $$output?: ODataTypeRef
-    $$root?: ODataServiceTypes
-}
 
 export type Operable<T> = QueryPrimitive<T> | QueryEnum<T> | Filter
 

@@ -70,10 +70,11 @@ describe("Query.Paging", function () {
             ].sort()
 
             const result = await client.Users
-                .withQuery((q, { paging, filter: { isIn }, orderBy: { orderBy } }) => q
-                    .filter(u => isIn(u.Id, userIds))
-                    .orderBy(u => orderBy(u.Id))
-                    .page(() => paging(1, 1, true)))
+                .withQuery((u, { paging, filter: { isIn }, orderBy: { orderBy } }) => [
+                    isIn(u.Id, userIds),
+                    orderBy(u.Id),
+                    paging(1, 1, true)
+                ])
                 .get();
 
             expect(result.value.length).toBe(1);

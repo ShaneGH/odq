@@ -1,6 +1,5 @@
-import { Expand, OrderBy, Paging, Select } from "../queryBuilder.js"
-import { PathSegment, QueryArray, QueryComplexObject, QueryEnum, QueryObject, QueryObjectType, reContext } from "../typeRefBuilder.js"
-import { Filter } from "./filtering/operable0.js"
+import { Expand, OrderBy, Paging, Query, Select } from "../queryBuilder.js"
+import { PathSegment, QueryArray, QueryComplexObject, QueryObjectType, reContext } from "../typeRefBuilder.js"
 
 export type ExpandUtils = {
 
@@ -24,7 +23,7 @@ export type ExpandUtils = {
      * @example expand(my.user.blogPosts)
      * @example expand(my.user.blogPosts, p => gt(p.likes, 10), p => select(p.title), _ => "$count")
      */
-    expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => ExtraExpansionResult)[]): Expand;
+    expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => Query)[]): Expand;
 
     /**
      * Combine multiple expanded properties
@@ -42,9 +41,7 @@ function expandRaw(expand: string): Expand {
     }
 }
 
-type ExtraExpansionResult = "$count" | Expand | Filter | Select | OrderBy | Paging
-
-function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => ExtraExpansionResult)[]): Expand {
+function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>, T>, ...and: ((x: QueryComplexObject<T>) => Query)[]): Expand {
 
     const $$expand = _expand(obj.$$oDataQueryMetadata.path);
     if (!$$expand) {
@@ -74,13 +71,9 @@ function expand<T>(obj: QueryComplexObject<T> | QueryArray<QueryComplexObject<T>
 
 function executeInnerContext<T>(
     reContextedObj: QueryComplexObject<T>,
-    and: (x: QueryComplexObject<T>) => ExtraExpansionResult
+    and: (x: QueryComplexObject<T>) => Query
 ) {
     const result = and(reContextedObj)
-
-    if (result === "$count") {
-        return `$count=true`
-    }
 
     if (result.$$oDataQueryObjectType === "Expand") {
         return `$expand=${result.$$expand}`
@@ -98,7 +91,7 @@ function executeInnerContext<T>(
         return [
             result.$$top != null ? `$top=${result.$$top}` : null,
             result.$$skip != null ? `$skip=${result.$$skip}` : null,
-            result.$$count != null ? `$count` : null
+            result.$$count != null ? `$count=true` : null
         ]
             .filter(x => !!x)
             .join(";")

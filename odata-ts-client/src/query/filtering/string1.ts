@@ -1,6 +1,7 @@
 import { ODataTypeRef } from "odata-ts-client-shared";
+import { Filter } from "../../queryBuilder.js";
 import { serialize } from "../../valueSerializer.js";
-import { combineFilterStrings, Filter, getFilterString, getOperableFilterString, getOperableTypeInfo, Operable } from "./operable0.js";
+import { combineFilterStrings, getFilterString, getOperableFilterString, getOperableTypeInfo, Operable } from "./operable0.js";
 import { IntegerTypes, NonNumericTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 const stringT = resolveOutputType(NonNumericTypes.String)

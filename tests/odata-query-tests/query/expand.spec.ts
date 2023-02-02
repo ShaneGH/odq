@@ -220,7 +220,7 @@ describe("Query.Expand", function () {
             const result = await client.BlogPosts
                 .withKey(ctxt.blogPost.Id)
                 .withQuery((q, { expand: { expand }, paging }) => q
-                    .expand(p => expand(p.Comments, b => paging(0, 1))))
+                    .expand(p => expand(p.Comments, b => paging(0, 1, true))))
                 .get();
 
             expect(result.Comments?.length).toBe(0);

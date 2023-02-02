@@ -1,5 +1,6 @@
+import { Filter } from "../../queryBuilder.js";
 import { infixOp, MappableType } from "./op1.js";
-import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, Operable } from "./operable0.js";
+import { combineFilterStrings, getOperableFilterString, getOperableTypeInfo, Operable } from "./operable0.js";
 import { DecimalNumberTypes, IntegerTypes, RealNumberTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 const int32T = resolveOutputType(IntegerTypes.Int32)

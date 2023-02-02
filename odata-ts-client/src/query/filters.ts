@@ -7,8 +7,9 @@ import {
 } from "./filtering/string1.js";
 import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./filtering/logical2.js";
 import { FilterablePaths, FilterableProps, filterRaw } from "./filtering/op1.js";
-import { Filter, Operable } from "./filtering/operable0.js";
+import { Operable } from "./filtering/operable0.js";
 import { IntegerTypes, OutputTypes, RealNumberTypes } from "./filtering/queryPrimitiveTypes0.js";
+import { Filter } from "../queryBuilder.js";
 
 // TODO: remove mappers from functions which will not use them. e.g.
 //      eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;

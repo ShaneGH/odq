@@ -1,6 +1,7 @@
 import { ODataTypeRef } from "odata-ts-client-shared";
+import { Filter } from "../../queryBuilder.js";
 import { HasODataQueryMetadata } from "../../typeRefBuilder.js";
-import { combineFilterStrings, Filter, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
+import { combineFilterStrings, getOperableFilterString, getOperableTypeInfo, HasFilterMetadata } from "./operable0.js";
 import { OutputTypes, resolveOutputType } from "./queryPrimitiveTypes0.js";
 
 // using a class here because they play ywell with type deconstruction
