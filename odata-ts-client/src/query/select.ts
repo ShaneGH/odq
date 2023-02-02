@@ -1,5 +1,5 @@
-import { Select } from "../../queryBuilder.js"
-import { QueryObject } from "../../typeRefBuilder.js"
+import { Select } from "../queryBuilder.js"
+import { QueryObject } from "../typeRefBuilder.js"
 
 export type SelectUtils = {
     /**

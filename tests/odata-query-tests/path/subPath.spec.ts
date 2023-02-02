@@ -1,6 +1,5 @@
 
 import { My, ODataClient } from "../generatedCode.js";
-import { FilterUtils as F, ExpandUtils as E } from "odata-ts-client";
 import { addFullUserChain, addUser } from "../utils/client.js";
 import { uniqueString } from "../utils/utils.js";
 import { WithKeyType } from "odata-ts-client/dist/src/httpClient.js";

@@ -27,10 +27,6 @@ export {
     utils as queryUtils
 } from "./src/query/queryUtils.js"
 
-export * as ExpandUtils from "./src/expandUtils.js"
-
-export * as FilterUtils from "./src/query/filtering/filters.js"
-
 export {
     ODataAnnotatedResult,
     ODataResult,

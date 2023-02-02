@@ -1,14 +1,14 @@
-import { QueryArray, QueryObject, QueryPrimitive } from "../../typeRefBuilder.js";
-import { add, ceiling, div, divby, floor, mod, mul, round, sub } from "./arithmetic2.js";
-import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./collection1.js";
+import { QueryArray, QueryObject, QueryPrimitive } from "../typeRefBuilder.js";
+import { add, ceiling, div, divby, floor, mod, mul, round, sub } from "./filtering/arithmetic2.js";
+import { all, any, collectionFilter, collectionFunction, count, hassubset, OperableCollection } from "./filtering/collection1.js";
 import {
     concat as concatString, contains as containsString, startsWith as startsWithString,
     endsWith as endsWithString, indexOf as indexOfString, length as lengthString, subString
-} from "./string1.js";
-import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./logical2.js";
-import { FilterablePaths, FilterableProps, filterRaw } from "./op1.js";
-import { Filter, Operable } from "./operable0.js";
-import { IntegerTypes, OutputTypes, RealNumberTypes } from "./queryPrimitiveTypes0.js";
+} from "./filtering/string1.js";
+import { and, eq, ge, group, gt, isIn, le, logicalInfixOp, lt, ne, not, or } from "./filtering/logical2.js";
+import { FilterablePaths, FilterableProps, filterRaw } from "./filtering/op1.js";
+import { Filter, Operable } from "./filtering/operable0.js";
+import { IntegerTypes, OutputTypes, RealNumberTypes } from "./filtering/queryPrimitiveTypes0.js";
 
 // TODO: remove mappers from functions which will not use them. e.g.
 //      eq<T>(lhs: Operable<T>, rhs: T | Operable<T>, mapper?: (x: T) => string): Filter;

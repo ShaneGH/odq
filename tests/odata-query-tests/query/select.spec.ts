@@ -1,10 +1,7 @@
 
 import { addFullUserChain } from "../utils/client.js";
 import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
-import { FilterUtils as F, QueryBuilder, QueryComplexObject, queryUtils } from "odata-ts-client";
-import { uniqueString } from "../utils/utils.js";
-import { buildComplexTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
-import { NonNumericTypes } from "odata-ts-client/dist/src/filterUtils.js";
+import { queryUtils } from "odata-ts-client";
 
 const rootConfig = rootConfigExporter();
 

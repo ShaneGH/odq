@@ -1,6 +1,6 @@
-import { FilterUtils, newUtils as filter } from "./filtering/filters.js";
-import { SelectUtils, newUtils as select } from "./selecting/select.js";
-import { ExpandUtils, newUtils as expand } from "./expanding/expand.js";
+import { FilterUtils, newUtils as filter } from "./filters.js";
+import { SelectUtils, newUtils as select } from "./select.js";
+import { ExpandUtils, newUtils as expand } from "./expand.js";
 
 export type Utils = {
     filter: FilterUtils

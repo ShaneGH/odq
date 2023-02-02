@@ -1,6 +1,6 @@
-import { Expand, Select } from "../../queryBuilder.js"
-import { PathSegment, QueryArray, QueryComplexObject, QueryEnum, QueryObject, QueryObjectType, reContext } from "../../typeRefBuilder.js"
-import { Filter } from "../filtering/operable0.js"
+import { Expand, Select } from "../queryBuilder.js"
+import { PathSegment, QueryArray, QueryComplexObject, QueryEnum, QueryObject, QueryObjectType, reContext } from "../typeRefBuilder.js"
+import { Filter } from "./filtering/operable0.js"
 
 export type ExpandUtils = {
 
