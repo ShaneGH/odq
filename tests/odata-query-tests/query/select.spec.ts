@@ -64,8 +64,8 @@ describe("Query.Select", function () {
             const ctxt = await addFullUserChain();
             const result = await client.Users
                 .withKey(ctxt.blogUser.Id)
-                .withQuery((q, { select: { selectRaw } }) => q
-                    .select(_ => selectRaw("Name,Score")))
+                .withQuery((_, { select: { selectRaw } }) =>
+                    selectRaw("Name,Score"))
                 .get();
 
             expect(result.Name).toBe(ctxt.blogUser.Name);
@@ -81,8 +81,8 @@ describe("Query.Select", function () {
                 const ctxt = await addFullUserChain();
                 const result = await client.Users
                     .withKey(ctxt.blogUser.Id)
-                    .withQuery((q, { select: { select } }) => q
-                        .select(x => select(x.Name, x.Score)))
+                    .withQuery((x, { select: { select } }) =>
+                        select(x.Name, x.Score))
                     .get();
 
                 expect(result.Name).toBe(ctxt.blogUser.Name);
@@ -98,8 +98,7 @@ describe("Query.Select", function () {
                 const ctxt = await addFullUserChain({ commentMood: My.Odata.Entities.Mood.Happy });
                 const result = await client.Comments
                     .withKey(ctxt.comment.Id)
-                    .withQuery((q, { select: { select } }) => q
-                        .select(x => select(x.Mood)))
+                    .withQuery((x, { select: { select } }) => select(x.Mood))
                     .get();
 
                 expect(result.Mood!.Key).toBe(ctxt.comment.Mood!.Key);
@@ -114,8 +113,7 @@ describe("Query.Select", function () {
                 const ctxt = await addFullUserChain({ commentMood: My.Odata.Entities.Mood.Happy });
                 const result = await client.Comments
                     .withKey(ctxt.comment.Id)
-                    .withQuery((q, { select: { select } }) => q
-                        .select(x => select(x.Mood.Mood)))
+                    .withQuery((x, { select: { select } }) => select(x.Mood.Mood))
                     .get();
 
                 expect(result.Mood!.Key).toBeUndefined();
@@ -124,5 +122,4 @@ describe("Query.Select", function () {
         });
     });
 });
-
 

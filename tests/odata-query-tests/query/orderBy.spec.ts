@@ -69,9 +69,10 @@ describe("Query.OrderBy", function () {
             ]
 
             const result = await client.Users
-                .withQuery((q, { filter: { isIn }, orderBy: { orderByRaw } }) => q
-                    .filter(u => isIn(u.Id, userIds))
-                    .orderBy(u => orderByRaw("Name")))
+                .withQuery((u, { filter: { isIn }, orderBy: { orderByRaw } }) => [
+                    isIn(u.Id, userIds),
+                    orderByRaw("Name")
+                ])
                 .get();
 
             expect(result.value.length).toBeGreaterThan(1);
@@ -96,9 +97,10 @@ describe("Query.OrderBy", function () {
                 ]
 
                 const result = await client.Users
-                    .withQuery((q, { filter: { isIn }, orderBy: { orderBy } }) => q
-                        .filter(u => isIn(u.Id, userIds))
-                        .orderBy(u => orderBy(asc ? u.Name : [u.Name, "desc"])))
+                    .withQuery((u, { filter: { isIn }, orderBy: { orderBy } }) => [
+                        isIn(u.Id, userIds),
+                        orderBy(asc ? u.Name : [u.Name, "desc"])
+                    ])
                     .get();
 
                 expect(result.value.length).toBeGreaterThan(1);
@@ -119,9 +121,10 @@ describe("Query.OrderBy", function () {
                 ]
 
                 const result = await client.Users
-                    .withQuery((q, { filter: { isIn }, orderBy: { orderBy } }) => q
-                        .filter(u => isIn(u.Id, userIds))
-                        .orderBy(u => orderBy(u.Name, u.UserType)))
+                    .withQuery((u, { filter: { isIn }, orderBy: { orderBy } }) => [
+                        isIn(u.Id, userIds),
+                        orderBy(u.Name, u.UserType)
+                    ])
                     .get();
 
                 expect(result.value.length).toBeGreaterThan(1);
@@ -141,9 +144,10 @@ describe("Query.OrderBy", function () {
                 ]
 
                 const result = await client.Users
-                    .withQuery((q, { filter: { isIn }, orderBy: { orderBy } }) => q
-                        .filter(u => isIn(u.Id, userIds))
-                        .orderBy(u => orderBy([u.Blogs.$count, "desc"])))
+                    .withQuery((u, { filter: { isIn }, orderBy: { orderBy } }) => [
+                        isIn(u.Id, userIds),
+                        orderBy([u.Blogs.$count, "desc"])
+                    ])
                     .get();
 
                 expect(result.value.length).toBe(2);
@@ -153,5 +157,4 @@ describe("Query.OrderBy", function () {
         });
     });
 });
-
 

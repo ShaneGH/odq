@@ -16,7 +16,6 @@ export type Keywords = {
     ODataComplexType: string,
     ODataTypeRef: string
     _httpClientArgs: string,
-    ISingletonQueryBulder: string,
     ODataAnnotatedResult: string
     ODataResult: string
     Internal: string
@@ -26,7 +25,6 @@ export type Keywords = {
     CastingOnCollectionsOfCollectionsIsNotSupported: string
     QueryingOnCollectionsOfCollectionsIsNotSupported: string
     ThisItemDoesNotHaveAKey: string
-    QueryBuilder: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -46,7 +44,6 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
     // TODO: tests for all keyword re-mappings
     return {
         QueryEnum: getKeyword("QueryEnum"),
-        QueryBuilder: getKeyword("QueryBuilder"),
         ODataTypeRef: getKeyword("ODataTypeRef"),
         ODataComplexType: getKeyword("ODataComplexType"),
         RequestTools: getKeyword("RequestTools"),
@@ -60,7 +57,6 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
         rootConfig: getKeyword("rootConfig"),
         ODataUriParts: getKeyword("ODataUriParts"),
         ODataServiceConfig: getKeyword("ODataServiceConfig"),
-        ISingletonQueryBulder: getKeyword("ISingletonQueryBulder"),
         ODataAnnotatedResult: getKeyword("ODataAnnotatedResult"),
         ODataResult: getKeyword("ODataResult"),
         _httpClientArgs: getKeyword("_httpClientArgs"),
@@ -88,7 +84,6 @@ export function imports(keywords: Keywords, tab: Tab) {
     // TODO: audit are all of these still used?
     return `import {
 ${tab(importWithAlias("QueryEnum"))},
-${tab(importWithAlias("QueryBuilder"))},
 ${tab(importWithAlias("ODataComplexType"))},
 ${tab(importWithAlias("ODataTypeRef"))},
 ${tab(importWithAlias("RequestTools"))},
@@ -98,7 +93,6 @@ ${tab(importWithAlias("SubPathSelection"))},
 ${tab(importWithAlias("ODataUriParts"))},
 ${tab(importWithAlias("QueryPrimitive"))},
 ${tab(importWithAlias("QueryArray"))},
-${tab(importWithAlias("ISingletonQueryBulder"))},
 ${tab(importWithAlias("EntityQuery"))},
 ${tab(importWithAlias("QueryComplexObject"))},
 ${tab(importWithAlias("ODataAnnotatedResult"))},

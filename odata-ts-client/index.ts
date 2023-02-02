@@ -23,6 +23,11 @@ export {
 } from "./src/query/queryUtils.js"
 
 export {
+    Query,
+    buildQuery
+} from "./src/queryBuilder.js"
+
+export {
     ODataAnnotatedResult,
     ODataResult,
     EntityQuery,
