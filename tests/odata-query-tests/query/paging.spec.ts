@@ -78,6 +78,7 @@ describe("Query.Paging", function () {
 
             expect(result.value.length).toBe(1);
             expect(result.value[0].Id).toBe(userIds[1]);
+            expect((result as any)['@odata.count']).toBe(3)
         });
     });
 });

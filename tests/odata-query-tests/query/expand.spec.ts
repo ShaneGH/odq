@@ -214,6 +214,18 @@ describe("Query.Expand", function () {
             expect(result.Comments![0].Title).toBe(ctxt.comment.Title);
         });
 
+        it("Should work correctly with multiple entity + paging", async () => {
+
+            const ctxt = await addFullUserChain();
+            const result = await client.BlogPosts
+                .withKey(ctxt.blogPost.Id)
+                .withQuery((q, { expand: { expand }, paging }) => q
+                    .expand(p => expand(p.Comments, b => paging(0, 1))))
+                .get();
+
+            expect(result.Comments?.length).toBe(0);
+        });
+
         it("Should work correctly with multiple entity + expand", async () => {
 
             // see: Should work correctly with multiple entity collections
