@@ -204,11 +204,11 @@ function getCastingTypeRef(type: ODataTypeRef) {
     }
 }
 
-/*
+/**
  * Specified how to format an entity key in a url
  */
 export enum WithKeyType {
-    /*
+    /**
      * Specifies that a key should be embedded as a function call
      * e.g. ~/Users(1)
      * 
@@ -216,7 +216,7 @@ export enum WithKeyType {
      */
     FunctionCall = "FunctionCall",
 
-    /*
+    /**
      * Specifies that a key should be added as a path segment
      * e.g. ~/Users/1
      */
