@@ -306,7 +306,7 @@ type EnumQueryBuilder<TEntity> = (entity: QueryEnum<TEntity>, utils: Utils) => Q
 
 // NOTE: these generic type names are copy pasted into code gen project \src\codeGen\utils.ts
 // NOTE: make sure that they stay in sync
-export class EntityQuery<TEntity, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
+export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath> {
 
     state: EntityQueryState
 
@@ -438,7 +438,7 @@ export class EntityQuery<TEntity, TKeyBuilder, TQueryable, TCaster, TSingleCaste
                 ? this.executePrimitiveQueryBuilder(t.type, queryBuilder as any)
                 : this.executeEnumQueryBuilder(t.type, queryBuilder as any);
 
-        return new EntityQuery<TEntity, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
+        return new EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -506,24 +506,25 @@ export class EntityQuery<TEntity, TKeyBuilder, TQueryable, TCaster, TSingleCaste
      * Execute a get request
      * @param overrideRequestTools Override any request tools needed
      */
-    get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult>;
+    get(overrideRequestTools?: Partial<RequestTools>): TResult;
 
     /**
      * Execute a get request, casting the result to something custom
      * @param overrideRequestTools Override any request tools needed
      */
-    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools>): Promise<TOverrideResultType>;
+    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools>): TOverrideResultType;
 
 
-    get(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
-        return this.fetch(this.path(), overrideRequestTools)
+    get(overrideRequestTools?: Partial<RequestTools>): TResult {
+        return this.fetch(this.path(), overrideRequestTools) as TResult
     }
 
-    // TODO: test
-    // TODO: is response type correct?
-    count(overrideRequestTools?: Partial<RequestTools>): Promise<TResult> {
-        return this.fetch(this.path("$count"), overrideRequestTools);
-    }
+    // // TODO: $count_fincution
+    // // TODO: is response type correct?
+    // count(overrideRequestTools?: Partial<RequestTools>): Promise<TDataResult> {
+    //     throw new Error()
+    //     //return this.fetch(this.path("$count"), overrideRequestTools);
+    // }
 
     private path(append?: string[] | string | undefined) {
 

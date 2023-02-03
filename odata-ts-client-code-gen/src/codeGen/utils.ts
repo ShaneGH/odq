@@ -209,22 +209,22 @@ export type HttpClientGenerics = {
     }
 }
 
-const httpClientGenericNames = ["TEntity", "TKeyBuilder", "TQueryable", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
+const httpClientGenericNames = ["TEntity", "TDataResult", "TKeyBuilder", "TQueryable", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath"]
 const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x ? s : x, -1);
 
 export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {
 
     const gs = [
         generics.tEntity,
+        generics.tResult.annotated
+            ? `Promise<${keywords.ODataAnnotatedResult}<${generics.tResult.resultType}>>`
+            : `Promise<${keywords.ODataResult}<${generics.tResult.resultType}>>`,
         generics.tKeyBuilder,
         generics.tQueryable,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,
-        generics.tSingleSubPath,
-        generics.tResult.annotated
-            ? `${keywords.ODataAnnotatedResult}<${generics.tResult.resultType}>`
-            : `${keywords.ODataResult}<${generics.tResult.resultType}>`
+        generics.tSingleSubPath
     ]
         .map(addType)
         .map(tab)
