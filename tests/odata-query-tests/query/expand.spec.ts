@@ -63,7 +63,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expandRaw } }) =>
                     expandRaw("Blog"))
                 .get();
@@ -77,7 +77,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand } }) =>
                     expand(p.Blog))
                 .get();
@@ -94,7 +94,7 @@ describe("Query.Expand", function () {
 
                 const ctxt = await addFullUserChain();
                 const result = await client.BlogPosts
-                    .withKey(ctxt.blogPost.Id)
+                    .withKey(x => x.key(ctxt.blogPost.Id))
                     .withQuery((p, { expand: { expand } }) => {
                         return twoCalls
                             ? expand(p.Blog, b => expand(b.User))
@@ -111,7 +111,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, paging }) =>
                     expand(p.Comments, _ => paging(null, null, true)))
                 .get();
@@ -124,7 +124,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.Users
-                .withKey(ctxt.blogUser.Id)
+                .withKey(x => x.key(ctxt.blogUser.Id))
                 .withQuery((p, { expand: { expand } }) =>
                     expand(p.Blogs, b => expand(b.Posts)))
                 .get();
@@ -141,7 +141,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, select: { select } }) =>
                     expand(p.Blog, b => select(b.Name)))
                 .get();
@@ -154,7 +154,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, select: { select }, paging }) =>
                     expand(p.Comments, b => select(b.Title), _ => paging(null, null, true)))
                 .get();
@@ -174,7 +174,7 @@ describe("Query.Expand", function () {
 
             //     const ctxt = await addFullUserChain();
             //     const result = await client.BlogPosts
-            //         .withKey(ctxt.blogPost.Id)
+            //         .withKey(x => x.key(ctxt.blogPost.Id)
             //         .withQuery((q, { expand: { expand }, filter: { eq, ne } }) => q
             //             .expand(p => expand(p.Blog, c => returnSomething
             //                 ? eq(c.Name, ctxt.blog.Name)
@@ -193,7 +193,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, select: { select } }) =>
                     expand(p.Comments, b => select(b.Title)))
                 .get();
@@ -206,7 +206,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, orderBy: { orderBy } }) =>
                     expand(p.Comments, b => orderBy(b.Title)))
                 .get();
@@ -218,7 +218,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, paging }) =>
                     expand(p.Comments, b => paging(0, 1, true)))
                 .get();
@@ -230,7 +230,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, search: { term, searchNot } }) =>
                     expand(p.Comments, _ => searchNot(term("saopidhasodh a"))))
                 .get();
@@ -243,7 +243,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand }, custom }) =>
                     expand(p.Comments, b => custom("$top", "0")))
                 .get();
@@ -264,7 +264,7 @@ describe("Query.Expand", function () {
 
                 const ctxt = await addFullUserChain();
                 const result = await client.BlogPosts
-                    .withKey(ctxt.blogPost.Id)
+                    .withKey(x => x.key(ctxt.blogPost.Id))
                     .withQuery((p, { expand: { expand }, filter: { eq, ne } }) =>
                         expand(p.Comments, c => returnSomething
                             ? eq(c.Title, ctxt.comment.Title)
@@ -285,7 +285,7 @@ describe("Query.Expand", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.BlogPosts
-                .withKey(ctxt.blogPost.Id)
+                .withKey(x => x.key(ctxt.blogPost.Id))
                 .withQuery((p, { expand: { expand, combine } }) =>
                     combine(
                         expand(p.Blog),

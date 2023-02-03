@@ -11,11 +11,13 @@ export type Keywords = {
     rootConfigExporter: string
     ODataUriParts: string
     CastSelection: string
+    KeySelection: string
     SubPathSelection: string
     RequestTools: string,
     ODataComplexType: string,
     ODataTypeRef: string
     _httpClientArgs: string,
+    WithKeyType: string
     ODataAnnotatedResult: string
     ODataResult: string
     Internal: string
@@ -44,7 +46,9 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
     // TODO: tests for all keyword re-mappings
     return {
         QueryEnum: getKeyword("QueryEnum"),
+        WithKeyType: getKeyword("WithKeyType"),
         ODataTypeRef: getKeyword("ODataTypeRef"),
+        KeySelection: getKeyword("KeySelection"),
         ODataComplexType: getKeyword("ODataComplexType"),
         RequestTools: getKeyword("RequestTools"),
         rootConfigExporter: getKeyword("rootConfigExporter"),
@@ -83,6 +87,8 @@ export function imports(keywords: Keywords, tab: Tab) {
 
     // TODO: audit are all of these still used?
     return `import {
+${tab(importWithAlias("KeySelection"))},
+${tab(importWithAlias("WithKeyType"))},
 ${tab(importWithAlias("QueryEnum"))},
 ${tab(importWithAlias("ODataComplexType"))},
 ${tab(importWithAlias("ODataTypeRef"))},

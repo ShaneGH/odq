@@ -51,7 +51,7 @@ export function configObj(serviceConfig: ODataServiceConfig, keywords: Keywords,
         : JSON.stringify(serviceConfig);
 
     const exportSettings = settings?.exportTypeDefinitionJsObject
-        ? `/*
+        ? `/**
  * A copy of ${keywords.rootConfig}, exported for debug purposes.
  * Subject to breaking changes without warning
  */
@@ -61,7 +61,7 @@ ${tab(`return () => ${keywords.rootConfigExporter}`)}
 }());`
         : ""
 
-    return `/*
+    return `/**
  * A config object which describes relationships between types.
  */
 const ${keywords.rootConfig}: ${keywords.ODataServiceConfig} = ${oDataServiceConfig}
@@ -197,7 +197,7 @@ export const buildGetTypeString = (settings: CodeGenConfig | null | undefined) =
 
 export type HttpClientGenerics = {
     tEntity: string,
-    tKey: string,
+    tKeyBuilder: string,
     tQueryable: string,
     tCaster: string,
     tSingleCaster: string,
@@ -209,14 +209,14 @@ export type HttpClientGenerics = {
     }
 }
 
-const httpClientGenericNames = ["TEntity", "TKey", "TQueryable", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
+const httpClientGenericNames = ["TEntity", "TKeyBuilder", "TQueryable", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TResult"]
 const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x ? s : x, -1);
 
 export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {
 
     const gs = [
         generics.tEntity,
-        generics.tKey,
+        generics.tKeyBuilder,
         generics.tQueryable,
         generics.tCaster,
         generics.tSingleCaster,
@@ -257,6 +257,15 @@ export const buildGetQueryableName = (settings: CodeGenConfig | null | undefined
 
     return (forType: string) => {
         const qTemplate = settings?.queryableTypeNameTemplate || "Queryable{0}";
+        return qTemplate.replace(/\{0\}/g, forType);
+    }
+}
+
+export type GetKeyBuilderName = (forType: string) => string
+export const buildGetKeyBuilderName = (settings: CodeGenConfig | null | undefined): GetKeyBuilderName => {
+
+    return (forType: string) => {
+        const qTemplate = settings?.keyBuilderTypeNameTemplate || "{0}KeyBuiler";
         return qTemplate.replace(/\{0\}/g, forType);
     }
 }

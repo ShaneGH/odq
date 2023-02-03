@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef, ODataEnum } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
-import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildSanitizeNamespace, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
+import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyBuilderName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildSanitizeNamespace, FullyQualifiedTsType, GetCasterName, GetKeyBuilderName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
 
 // TODO: duplicate_logic_key: subPath
 enum ObjectType {
@@ -36,10 +36,10 @@ type EntityTypeInfo = {
 function buildGetSubPathProps(
     allTypes: ODataServiceTypes,
     fullyQualifiedTsType: FullyQualifiedTsType,
-    getKeyType: GetKeyType,
     getQueryableName: GetQueryableName,
     getCasterName: GetCasterName,
     getSubPathName: GetSubPathName,
+    getKeyBuilderName: GetKeyBuilderName,
     keywords: Keywords,
     tab: Tab) {
 
@@ -57,7 +57,7 @@ function buildGetSubPathProps(
 
                 const generics = {
                     tEntity,
-                    tKey: getPropertyKeyType(entityInfo) || keywords.SingleItemsCannotBeQueriedByKey,
+                    tKeyBuilder: getTKeyBuilder(entityInfo),
                     tQueryable: getTQuery(entityInfo),
                     tCaster: getTCaster(entityInfo),
                     tSingleCaster: getTCaster(entityInfo, true),
@@ -110,6 +110,25 @@ function buildGetSubPathProps(
             : `${caster}.Collection`
     }
 
+    function getTKeyBuilder(info: EntityTypeInfo) {
+
+        if (info.collectionDepth !== 1) {
+            return info.collectionDepth > 1 || info.type.objectType !== ObjectType.ComplexType
+                ? keywords.ThisItemDoesNotHaveAKey
+                : keywords.SingleItemsCannotBeQueriedByKey
+        }
+
+        if (info.type.objectType !== ObjectType.ComplexType) {
+            return keywords.ThisItemDoesNotHaveAKey;
+        }
+
+        return fullyQualifiedTsType({
+            isCollection: false,
+            namespace: info.type.complexType.namespace,
+            name: info.type.complexType.name
+        }, getKeyBuilderName);
+    }
+
     function getTQuery(info: EntityTypeInfo) {
 
         if (info.collectionDepth > 1) {
@@ -129,15 +148,6 @@ function buildGetSubPathProps(
             namespace: info.type.complexType.namespace,
             name: info.type.complexType.name
         }, getQueryableName)
-    }
-
-    function getPropertyKeyType(type: EntityTypeInfo) {
-
-        if (type.collectionDepth !== 1 || type.type.objectType !== ObjectType.ComplexType) {
-            return null;
-        }
-
-        return getKeyType(type.type.complexType, true)
     }
 
     function typeName(info: EntityTypeInfo, unwrapCollections = 0) {
@@ -215,9 +225,10 @@ export const buildEntitySubPath = (tab: Tab, settings: CodeGenConfig | null | un
     const getCasterName = buildGetCasterName(settings);
     const getSubPathName = buildGetSubPathName(settings);
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
-    const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
+    const getKeyBuilderName = buildGetKeyBuilderName(settings);
     const getQueryableName = buildGetQueryableName(settings);
-    const getSubPathProps = buildGetSubPathProps(serviceConfig.types, fullyQualifiedTsType, getKeyType, getQueryableName, getCasterName, getSubPathName, keywords, tab);
+    const getSubPathProps = buildGetSubPathProps(serviceConfig.types, fullyQualifiedTsType, getQueryableName,
+        getCasterName, getSubPathName, getKeyBuilderName, keywords, tab);
 
     return (type: ODataComplexType) => {
         const subPathName = getSubPathName(type.name)

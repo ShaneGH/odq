@@ -57,7 +57,7 @@ describe("SubPath", function () {
         it("Should retrieve primitive item in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const userName = await client.Users
-                .withKey(user.blogUser.Id!)
+                .withKey(x => x.key(user.blogUser.Id!))
                 .subPath(x => x.Name)
                 .get();
 
@@ -67,7 +67,7 @@ describe("SubPath", function () {
         it("Should retrieve primitive items in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const blogWords = await client.BlogPosts
-                .withKey(user.blogPost.Id!)
+                .withKey(x => x.key(user.blogPost.Id!))
                 .subPath(x => x.Words)
                 .get();
 
@@ -77,7 +77,7 @@ describe("SubPath", function () {
         it("Should retrieve items in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const blog = await client.BlogPosts
-                .withKey(user.blogPost.Id!)
+                .withKey(x => x.key(user.blogPost.Id!))
                 .subPath(x => x.Blog)
                 .get();
 
@@ -87,7 +87,7 @@ describe("SubPath", function () {
         it("Should retrieve items in the path, 2 levels", async () => {
             const context = await addFullUserChain();
             const user = await client.BlogPosts
-                .withKey(context.blogPost.Id!)
+                .withKey(x => x.key(context.blogPost.Id!))
                 .subPath(x => x.Blog)
                 .subPath(x => x.User)
                 .get();
@@ -103,7 +103,7 @@ describe("SubPath", function () {
         it("Should retrieve number enum item in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const userType = await client.Users
-                .withKey(user.blogUser.Id!)
+                .withKey(x => x.key(user.blogUser.Id!))
                 .subPath(x => x.UserType)
                 .get();
 
@@ -115,7 +115,7 @@ describe("SubPath", function () {
         it("Should retrieve string enum item in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const userProfileType = await client.Users
-                .withKey(user.blogUser.Id!)
+                .withKey(x => x.key(user.blogUser.Id!))
                 .subPath(x => x.UserProfileType)
                 .get();
 
@@ -127,7 +127,7 @@ describe("SubPath", function () {
         // it("Should retrieve item with enum as key", async () => {
         //     const user = await addFullUserChain();
         //     const role = await client.UserRoles
-        //         .withKey(My.Odata.Entities.UserType.Admin)
+        //         .withKey(x => x.key(My.Odata.Entities.UserType.Admin))
         //         .get();
 
         //     expect(role.Description).toBe("Admin");
@@ -136,7 +136,7 @@ describe("SubPath", function () {
         // it("Should retrieve subpath of item with enum as key", async () => {
         //     const user = await addFullUserChain();
         //     const role = await client.UserRoles
-        //         .withKey(My.Odata.Entities.UserType.User)
+        //         .withKey(x => x.key(My.Odata.Entities.UserType.User))
         //         .subPath(x => x.Description)
         //         .get();
 
@@ -149,7 +149,7 @@ describe("SubPath", function () {
         it("Should retrieve items in the path, 1 level", async () => {
             const user = await addFullUserChain();
             const comments = await client.BlogPosts
-                .withKey(user.blogPost.Id!)
+                .withKey(x => x.key(user.blogPost.Id!))
                 .subPath(x => x.Comments)
                 .get();
 
@@ -160,7 +160,7 @@ describe("SubPath", function () {
         it("Should retrieve items in the path, 2 levels", async () => {
             const context = await addFullUserChain({ addFullChainToCommentUser: {} });
             const comments = await client.Blogs
-                .withKey(context.commentUserChain!.blog.Id!)
+                .withKey(x => x.key(context.commentUserChain!.blog.Id!))
                 .subPath(x => x.User)
                 .subPath(x => x.BlogPostComments)
                 .get();
@@ -172,7 +172,7 @@ describe("SubPath", function () {
         it("Should retrieve items in the path, 3 levels", async () => {
             const context = await addFullUserChain({ addFullChainToCommentUser: {} });
             const comments = await client.BlogPosts
-                .withKey(context.commentUserChain!.blogPost.Id!)
+                .withKey(x => x.key(context.commentUserChain!.blogPost.Id!))
                 .subPath(x => x.Blog)
                 .subPath(x => x.User)
                 .subPath(x => x.BlogPostComments)
@@ -200,9 +200,9 @@ describe("SubPath", function () {
                 const records: Recorder[] = []
                 const user = await addFullUserChain();
                 const comment = await client.BlogPosts
-                    .withKey(user.blogPost.Id!, keyType)
+                    .withKey(x => x.key(user.blogPost.Id!, keyType))
                     .subPath(x => x.Comments)
-                    .withKey(user.comment.Id!, keyType)
+                    .withKey(x => x.key(user.comment.Id!, keyType))
                     .get({ fetch: recordingFetcher(records) });
 
                 expect(comment.Text).toBe(user.comment.Text);
@@ -221,9 +221,9 @@ describe("SubPath", function () {
 
                 const user = await addFullUserChain();
                 const comment = await client.BlogPosts
-                    .withKey(user.blogPost.Id!)
+                    .withKey(x => x.key(user.blogPost.Id!))
                     .subPath(x => x.Comments)
-                    .withKey(user.comment.Id!)
+                    .withKey(x => x.key(user.comment.Id!))
                     .subPath(x => x.User)
                     .get();
 
@@ -238,7 +238,7 @@ describe("SubPath", function () {
             const tag = { Tag: uniqueString() }
             const user = await addFullUserChain({ commentTags: [tag] });
             const comment = await client.Comments
-                .withKey(user.comment.Id!)
+                .withKey(x => x.key(user.comment.Id!))
                 .subPath(x => x.Tags)
                 .get();
 
@@ -254,7 +254,7 @@ describe("SubPath", function () {
             const tag = { Tag: uniqueString() }
             const user = await addFullUserChain({ commentTags: [tag] });
             const comment = await client.Comments
-                .withKey(user.comment.Id!)
+                .withKey(x => x.key(user.comment.Id!))
                 .subPath(x => x.Tags)
                 .withQuery((t, { filter: { eq } }) => eq(t.Tag, success ? tag.Tag : "invalid"))
                 .get();

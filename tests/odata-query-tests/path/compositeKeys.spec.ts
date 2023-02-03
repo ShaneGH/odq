@@ -53,7 +53,7 @@ describe("Composite Keys", function () {
     it("Should retrieve items by key", async () => {
         const item = await addCompositeKeyItem();
         const result = await client.CompositeKeyItems
-            .withKey({ Id1: item.Id1!, Id2: item.Id2! })
+            .withKey(x => x.key({ Id1: item.Id1!, Id2: item.Id2! }))
             .get();
 
         expect(result.Data).toBe(item.Data);
@@ -62,7 +62,7 @@ describe("Composite Keys", function () {
     it("Should not retrieve items by invalid key", async () => {
         const item = await addCompositeKeyItem();
         const result = await client.CompositeKeyItems
-            .withKey({ Id1: item.Id1! + "a", Id2: item.Id2! })
+            .withKey(x => x.key({ Id1: item.Id1! + "a", Id2: item.Id2! }))
             .get<number>({ responseInterceptor: x => x.status });
 
         expect(result).toBe(404);
@@ -71,7 +71,7 @@ describe("Composite Keys", function () {
     it("Should not retrieve items by swapped key", async () => {
         const item = await addCompositeKeyItem();
         const result = await client.CompositeKeyItems
-            .withKey({ Id1: item.Id2!, Id2: item.Id1! })
+            .withKey(x => x.key({ Id1: item.Id2!, Id2: item.Id1! }))
             .get<number>({ responseInterceptor: x => x.status });
 
         expect(result).toBe(404);

@@ -56,7 +56,7 @@ describe("Cast", function () {
 
         const user = await addUser();
         const items = await client.HasIds
-            .withKey(user.Id!)
+            .withKey(x => x.key(user.Id!))
             .cast(i => i.User())
             .get();
 
@@ -80,7 +80,7 @@ describe("Cast", function () {
         let err: Error | null = null;
         try {
             await client.HasIds
-                .withKey(user.Id!)
+                .withKey(x => x.key(user.Id!))
                 .cast(i => i.Blog())
                 .get()
         } catch (e: any) {
@@ -94,7 +94,7 @@ describe("Cast", function () {
     it("Should retrieve correct values after cast", async () => {
         const user = await addUser();
         const items = await client.HasIds
-            .withKey(user.Id!)
+            .withKey(x => x.key(user.Id!))
             .cast(c => c.User())
             .get();
 
@@ -107,7 +107,7 @@ describe("Cast", function () {
         it("Should retrieve correct values after cast and path (multi)", async () => {
             const ctxt = await addFullUserChain();
             const comments = await client.HasIds
-                .withKey(ctxt.commentUser.Id!)
+                .withKey(x => x.key(ctxt.commentUser.Id!))
                 .cast(c => c.User())
                 .subPath(u => u.BlogPostComments)
                 .get();
@@ -119,7 +119,7 @@ describe("Cast", function () {
         it("Should retrieve correct values after cast and path (single)", async () => {
             const ctxt = await addFullUserChain();
             const user = await client.HasIds
-                .withKey(ctxt.blog.Id!)
+                .withKey(x => x.key(ctxt.blog.Id!))
                 .cast(c => c.Blog())
                 .subPath(u => u.User)
                 .get();

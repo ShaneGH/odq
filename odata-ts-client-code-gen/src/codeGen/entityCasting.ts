@@ -1,17 +1,17 @@
 import { ComplexTypeOrEnum, ODataComplexType, ODataEnum, ODataServiceConfig, ODataServiceTypes, ODataSingleTypeRef } from "odata-ts-client-shared";
 import { CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
-import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, FullyQualifiedTsType, GetCasterName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
+import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetKeyBuilderName, buildGetQueryableName, buildGetSubPathName, FullyQualifiedTsType, GetCasterName, GetKeyBuilderName, GetKeyType, GetQueryableName, GetSubPathName, httpClientType, Tab } from "./utils.js"
 
 // TODO: duplicate_logic_key: caster
 // TODO: this is a fairly heavy method to be called quite a bit. Optisation?
 function buildGetComplexCasterProps(
     allTypes: ODataServiceTypes,
     fullyQualifiedTsType: FullyQualifiedTsType,
-    getKeyType: GetKeyType,
     getQueryableName: GetQueryableName,
     getCasterName: GetCasterName,
     getSubPathName: GetSubPathName,
+    getKeyBuilderName: GetKeyBuilderName,
     keywords: Keywords,
     tab: Tab) {
 
@@ -48,10 +48,11 @@ function buildGetComplexCasterProps(
                 const resultType = fullyQualifiedTsType(typeRef)
                 const caster = fullyQualifiedTsType(typeRef, getCasterName)
                 const subProps = fullyQualifiedTsType(typeRef, getSubPathName)
+                const keyProp = fullyQualifiedTsType(typeRef, getKeyBuilderName);
 
                 const generics = {
                     tEntity: resultType,
-                    tKey: getKeyType(t, true),
+                    tKeyBuilder: keyProp,
                     tQueryable: fullyQualifiedTsType(typeRef, getQueryableName),
                     tCaster: `${caster}.${casterType}`,
                     tSingleCaster: `${caster}.Single`,
@@ -76,9 +77,11 @@ export const buildEntityCasting = (tab: Tab, settings: CodeGenConfig | null | un
     const getCasterName = buildGetCasterName(settings);
     const getSubPathName = buildGetSubPathName(settings);
     const getQueryableName = buildGetQueryableName(settings);
+    const getKeyBuilderName = buildGetKeyBuilderName(settings);
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
-    const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
-    const getComplexCasterProps = buildGetComplexCasterProps(serviceConfig.types, fullyQualifiedTsType, getKeyType, getQueryableName, getCasterName, getSubPathName, keywords, tab);
+    const getComplexCasterProps = buildGetComplexCasterProps(serviceConfig.types,
+        fullyQualifiedTsType, getQueryableName, getCasterName, getSubPathName, getKeyBuilderName,
+        keywords, tab);
 
     return (type: ComplexTypeOrEnum) => type.containerType === "ComplexType"
         ? complexType(type.type)

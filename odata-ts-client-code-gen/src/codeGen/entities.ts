@@ -2,6 +2,7 @@ import { ODataComplexType, ODataServiceConfig, ComplexTypeOrEnum } from "odata-t
 import { CodeGenConfig, SupressWarnings } from "../config.js"
 import { buildEntityCasting } from "./entityCasting.js"
 import { buildEntityData } from "./entityData.js"
+import { buildEntityKeyBuilder } from "./entityKeyBuilder.js"
 import { buildEntityQuery } from "./entityQuery.js"
 import { buildEntitySubPath } from "./entitySubPath.js"
 import { Keywords } from "./keywords.js"
@@ -12,6 +13,7 @@ export type EntityParts = {
     caster: string | null
     subPath: string | null
     query: string | null
+    keyBuilder: string | null
 }
 
 type EntityBuilder = (type: ComplexTypeOrEnum) => EntityParts
@@ -20,12 +22,14 @@ const buildEntityBuilder = (settings: CodeGenConfig | null | undefined, tab: Tab
     const entityData = buildEntityData(settings, tab);
     const entityDataBuilder = buildEntityQuery(settings, tab, keywords, serviceConfig);
     const entityCastings = buildEntityCasting(tab, settings, serviceConfig, keywords);
+    const entityKeyBuilder = buildEntityKeyBuilder(tab, settings, serviceConfig, keywords)
     const entitySubPathProps = buildEntitySubPath(tab, settings, serviceConfig, keywords);
 
     return (type: ComplexTypeOrEnum) => ({
         data: entityData(type),
         query: entityDataBuilder(type),
         caster: entityCastings(type),
+        keyBuilder: type.containerType === "ComplexType" ? entityKeyBuilder(type.type) : null,
         subPath: type.containerType === "ComplexType" ? entitySubPathProps(type.type) : null
     })
 }

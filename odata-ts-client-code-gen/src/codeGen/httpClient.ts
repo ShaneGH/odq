@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataEntitySet, ODataServiceConfig } from "odata-ts-client-shared";
 import { CodeGenConfig, SupressWarnings } from "../config.js";
 import { Keywords } from "./keywords.js";
-import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupComplexType, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";
+import { buildFullyQualifiedTsType, buildGetCasterName, buildGetKeyBuilderName, buildGetKeyType, buildGetQueryableName, buildGetSubPathName, buildLookupComplexType, buildLookupType, buildSanitizeNamespace, httpClientType, Tab } from "./utils.js";
 
 export function httpClient(
     serviceConfig: ODataServiceConfig,
@@ -12,7 +12,7 @@ export function httpClient(
 
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
     const sanitizeNamespace = buildSanitizeNamespace(settings);
-    const getKeyType = buildGetKeyType(settings, serviceConfig, keywords);
+    const getKeyBuilderName = buildGetKeyBuilderName(settings);
     const lookupComplexType = buildLookupComplexType(serviceConfig);
 
     const getQueryableName = buildGetQueryableName(settings);
@@ -35,7 +35,7 @@ export function httpClient(
 
     const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}) { }`;
 
-    return `/*
+    return `/**
  * The http client which serves as an entry point to OData
  */
 export class ${className()} {
@@ -126,11 +126,11 @@ ${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
         const queryableType = fullyQualifiedTsType(entitySet.forType, getQueryableName);
         const casterType = fullyQualifiedTsType(entitySet.forType, getCasterName)
         const subPathType = fullyQualifiedTsType(entitySet.forType, getSubPathName)
-        const idType = getKeyType(type, true);
+        const keyBuilderType = fullyQualifiedTsType(entitySet.forType, getKeyBuilderName)
 
         return {
             tEntity: resultType,
-            tKey: idType,
+            tKeyBuilder: keyBuilderType,
             tQueryable: queryableType,
             tCaster: `${casterType}.Collection`,
             tSingleCaster: `${casterType}.Single`,
@@ -151,7 +151,7 @@ ${tab(`return new ${instanceType}(${constructorArgs.join(", ")});`)}
 
         return {
             tEntity: resultType,
-            tKey: keywords.SingleItemsCannotBeQueriedByKey,
+            tKeyBuilder: keywords.SingleItemsCannotBeQueriedByKey,
             tQueryable: queryableType,
             tCaster: `${casterType}.Single`,
             tSingleCaster: `${casterType}.Single`,

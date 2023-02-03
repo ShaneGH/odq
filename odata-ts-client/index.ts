@@ -32,6 +32,8 @@ export {
     ODataResult,
     EntityQuery,
     CastSelection,
+    KeySelection,
+    WithKeyType,
     SubPathSelection
 } from "./src/httpClient.js"
 

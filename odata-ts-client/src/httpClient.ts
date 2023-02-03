@@ -36,6 +36,11 @@ type EntityQueryState = {
     query?: Query | Query[]
 }
 
+export type KeySelection<TNewEntityQuery> = {
+    keyEmbedType: WithKeyType,
+    key: any
+}
+
 export type CastSelection<TNewEntityQuery> = {
     type: ODataTypeRef
 }
@@ -206,6 +211,8 @@ export enum WithKeyType {
     /*
      * Specifies that a key should be embedded as a function call
      * e.g. ~/Users(1)
+     * 
+     * Default
      */
     FunctionCall = "FunctionCall",
 
@@ -245,6 +252,8 @@ const defaultRequestTools: Partial<RequestTools> = {
 }
 
 function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType, serviceConfig: ODataServiceTypes) {
+
+    if (key === undefined) key = null;
 
     if (keyTypes.length === 1) {
         const result = keyEmbedType === WithKeyType.FunctionCall
@@ -297,7 +306,7 @@ type EnumQueryBuilder<TEntity> = (entity: QueryEnum<TEntity>, utils: Utils) => Q
 
 // NOTE: these generic type names are copy pasted into code gen project \src\codeGen\utils.ts
 // NOTE: make sure that they stay in sync
-export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
+export class EntityQuery<TEntity, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult> {
 
     state: EntityQueryState
 
@@ -313,13 +322,9 @@ export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSub
         };
     }
 
-    withKey(key: TKey, keyEmbedType = WithKeyType.FunctionCall) {
+    withKey<TNewEntityQuery>(key: (builder: TKeyBuilder) => KeySelection<TNewEntityQuery>): TNewEntityQuery {
         if (this.state.query) {
             throw new Error("You cannot add query components before doing a key lookup");
-        }
-
-        if (key === undefined) {
-            throw new Error("Cannot set key to undefined. Try setting to null instead");
         }
 
         if (!this.state.path.length) {
@@ -334,8 +339,13 @@ export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSub
             throw new Error("Cannot search a collection of collections by key. You must search a collection instead");
         }
 
+        const keyResult = key({
+            key: (key: any, keyEmbedType?: WithKeyType.FunctionCall): KeySelection<any> => ({
+                key, keyEmbedType: keyEmbedType || WithKeyType.FunctionCall
+            })
+        } as any);
         const keyTypes = tryFindKeyTypes(this.type.collectionType, this.root.types);
-        const keyPath = keyExpr(keyTypes, key, keyEmbedType, this.root.types);
+        const keyPath = keyExpr(keyTypes, keyResult.key, keyResult.keyEmbedType, this.root.types);
 
         const path = keyPath.appendToLatest
             ? [
@@ -347,12 +357,12 @@ export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSub
                 keyPath.value
             ]
 
-        return new EntityQuery<TEntity, never, TQueryable, TSingleCaster, TSingleCaster, TSingleSubPath, never, ODataResult<TEntity>>(
+        return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
             this.type.collectionType,
             this.entitySet,
             this.root,
-            { ...this.state, path });
+            { ...this.state, path }) as TNewEntityQuery;
     }
 
     cast<TNewEntityQuery>(
@@ -428,7 +438,7 @@ export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSub
                 ? this.executePrimitiveQueryBuilder(t.type, queryBuilder as any)
                 : this.executeEnumQueryBuilder(t.type, queryBuilder as any);
 
-        return new EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
+        return new EntityQuery<TEntity, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TResult>(
             this.requestTools,
             this.type,
             this.entitySet,
@@ -568,7 +578,8 @@ export class EntityQuery<TEntity, TKey, TQueryable, TCaster, TSingleCaster, TSub
                 .keys(this.root.types[ns])
                 .map(t => this.root.types[ns][t]))
             .reduce((s, x) => [...s, ...x], [])
-            .filter(x => x.containerType === "ComplexType" && x.type.baseType
+            .filter(x => x.containerType === "ComplexType"
+                && x.type.baseType
                 && x.type.baseType.namespace === namespace
                 && x.type.baseType.name === name)
             .map(x => x.type as ODataComplexType)

@@ -66,7 +66,7 @@ describe("Query.Filter Depth", function () {
                 : uniqueString("FilterByWord");
 
             const result = await client.BlogPosts
-                .withKey(user.blogPost.Id!)
+                .withKey(x => x.key(user.blogPost.Id!))
                 .subPath(x => x.Words)
                 .withQuery((n, { filter: { eq, and } }) => eq(n, word))
                 .get();

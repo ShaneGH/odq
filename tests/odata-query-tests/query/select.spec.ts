@@ -63,7 +63,7 @@ describe("Query.Select", function () {
 
             const ctxt = await addFullUserChain();
             const result = await client.Users
-                .withKey(ctxt.blogUser.Id)
+                .withKey(x => x.key(ctxt.blogUser.Id))
                 .withQuery((_, { select: { selectRaw } }) =>
                     selectRaw("Name,Score"))
                 .get();
@@ -80,7 +80,7 @@ describe("Query.Select", function () {
 
                 const ctxt = await addFullUserChain();
                 const result = await client.Users
-                    .withKey(ctxt.blogUser.Id)
+                    .withKey(x => x.key(ctxt.blogUser.Id))
                     .withQuery((x, { select: { select } }) =>
                         select(x.Name, x.Score))
                     .get();
@@ -97,7 +97,7 @@ describe("Query.Select", function () {
 
                 const ctxt = await addFullUserChain({ commentMood: My.Odata.Entities.Mood.Happy });
                 const result = await client.Comments
-                    .withKey(ctxt.comment.Id)
+                    .withKey(x => x.key(ctxt.comment.Id))
                     .withQuery((x, { select: { select } }) => select(x.Mood))
                     .get();
 
@@ -112,7 +112,7 @@ describe("Query.Select", function () {
 
                 const ctxt = await addFullUserChain({ commentMood: My.Odata.Entities.Mood.Happy });
                 const result = await client.Comments
-                    .withKey(ctxt.comment.Id)
+                    .withKey(x => x.key(ctxt.comment.Id))
                     .withQuery((x, { select: { select } }) => select(x.Mood.Mood))
                     .get();
 

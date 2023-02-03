@@ -53,7 +53,7 @@ describe("Multiple entity sets", function () {
     it("Should retrieve items from entity set 1", async () => {
         const item = await addFullUserChain();
         const result = await client.BlogPosts
-            .withKey(item.blogPost.Id!)
+            .withKey(x => x.key(item.blogPost.Id!))
             .get();
 
         expect(result.Name).toBe(item.blogPost.Name);
@@ -62,7 +62,7 @@ describe("Multiple entity sets", function () {
     it("Should retrieve items from entity set 2", async () => {
         const item = await addFullUserChain();
         const result = await client.BlogPosts2
-            .withKey(item.blogPost.Id!)
+            .withKey(x => x.key(item.blogPost.Id!))
             .get();
 
         expect(result.Name).toBe(item.blogPost.Name);

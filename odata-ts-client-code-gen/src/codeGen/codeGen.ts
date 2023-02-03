@@ -57,7 +57,8 @@ ${edm(tab)}`
                         data: ns[x].data,
                         caster: null,
                         subPath: null,
-                        query: null
+                        query: null,
+                        keyBuilder: null
                     }
                 }), {} as ProcessedNamespace);
         }
@@ -71,7 +72,8 @@ ${edm(tab)}`
                         data: null,
                         caster: ns[x].caster,
                         subPath: ns[x].subPath,
-                        query: ns[x].query
+                        query: ns[x].query,
+                        keyBuilder: ns[x].keyBuilder
                     }
                 }), {} as ProcessedNamespace);
         }
@@ -81,12 +83,12 @@ ${edm(tab)}`
         const [data, utils] = splitConfig(
             processServiceConfig(settings, tab, keywords, serviceConfig, warnings))
 
-        return `/*
+        return `/**
  * Entities and complex types from the data model
  */
 ${buildModule(data)}
 
-/*
+/**
  * Helper types for static typing of OData uris.
  */
 ${buildModule(utils)}`
@@ -108,7 +110,8 @@ ${buildModule(utils)}`
                     module[name].data,
                     module[name].query,
                     module[name].caster,
-                    module[name].subPath
+                    module[name].subPath,
+                    module[name].keyBuilder
                 ]
                     .filter(x => x)
                     .join("\n\n"))

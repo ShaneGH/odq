@@ -123,6 +123,13 @@ export type CodeGenConfig = Partial<{
     queryableTypeNameTemplate: string,
 
     /** 
+     * Specifies how to name key builder types. Use "{0}" to inject the name of the type
+     * that this queryable is for
+     * @default "{0}KeyBuilder"
+     */
+    keyBuilderTypeNameTemplate: string,
+
+    /** 
      * Specifies how to name caster types. Use "{0}" to inject the name of the type
      * that this caster is for
      * @default "{0}Caster"

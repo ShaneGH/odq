@@ -23,7 +23,7 @@ import { Tab } from "./utils.js";
 <xs:enumeration value="Edm.SByte"/> */
 
 export function edm(tab: Tab) {
-    return `/*
+    return `/**
  * Type references for described Edm data types.
  */
 export module Edm {
