@@ -1,6 +1,9 @@
+import { AsyncType, CodeGenConfig } from "../config.js";
 import { Dict, Tab } from "./utils.js";
 
 export type Keywords = {
+    mergeMap: string
+    map: string
     ODataServiceConfig: string
     QueryPrimitive: string
     QueryArray: string
@@ -30,6 +33,13 @@ export type Keywords = {
     toODataTypeRef: string,
     responseParser: string,
     RootResponseInterceptor: string
+    AngularHttpClient: string
+    blobToText: string
+    parseResponse: string
+    Observable: string
+    HttpError: string,
+    AngularHttpResponseBase: string,
+    AngularHttpResponse: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -48,6 +58,15 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
     // TODO: tests for all keyword re-mappings
     return {
+        mergeMap: getKeyword("mergeMap"),
+        map: getKeyword("map"),
+        AngularHttpResponseBase: getKeyword("HttpResponseBase"),
+        AngularHttpResponse: getKeyword("HttpResponse"),
+        parseResponse: getKeyword("parseResponse"),
+        blobToText: getKeyword("blobToText"),
+        HttpError: getKeyword("HttpError"),
+        Observable: getKeyword("Observable"),
+        AngularHttpClient: getKeyword("AngularHttpClient"),
         RootResponseInterceptor: getKeyword("RootResponseInterceptor"),
         responseParser: getKeyword("responseParser"),
         toODataTypeRef: getKeyword("toODataTypeRef"),
@@ -89,10 +108,23 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
     }
 }
 
-export function imports(keywords: Keywords, tab: Tab) {
+export function imports(keywords: Keywords, tab: Tab, config: CodeGenConfig | null) {
+
+    const ng = config?.angularMode && `import {
+    ${tab(importWithAlias("AngularHttpClient", "HttpClient"))},
+    ${tab(importWithAlias("AngularHttpResponseBase", "HttpResponseBase"))},
+    ${tab(importWithAlias("AngularHttpResponse", "HttpResponse"))}
+} from '@angular/common/http'`
+
+    const rxjs = (config?.angularMode || config?.asyncType === AsyncType.RxJs) && `import {
+    ${tab(importWithAlias("Observable"))},
+    ${tab(importWithAlias("mergeMap"))},
+    ${tab(importWithAlias("map"))},
+} from 'rxjs'`
 
     // TODO: audit are all of these still used?
-    return `import {
+    const odataTsClient = `import {
+${tab(importWithAlias("HttpError"))},
 ${tab(importWithAlias("RootResponseInterceptor"))},
 ${tab(importWithAlias("KeySelection"))},
 ${tab(importWithAlias("WithKeyType"))},
@@ -118,10 +150,14 @@ ${tab(importWithAlias("CastingOnCollectionsOfCollectionsIsNotSupported"))},
 ${tab(importWithAlias("QueryingOnCollectionsOfCollectionsIsNotSupported"))}
 } from 'odata-ts-client';`
 
-    function importWithAlias(importName: keyof Keywords) {
+    return [odataTsClient, ng, rxjs]
+        .filter(x => !!x)
+        .join("\n\n")
+
+    function importWithAlias(importName: keyof Keywords, libImportName?: string) {
         if (!keywords[importName]) {
             throw new Error(`Invalid keyword: ${importName}`);
         }
-        return keywords[importName] === importName ? importName : `${importName} as ${keywords[importName]}`
+        return !libImportName && keywords[importName] === importName ? importName : `${libImportName || importName} as ${keywords[importName]}`
     }
 }

@@ -34,7 +34,8 @@ export {
     CastSelection,
     KeySelection,
     WithKeyType,
-    SubPathSelection
+    SubPathSelection,
+    HttpError
 } from "./src/httpClient.js"
 
 export {

@@ -13,6 +13,7 @@ function buildGetComplexCasterProps(
     getSubPathName: GetSubPathName,
     getKeyBuilderName: GetKeyBuilderName,
     keywords: Keywords,
+    settings: CodeGenConfig | null,
     tab: Tab) {
 
     const allComplexTypeFlatList = Object
@@ -64,7 +65,7 @@ function buildGetComplexCasterProps(
                     }
                 }
 
-                const entityQueryType = httpClientType(keywords, generics, tab);
+                const entityQueryType = httpClientType(keywords, generics, tab, settings || null);
                 return `${name(t)}(): ${keywords.CastSelection}<${entityQueryType}>`
             })
     }
@@ -81,7 +82,7 @@ export const buildEntityCasting = (tab: Tab, settings: CodeGenConfig | null | un
     const fullyQualifiedTsType = buildFullyQualifiedTsType(settings);
     const getComplexCasterProps = buildGetComplexCasterProps(serviceConfig.types,
         fullyQualifiedTsType, getQueryableName, getCasterName, getSubPathName, getKeyBuilderName,
-        keywords, tab);
+        keywords, settings || null, tab);
 
     return (type: ComplexTypeOrEnum) => type.containerType === "ComplexType"
         ? complexType(type.type)

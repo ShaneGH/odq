@@ -44,7 +44,7 @@ ${tab(`key(key: ${getKeyType(type, true)}, keyType?: ${keywords.WithKeyType}): $
             }
         }
 
-        const entityQueryType = httpClientType(keywords, generics, tab);
+        const entityQueryType = httpClientType(keywords, generics, tab, settings || null);
         return `${keywords.KeySelection}<${entityQueryType}>`
     }
 }

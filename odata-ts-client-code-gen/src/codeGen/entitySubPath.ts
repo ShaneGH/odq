@@ -41,6 +41,7 @@ function buildGetSubPathProps(
     getSubPathName: GetSubPathName,
     getKeyBuilderName: GetKeyBuilderName,
     keywords: Keywords,
+    settings: CodeGenConfig | null,
     tab: Tab) {
 
     return (type: ODataComplexType): string[] => {
@@ -69,7 +70,7 @@ function buildGetSubPathProps(
                     }
                 }
 
-                const entityQueryType = httpClientType(keywords, generics, tab);
+                const entityQueryType = httpClientType(keywords, generics, tab, settings || null);
                 return `${key}: ${keywords.SubPathSelection}<${entityQueryType}>`
             })
     }
@@ -228,7 +229,7 @@ export const buildEntitySubPath = (tab: Tab, settings: CodeGenConfig | null | un
     const getKeyBuilderName = buildGetKeyBuilderName(settings);
     const getQueryableName = buildGetQueryableName(settings);
     const getSubPathProps = buildGetSubPathProps(serviceConfig.types, fullyQualifiedTsType, getQueryableName,
-        getCasterName, getSubPathName, getKeyBuilderName, keywords, tab);
+        getCasterName, getSubPathName, getKeyBuilderName, keywords, settings || null, tab);
 
     return (type: ODataComplexType) => {
         const subPathName = getSubPathName(type.name)

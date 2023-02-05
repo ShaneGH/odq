@@ -1,5 +1,5 @@
 import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataSingleTypeRef, ComplexTypeOrEnum } from "odata-ts-client-shared";
-import { CodeGenConfig } from "../config.js";
+import { AsyncType, CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 
 export type Dict<T> = { [key: string]: T }
@@ -31,7 +31,8 @@ export function buildTab(settings: CodeGenConfig | null | undefined): Tab {
 
 // TODO: some licensing or marketing?
 export function lintingAndComments() {
-    return `/* tslint:disable */
+    return `// ReSharper disable InconsistentNaming
+/* tslint:disable */
 /* eslint-disable */
 
 /********************************************************/
@@ -212,20 +213,24 @@ export type HttpClientGenerics = {
 const httpClientGenericNames = ["TEntity", "TDataResult", "TKeyBuilder", "TQueryable", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TFetchResult"]
 const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x ? s : x, -1);
 
-export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab) {
+export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab, settings: CodeGenConfig | null) {
+
+    const { async, fetchResponse } = settings?.angularMode || settings?.asyncType === AsyncType.RxJs
+        ? { async: keywords.Observable, fetchResponse: keywords.AngularHttpResponseBase }
+        : { async: "Promise", fetchResponse: "Response" };
 
     const gs = [
         generics.tEntity,
         generics.tResult.annotated
-            ? `Promise<${keywords.ODataAnnotatedResult}<${generics.tResult.resultType}>>`
-            : `Promise<${keywords.ODataResult}<${generics.tResult.resultType}>>`,
+            ? `${async}<${keywords.ODataAnnotatedResult}<${generics.tResult.resultType}>>`
+            : `${async}<${keywords.ODataResult}<${generics.tResult.resultType}>>`,
         generics.tKeyBuilder,
         generics.tQueryable,
         generics.tCaster,
         generics.tSingleCaster,
         generics.tSubPath,
         generics.tSingleSubPath,
-        "Promise<Response>"
+        `${async}<${fetchResponse}>`
     ]
         .map(addType)
         .map(tab)

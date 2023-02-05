@@ -7,6 +7,8 @@ export function httpClient(
     serviceConfig: ODataServiceConfig,
     tab: Tab,
     keywords: Keywords,
+    requestToolsGenerics: [string, string],
+    parseResponseFunctionBody: string,
     settings: CodeGenConfig | null | undefined,
     warnings: SupressWarnings | null | undefined) {
 
@@ -33,7 +35,7 @@ export function httpClient(
         .map(x => methodsForEntitySetNamespace(x.escapedNamespaceParts, x.entitySets))
         .join("\n\n");
 
-    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}<Promise<Response>, Promise<any>>) { }`;
+    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}<${requestToolsGenerics.join(", ")}>) { }`;
 
     return `
 ${parseResponse()}
@@ -63,16 +65,9 @@ ${tab("return collection ? { isCollection: true, collectionType } : collectionTy
     // TODO: error handling
     function parseResponse() {
 
-        const body = `const result = await response
-if (!result.ok) {
-${tab(`return new Promise<any>((_, rej) => rej(result));`)}
-}
+        return `const ${keywords.responseParser}: ${keywords.RootResponseInterceptor}<${requestToolsGenerics.join(", ")}> = response => {
 
-return result.json();`
-
-        return `const ${keywords.responseParser}: ${keywords.RootResponseInterceptor}<Promise<Response>, Promise<any>> = async response => {
-
-${tab(body)}
+${tab(parseResponseFunctionBody)}
 }`
     }
 
@@ -127,7 +122,7 @@ ${methods}
             ? singletonGenerics(entitySet, type)
             : entitySetGenerics(entitySet, type);
 
-        const instanceType = httpClientType(keywords, generics, tab);
+        const instanceType = httpClientType(keywords, generics, tab, settings || null);
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
             `${keywords.responseParser}`,

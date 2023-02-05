@@ -289,6 +289,12 @@ type ComplexQueryBuilder<TEntity> = (entity: QueryComplexObject<TEntity>, utils:
 type PrimitiveQueryBuilder<TEntity> = (entity: QueryPrimitive<TEntity>, utils: Utils) => Query | Query[]
 type EnumQueryBuilder<TEntity> = (entity: QueryEnum<TEntity>, utils: Utils) => Query | Query[]
 
+export class HttpError extends Error {
+    constructor(message: string, public httpResponse: any) {
+        super(message)
+    }
+}
+
 // TODO: deconstruct into different functions/files
 // TODO: do not return instances from any methods. Return interfaces instead
 // TODO: not a great name: EntityQuery

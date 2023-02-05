@@ -1,24 +1,31 @@
 
 import { ODataServiceConfig } from "odata-ts-client-shared";
-import { CodeGenConfig, SupressWarnings } from "../config.js";
+import { AsyncType, CodeGenConfig, SupressWarnings } from "../config.js";
+import { angularHttpClient } from "./angularHttpClient.js";
 import { edm } from "./edm.js";
 import { ProcessedNamespace, ProcessedServiceConfig, processServiceConfig } from "./entities.js";
+import { fetchHttpClient } from "./fetchHttpClient.js";
 import { httpClient } from "./httpClient.js";
 import { generateKeywords, imports } from "./keywords.js";
 import { buildTab, configObj, lintingAndComments } from "./utils.js";
 
 export function codeGen(serviceConfig: ODataServiceConfig, settings: CodeGenConfig | null | undefined, warnings: SupressWarnings | null | undefined) {
 
+    if (settings != null && settings.angularMode && settings.asyncType && settings.asyncType !== AsyncType.RxJs) {
+        throw new Error('If angularMode is configured, asyncType must be either null or "Rxjs"');
+    }
+
     const keywords = generateKeywords(Object.keys(serviceConfig.types), Object.keys(serviceConfig.types[""] || {}));
     const tab = buildTab(settings)
+    const client = settings?.angularMode ? angularHttpClient : fetchHttpClient
 
     // TODO: make module composition a bit nicer "module X { module Y { module Z { ..."
     const output = `
-${imports(keywords, tab)}
+${imports(keywords, tab, settings || null)}
 
 ${lintingAndComments()}
 
-${httpClient(serviceConfig, tab, keywords, settings, warnings)}
+${client(serviceConfig, tab, keywords, settings, warnings)}
 
 ${entities()}
 

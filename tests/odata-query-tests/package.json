@@ -20,7 +20,8 @@
   "devDependencies": {
     "@types/node-fetch": "^2.6.2",
     "node-fetch": "^3.3.0",
-    "openapi": "^1.0.1"
+    "openapi": "^1.0.1",
+    "@angular/common": "^15.1.3"
   },
   "dependencies": {
     "@types/jest": "^29.2.5",
