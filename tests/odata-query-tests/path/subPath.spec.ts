@@ -45,9 +45,9 @@ function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
 }
 
 type Recorder = { input: RequestInfo | URL, init?: RequestInit }
-function recordingFetcher(recorder: Recorder[]) {
-    return (input: any, uri: string, init: RequestInit, defaultInterceptor: RootResponseInterceptor<any>) => {
-        recorder.push({ input, init })
+function recordingFetcher(recorder: string[]) {
+    return (input: any, uri: string, init: RequestInit, defaultInterceptor: RootResponseInterceptor<Promise<Response>, any>) => {
+        recorder.push(uri)
         return defaultInterceptor(input, uri, init)
     }
 }
@@ -199,7 +199,7 @@ describe("SubPath", function () {
 
             async function execute(keyType: WithKeyType) {
 
-                const records: Recorder[] = []
+                const records: string[] = []
                 const user = await addFullUserChain();
                 const comment = await client.BlogPosts
                     .withKey(x => x.key(user.blogPost.Id!, keyType))
@@ -211,9 +211,9 @@ describe("SubPath", function () {
                 expect(records.length).toBe(1);
 
                 if (keyType === WithKeyType.FunctionCall) {
-                    expect(records[0].input).toContain("(");
+                    expect(records[0]).toContain("(");
                 } else {
-                    expect((records[0].input.toString()).indexOf("(")).toBe(-1);
+                    expect((records[0]).indexOf("(")).toBe(-1);
                 }
             }
         });

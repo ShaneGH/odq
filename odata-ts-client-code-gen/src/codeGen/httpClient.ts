@@ -33,7 +33,7 @@ export function httpClient(
         .map(x => methodsForEntitySetNamespace(x.escapedNamespaceParts, x.entitySets))
         .join("\n\n");
 
-    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}<Promise<any>>) { }`;
+    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}<Promise<Response>, Promise<any>>) { }`;
 
     return `
 ${parseResponse()}
@@ -62,14 +62,17 @@ ${tab("return collection ? { isCollection: true, collectionType } : collectionTy
 
     // TODO: error handling
     function parseResponse() {
-        return `const ${keywords.responseParser}: ${keywords.RootResponseInterceptor}<Promise<any>> = async (response: Promise<any>, uri: string, reqValues: RequestInit) => {
-    
-    const result = await response
-    if (!result.ok) {
-        return new Promise<any>((_, rej) => rej(result));
-    }
 
-    return result.json();
+        const body = `const result = await response
+if (!result.ok) {
+${tab(`return new Promise<any>((_, rej) => rej(result));`)}
+}
+
+return result.json();`
+
+        return `const ${keywords.responseParser}: ${keywords.RootResponseInterceptor}<Promise<Response>, Promise<any>> = async response => {
+
+${tab(body)}
 }`
     }
 

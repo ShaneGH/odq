@@ -223,7 +223,7 @@ export enum WithKeyType {
     PathSegment = "PathSegment"
 }
 
-const defaultRequestTools: Partial<RequestTools<any>> = {
+const defaultRequestTools: Partial<RequestTools<any, any>> = {
     uriInterceptor: (uri: ODataUriParts) => {
 
         let queryPart = Object
@@ -296,13 +296,13 @@ type EnumQueryBuilder<TEntity> = (entity: QueryEnum<TEntity>, utils: Utils) => Q
 
 // NOTE: these generic type names are copy pasted into code gen project \src\codeGen\utils.ts
 // NOTE: make sure that they stay in sync
-export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath> {
+export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TFetchResult> {
 
     state: EntityQueryState
 
     constructor(
-        private requestTools: RequestTools<TResult>,
-        private defaultResponseInterceptor: RootResponseInterceptor<TResult>,
+        private requestTools: RequestTools<TFetchResult, TResult>,
+        private defaultResponseInterceptor: RootResponseInterceptor<TFetchResult, TResult>,
         private type: ODataTypeRef,
         private entitySet: ODataEntitySet,
         private root: ODataServiceConfig,
@@ -348,7 +348,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
                 keyPath.value
             ]
 
-        return new EntityQuery<any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
             this.requestTools,
             this.defaultResponseInterceptor,
             this.type.collectionType,
@@ -371,7 +371,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         const path = this.state.path?.length ? [...this.state.path, fullyQualifiedName] : [fullyQualifiedName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
             this.requestTools,
             this.defaultResponseInterceptor,
             newT.type,
@@ -401,7 +401,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         const path = this.state.path?.length ? [...this.state.path, newT.propertyName] : [newT.propertyName];
 
         // TODO: Are these anys harmful, can they be removed?
-        return new EntityQuery<any, any, any, any, any, any, any, any>(
+        return new EntityQuery<any, any, any, any, any, any, any, any, any>(
             this.requestTools,
             this.defaultResponseInterceptor,
             prop,
@@ -432,7 +432,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
                 ? this.executePrimitiveQueryBuilder(t.type, queryBuilder as any)
                 : this.executeEnumQueryBuilder(t.type, queryBuilder as any);
 
-        return new EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath>(
+        return new EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath, TFetchResult>(
             this.requestTools,
             this.defaultResponseInterceptor,
             this.type,
@@ -501,16 +501,16 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
      * Execute a get request
      * @param overrideRequestTools Override any request tools needed
      */
-    get(overrideRequestTools?: Partial<RequestTools<TResult>>): TResult;
+    get(overrideRequestTools?: Partial<RequestTools<TFetchResult, TResult>>): TResult;
 
     /**
      * Execute a get request, casting the result to something custom
      * @param overrideRequestTools Override any request tools needed
      */
-    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools<TResult>>): TOverrideResultType;
+    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools<TFetchResult, TOverrideResultType>>): TOverrideResultType;
 
 
-    get(overrideRequestTools?: Partial<RequestTools<TResult>>): TResult {
+    get(overrideRequestTools?: Partial<RequestTools<TFetchResult, TResult>>): TResult {
         return this.fetch(this.path(), overrideRequestTools)
     }
 
@@ -533,9 +533,9 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         return path.join("/");
     }
 
-    private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools<TResult>> | undefined): TResult {
+    private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools<TFetchResult, TResult>> | undefined): TResult {
 
-        const tools: RequestTools<TResult> = {
+        const tools: RequestTools<TFetchResult, TResult> = {
             responseInterceptor: this.defaultResponseInterceptor,
             ...defaultRequestTools,
             ...this.requestTools,
@@ -563,15 +563,15 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
             .buildResponseInterceptorChain(overrideRequestTools)(tools.fetch(uri, init), uri, init)
     }
 
-    private buildResponseInterceptorChain(overrideRequestTools: Partial<RequestTools<TResult>> | undefined): RootResponseInterceptor<TResult> {
+    private buildResponseInterceptorChain(overrideRequestTools: Partial<RequestTools<TFetchResult, TResult>> | undefined): RootResponseInterceptor<TFetchResult, TResult> {
 
         const l0 = this.defaultResponseInterceptor
 
         const i1 = this.requestTools.responseInterceptor
-        const l1 = i1 && ((input: TResult, uri: string, reqValues: RequestInit) => i1(input, uri, reqValues, l0))
+        const l1 = i1 && ((input: TFetchResult, uri: string, reqValues: RequestInit) => i1(input, uri, reqValues, l0))
 
         const i2 = overrideRequestTools?.responseInterceptor
-        const l2 = i2 && ((input: TResult, uri: string, reqValues: RequestInit) => i2(input, uri, reqValues, l1 || l0))
+        const l2 = i2 && ((input: TFetchResult, uri: string, reqValues: RequestInit) => i2(input, uri, reqValues, l1 || l0))
 
         return l2 || l1 || l0
     }
