@@ -92,9 +92,22 @@ export enum TypeCaseSettings {
     CamelCase = "CamelCase"
 }
 
+export enum AsyncType {
+    /**
+     * HttpClient results will be Promises
+     */
+    Promise = "Promise",
+
+    /**
+     * HttpClient results will be rxjs Observables
+     */
+    RxJs = "RxJs"
+}
+
 // TODO: settings from cmd
 // TODO: test all
 export type CodeGenConfig = Partial<{
+
     /** 
      * Specifies how to write the config json object. If true, will pretty print
      * @default false
@@ -200,4 +213,18 @@ export type CodeGenConfig = Partial<{
         serviceReturnTypes: TypeCaseSettings,
         queryTypes: TypeCaseSettings
     }>
+
+    /** 
+     * If true, will generate http clients with an angular HttpClient as input
+     * 
+     * @default false
+     */
+    angularMode: boolean
+
+    /** 
+     * Defines the type of outputs for the HttpClient
+     * 
+     * @default "Promise"
+     */
+    asyncType: AsyncType
 }>
