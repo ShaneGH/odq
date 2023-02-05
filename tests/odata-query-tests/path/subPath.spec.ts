@@ -3,6 +3,7 @@ import { My, ODataClient } from "../generatedCode.js";
 import { addFullUserChain, addUser } from "../utils/client.js";
 import { uniqueString } from "../utils/utils.js";
 import { WithKeyType } from "odata-ts-client/dist/src/httpClient.js";
+import { RootResponseInterceptor } from "odata-ts-client";
 
 const client = new ODataClient({
     fetch: (x, y) => {
@@ -10,15 +11,16 @@ const client = new ODataClient({
     },
     uriRoot: "http://localhost:5432/odata/test-entities",
     responseInterceptor: (result, uri, reqValues, defaultParser) => {
-        return defaultParser(result)
+        return defaultParser(result, uri, reqValues)
             .catch(async _ => {
 
+                const r = await result
                 const err = {
                     uri,
-                    code: result.status,
-                    statusText: result.statusText,
-                    headers: result.headers,
-                    error: await result.text(),
+                    code: r.status,
+                    statusText: r.statusText,
+                    headers: r.headers,
+                    error: await r.text(),
                     reqValues
                 }
 
@@ -44,9 +46,9 @@ function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
 
 type Recorder = { input: RequestInfo | URL, init?: RequestInit }
 function recordingFetcher(recorder: Recorder[]) {
-    return (input: RequestInfo | URL, init?: RequestInit) => {
+    return (input: any, uri: string, init: RequestInit, defaultInterceptor: RootResponseInterceptor<any>) => {
         recorder.push({ input, init })
-        return fetch(input, init)
+        return defaultInterceptor(input, uri, init)
     }
 }
 
@@ -203,7 +205,7 @@ describe("SubPath", function () {
                     .withKey(x => x.key(user.blogPost.Id!, keyType))
                     .subPath(x => x.Comments)
                     .withKey(x => x.key(user.comment.Id!, keyType))
-                    .get({ fetch: recordingFetcher(records) });
+                    .get({ responseInterceptor: recordingFetcher(records) });
 
                 expect(comment.Text).toBe(user.comment.Text);
                 expect(records.length).toBe(1);

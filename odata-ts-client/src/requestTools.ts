@@ -28,17 +28,21 @@ export type ODataUriParts = {
     query: { [key: string]: string }
 }
 
+export type RootResponseInterceptor<TResult> = (input: TResult, uri: string, reqValues: RequestInit) => any
+
+export type ResponseInterceptor<TResult> = (input: TResult, uri: string, reqValues: RequestInit, defaultInterceptor: RootResponseInterceptor<TResult>) => any
+
 // TODO: document: Add article
 // TODO: test all of these
 /**
  * Input args to an ODataHttpClient
  */
-export type RequestTools = {
+export type RequestTools<TResult> = {
     /** 
      * A basic http client. Set this to a browser fetch, node18 fetch or a client from the the node-fetch npm module
      * You can also use this value to proxy requests
      */
-    fetch: typeof fetch
+    fetch(input: RequestInfo | URL, init?: RequestInit): TResult
 
     /** 
      * The root URI of all entity sets. Something like: https://my.service.com/my-odata",
@@ -59,5 +63,5 @@ export type RequestTools = {
     /** 
      * Interceptor for http responses. Use this to add custom error handling or deserialization
      */
-    responseInterceptor?: (input: Response, uri: string, reqValues: RequestInit, defaultInterceptor: (input: Response) => Promise<any>) => any
+    responseInterceptor?: ResponseInterceptor<TResult>
 }

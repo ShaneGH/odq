@@ -16,7 +16,7 @@ export type Keywords = {
     RequestTools: string,
     ODataComplexType: string,
     ODataTypeRef: string
-    _httpClientArgs: string,
+    _httpClientArgs: string,    // TODO: keyword should be against collection namespaces
     WithKeyType: string
     ODataAnnotatedResult: string
     ODataResult: string
@@ -26,7 +26,10 @@ export type Keywords = {
     PrimitiveTypesCannotBeTraversed: string
     CastingOnCollectionsOfCollectionsIsNotSupported: string
     QueryingOnCollectionsOfCollectionsIsNotSupported: string
-    ThisItemDoesNotHaveAKey: string
+    ThisItemDoesNotHaveAKey: string,
+    toODataTypeRef: string,
+    responseParser: string,
+    RootResponseInterceptor: string
 };
 
 export function generateKeywords(allNamespaces: string[], rootLevelTypes: string[]): Keywords {
@@ -45,6 +48,9 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
 
     // TODO: tests for all keyword re-mappings
     return {
+        RootResponseInterceptor: getKeyword("RootResponseInterceptor"),
+        responseParser: getKeyword("responseParser"),
+        toODataTypeRef: getKeyword("toODataTypeRef"),
         QueryEnum: getKeyword("QueryEnum"),
         WithKeyType: getKeyword("WithKeyType"),
         ODataTypeRef: getKeyword("ODataTypeRef"),
@@ -87,6 +93,7 @@ export function imports(keywords: Keywords, tab: Tab) {
 
     // TODO: audit are all of these still used?
     return `import {
+${tab(importWithAlias("RootResponseInterceptor"))},
 ${tab(importWithAlias("KeySelection"))},
 ${tab(importWithAlias("WithKeyType"))},
 ${tab(importWithAlias("QueryEnum"))},

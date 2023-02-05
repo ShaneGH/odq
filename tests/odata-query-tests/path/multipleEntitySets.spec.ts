@@ -8,15 +8,16 @@ const client = new ODataClient({
     },
     uriRoot: "http://localhost:5432/odata/test-entities",
     responseInterceptor: (result, uri, reqValues, defaultParser) => {
-        return defaultParser(result)
+        return defaultParser(result, uri, reqValues)
             .catch(async _ => {
 
+                const r = await result
                 const err = {
                     uri,
-                    code: result.status,
-                    statusText: result.statusText,
-                    headers: result.headers,
-                    error: await result.text(),
+                    code: r.status,
+                    statusText: r.statusText,
+                    headers: r.headers,
+                    error: await r.text(),
                     reqValues
                 }
 

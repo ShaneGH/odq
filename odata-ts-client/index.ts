@@ -39,7 +39,8 @@ export {
 
 export {
     RequestTools,
-    ODataUriParts
+    ODataUriParts,
+    RootResponseInterceptor
 } from "./src/requestTools.js"
 
 export {

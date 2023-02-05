@@ -33,15 +33,18 @@ export function httpClient(
         .map(x => methodsForEntitySetNamespace(x.escapedNamespaceParts, x.entitySets))
         .join("\n\n");
 
-    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}) { }`;
+    const constructor = `constructor(private ${keywords._httpClientArgs}: ${keywords.RequestTools}<Promise<any>>) { }`;
 
-    return `/**
+    return `
+${parseResponse()}
+
+${toODataTypeRef()}
+
+/**
  * The http client which serves as an entry point to OData
  */
 export class ${className()} {
 ${tab(constructor)}
-
-${tab(toODataTypeRef())}
 
 ${tab(methods)}
 }`
@@ -51,9 +54,22 @@ ${tab(methods)}
     }
 
     function toODataTypeRef() {
-        return `private static toODataTypeRef(collection: boolean, namespace: string, name: string): ${keywords.ODataTypeRef} {
+        return `function ${keywords.toODataTypeRef}(collection: boolean, namespace: string, name: string): ${keywords.ODataTypeRef} {
 ${tab(`const collectionType: ${keywords.ODataTypeRef} = { isCollection: false, name, namespace }`)}
 ${tab("return collection ? { isCollection: true, collectionType } : collectionType")}
+}`
+    }
+
+    // TODO: error handling
+    function parseResponse() {
+        return `const ${keywords.responseParser}: ${keywords.RootResponseInterceptor}<Promise<any>> = async (response: Promise<any>, uri: string, reqValues: RequestInit) => {
+    
+    const result = await response
+    if (!result.ok) {
+        return new Promise<any>((_, rej) => rej(result));
+    }
+
+    return result.json();
 }`
     }
 
@@ -111,7 +127,8 @@ ${methods}
         const instanceType = httpClientType(keywords, generics, tab);
         const constructorArgs = [
             `${keywords._httpClientArgs}`,
-            `${className()}.toODataTypeRef(${!entitySet.isSingleton}, "${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,
+            `${keywords.responseParser}`,
+            `${keywords.toODataTypeRef}(${!entitySet.isSingleton}, "${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,
             `${keywords.rootConfig}.entitySets["${entitySet.namespace || ""}"]["${entitySet.name}"]`,
             keywords.rootConfig
         ]

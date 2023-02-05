@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
 import { utils as queryUtils, Utils } from "./query/queryUtils.js";
 import { buildQuery, Query } from "./queryBuilder.js";
-import { ODataUriParts, RequestTools } from "./requestTools.js";
+import { ODataUriParts, RequestTools, ResponseInterceptor, RootResponseInterceptor } from "./requestTools.js";
 import { buildComplexTypeRef, QueryComplexObject, QueryEnum, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -223,7 +223,7 @@ export enum WithKeyType {
     PathSegment = "PathSegment"
 }
 
-const defaultRequestTools: Partial<RequestTools> = {
+const defaultRequestTools: Partial<RequestTools<any>> = {
     uriInterceptor: (uri: ODataUriParts) => {
 
         let queryPart = Object
@@ -238,17 +238,7 @@ const defaultRequestTools: Partial<RequestTools> = {
         return `${uriRoot}${entityName}${queryPart}`
     },
 
-    requestInterceptor: (_: any, x: RequestInit) => x,
-
-    // NOTE: defaultProcessor will always be null
-    responseInterceptor: <TEntity>(response: Response, uri: any, reqValues: any, defaultProcessor: any): Promise<ODataAnnotatedResult<TEntity>> => {
-        // TODO: error handling
-        if (!response.ok) {
-            return new Promise<any>((_, rej) => rej(response));
-        }
-
-        return response.json();
-    }
+    requestInterceptor: (_: any, x: RequestInit) => x
 }
 
 function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType, serviceConfig: ODataServiceTypes) {
@@ -311,7 +301,8 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
     state: EntityQueryState
 
     constructor(
-        private requestTools: RequestTools,
+        private requestTools: RequestTools<TResult>,
+        private defaultResponseInterceptor: RootResponseInterceptor<TResult>,
         private type: ODataTypeRef,
         private entitySet: ODataEntitySet,
         private root: ODataServiceConfig,
@@ -359,6 +350,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
 
         return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
+            this.defaultResponseInterceptor,
             this.type.collectionType,
             this.entitySet,
             this.root,
@@ -381,6 +373,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         // TODO: Are these anys harmful, can they be removed?
         return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
+            this.defaultResponseInterceptor,
             newT.type,
             this.entitySet,
             this.root,
@@ -410,6 +403,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         // TODO: Are these anys harmful, can they be removed?
         return new EntityQuery<any, any, any, any, any, any, any, any>(
             this.requestTools,
+            this.defaultResponseInterceptor,
             prop,
             this.entitySet,
             this.root,
@@ -440,6 +434,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
 
         return new EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSingleCaster, TSubPath, TSingleSubPath>(
             this.requestTools,
+            this.defaultResponseInterceptor,
             this.type,
             this.entitySet,
             this.root,
@@ -506,22 +501,22 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
      * Execute a get request
      * @param overrideRequestTools Override any request tools needed
      */
-    get(overrideRequestTools?: Partial<RequestTools>): TResult;
+    get(overrideRequestTools?: Partial<RequestTools<TResult>>): TResult;
 
     /**
      * Execute a get request, casting the result to something custom
      * @param overrideRequestTools Override any request tools needed
      */
-    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools>): TOverrideResultType;
+    get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools<TResult>>): TOverrideResultType;
 
 
-    get(overrideRequestTools?: Partial<RequestTools>): TResult {
-        return this.fetch(this.path(), overrideRequestTools) as TResult
+    get(overrideRequestTools?: Partial<RequestTools<TResult>>): TResult {
+        return this.fetch(this.path(), overrideRequestTools)
     }
 
     // // TODO: $count_fincution
     // // TODO: is response type correct?
-    // count(overrideRequestTools?: Partial<RequestTools>): Promise<TDataResult> {
+    // count(overrideRequestTools?: Partial<RequestTools<TResult>>): Promise<TDataResult> {
     //     throw new Error()
     //     //return this.fetch(this.path("$count"), overrideRequestTools);
     // }
@@ -538,9 +533,10 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         return path.join("/");
     }
 
-    private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools> | undefined): Promise<any> {
+    private fetch(relativePath: string, overrideRequestTools: Partial<RequestTools<TResult>> | undefined): TResult {
 
-        const tools = {
+        const tools: RequestTools<TResult> = {
+            responseInterceptor: this.defaultResponseInterceptor,
             ...defaultRequestTools,
             ...this.requestTools,
             ...(overrideRequestTools || {})
@@ -563,9 +559,21 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
             }
         });
 
-        return tools
-            .fetch(uri, init)
-            .then(x => tools.responseInterceptor!(x, uri, init, x => defaultRequestTools.responseInterceptor!(x, uri, init, null as any)));
+        return this
+            .buildResponseInterceptorChain(overrideRequestTools)(tools.fetch(uri, init), uri, init)
+    }
+
+    private buildResponseInterceptorChain(overrideRequestTools: Partial<RequestTools<TResult>> | undefined): RootResponseInterceptor<TResult> {
+
+        const l0 = this.defaultResponseInterceptor
+
+        const i1 = this.requestTools.responseInterceptor
+        const l1 = i1 && ((input: TResult, uri: string, reqValues: RequestInit) => i1(input, uri, reqValues, l0))
+
+        const i2 = overrideRequestTools?.responseInterceptor
+        const l2 = i2 && ((input: TResult, uri: string, reqValues: RequestInit) => i2(input, uri, reqValues, l1 || l0))
+
+        return l2 || l1 || l0
     }
 
     // TODO: duplicate_logic_key: caster
