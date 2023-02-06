@@ -1,9 +1,9 @@
 
 import { My, ODataClient } from "../generatedCode.js";
-import { addFullUserChain, addUser } from "../utils/client.js";
+import { addFullUserChain } from "../utils/client.js";
 import { uniqueString } from "../utils/utils.js";
-import { WithKeyType } from "odata-ts-client/dist/src/httpClient.js";
-import { RootResponseInterceptor } from "odata-ts-client";
+import { WithKeyType } from "odata-ts-client";
+import { RequestOptions, RootResponseInterceptor } from "odata-ts-client";
 
 const client = new ODataClient({
     fetch: (x, y) => {
@@ -44,9 +44,8 @@ function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
     return fetch(input, init)
 }
 
-type Recorder = { input: RequestInfo | URL, init?: RequestInit }
 function recordingFetcher(recorder: string[]) {
-    return (input: any, uri: string, init: RequestInit, defaultInterceptor: RootResponseInterceptor<Promise<Response>, any>) => {
+    return (input: any, uri: string, init: RequestOptions, defaultInterceptor: RootResponseInterceptor<Promise<Response>, any>) => {
         recorder.push(uri)
         return defaultInterceptor(input, uri, init)
     }

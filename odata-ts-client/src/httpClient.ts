@@ -1,7 +1,7 @@
 import { ODataComplexType, ODataEntitySet, ODataTypeRef, ODataServiceConfig, ODataTypeName, ODataSingleTypeRef, ODataServiceTypes, ODataEnum } from "odata-ts-client-shared";
 import { utils as queryUtils, Utils } from "./query/queryUtils.js";
 import { buildQuery, Query } from "./queryBuilder.js";
-import { ODataUriParts, RequestTools, ResponseInterceptor, RootResponseInterceptor } from "./requestTools.js";
+import { ODataUriParts, RequestOptions, RequestTools, ResponseInterceptor, RootResponseInterceptor } from "./requestTools.js";
 import { buildComplexTypeRef, QueryComplexObject, QueryEnum, QueryObjectType, QueryPrimitive } from "./typeRefBuilder.js";
 import { serialize } from "./valueSerializer.js";
 
@@ -238,7 +238,7 @@ const defaultRequestTools: Partial<RequestTools<any, any>> = {
         return `${uriRoot}${entityName}${queryPart}`
     },
 
-    requestInterceptor: (_: any, x: RequestInit) => x
+    requestInterceptor: (_: any, x: RequestOptions) => x
 }
 
 function keyExpr(keyTypes: KeyType[], key: any, keyEmbedType: WithKeyType, serviceConfig: ODataServiceTypes) {
@@ -557,12 +557,12 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
             query: buildQuery(this.state.query || [])
         });
 
-        let init: RequestInit = tools.requestInterceptor!(uri, {
-            headers: {
-                "Content-Type": "application/json; charset=utf-8",
-                "Accept": "application/json",
-                "OData-Version": "4"
-            }
+        let init: RequestOptions = tools.requestInterceptor!(uri, {
+            headers: [
+                ["Content-Type", "application/json; charset=utf-8"],
+                ["Accept", "application/json"],
+                ["OData-Version", "4"]
+            ]
         });
 
         return this
@@ -574,10 +574,10 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         const l0 = this.defaultResponseInterceptor
 
         const i1 = this.requestTools.responseInterceptor
-        const l1 = i1 && ((input: TFetchResult, uri: string, reqValues: RequestInit) => i1(input, uri, reqValues, l0))
+        const l1 = i1 && ((input: TFetchResult, uri: string, reqValues: RequestOptions) => i1(input, uri, reqValues, l0))
 
         const i2 = overrideRequestTools?.responseInterceptor
-        const l2 = i2 && ((input: TFetchResult, uri: string, reqValues: RequestInit) => i2(input, uri, reqValues, l1 || l0))
+        const l2 = i2 && ((input: TFetchResult, uri: string, reqValues: RequestOptions) => i2(input, uri, reqValues, l1 || l0))
 
         return l2 || l1 || l0
     }

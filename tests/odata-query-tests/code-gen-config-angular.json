@@ -1,0 +1,11 @@
+{
+    "inputFileLocation": {
+        "fromUri": "http://localhost:5432/odata/test-entities/$metadata"
+    },
+    "outputFileLocation": "./generatedCode-angular.ts",
+    "codeGenSettings": {
+        "angularMode": true,
+        "prettyPrintJsonConfig": false
+    },
+    "warningSettings": {}
+}

@@ -24,7 +24,7 @@ export async function loadConfig(config: Config, odataConfig: XmlLocation) {
             : new Promise<string>(res => res(odataConfig.xml));
 
     const stringResult = await stringResultP;
-    if (config.printODataConfig) {
+    if (config.printOData$metadata) {
         console.log(stringResult);
     }
 

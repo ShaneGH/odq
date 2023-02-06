@@ -1,10 +1,10 @@
 
 import { addFullUserChain } from "../utils/client.js";
 import { My, ODataClient, rootConfigExporter } from "../generatedCode.js";
-import { buildQuery, Query, QueryComplexObject, queryUtils } from "odata-ts-client";
+import { buildQuery, Query, QueryComplexObject, queryUtils, RequestOptions } from "odata-ts-client";
 import { uniqueString } from "../utils/utils.js";
 import { describeEntityRelationship as testCase, verifyEntityRelationships } from "../correctness/entityRelationships.js";
-import { buildComplexTypeRef } from "odata-ts-client/dist/src/typeRefBuilder.js";
+import { buildComplexTypeRef } from "odata-ts-client";
 
 const rootConfig = rootConfigExporter();
 
@@ -35,13 +35,13 @@ const client = new ODataClient({
     }
 }).My.Odata.Container;
 
-function toListRequestInterceptor(_: any, r: RequestInit): RequestInit {
+function toListRequestInterceptor(_: any, r: RequestOptions): RequestOptions {
     return {
         ...r,
-        headers: {
-            ...(r.headers || {}),
-            ToList: "true"
-        }
+        headers: [
+            ...(r.headers || []),
+            ["ToList", "true"]
+        ]
     }
 }
 

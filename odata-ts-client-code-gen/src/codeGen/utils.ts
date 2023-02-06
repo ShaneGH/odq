@@ -1,5 +1,5 @@
 import { ODataComplexType, ODataTypeRef, ODataServiceConfig, ODataSingleTypeRef, ComplexTypeOrEnum } from "odata-ts-client-shared";
-import { AsyncType, CodeGenConfig } from "../config.js";
+import { AngularHttpResultType, AsyncType, CodeGenConfig } from "../config.js";
 import { Keywords } from "./keywords.js";
 
 export type Dict<T> = { [key: string]: T }
@@ -210,13 +210,29 @@ export type HttpClientGenerics = {
     }
 }
 
+export function angularResultType(settings: CodeGenConfig | null): string | null {
+    if (settings?.angularMode === true) {
+        return "string"
+    }
+
+    if (!settings?.angularMode || typeof settings?.angularMode === "boolean") {
+        return null;
+    }
+
+    return settings.angularMode.httpResultType === AngularHttpResultType.String
+        ? "string"
+        : settings.angularMode.httpResultType
+}
+
 const httpClientGenericNames = ["TEntity", "TDataResult", "TKeyBuilder", "TQueryable", "TCaster", "TSingleCaster", "TSubPath", "TSingleSubPath", "TFetchResult"]
 const longest = httpClientGenericNames.map(x => x.length).reduce((s, x) => s > x ? s : x, -1);
 
 export function httpClientType(keywords: Keywords, generics: HttpClientGenerics, tab: Tab, settings: CodeGenConfig | null) {
 
+    const angularResult = angularResultType(settings);
+
     const { async, fetchResponse } = settings?.angularMode || settings?.asyncType === AsyncType.RxJs
-        ? { async: keywords.Observable, fetchResponse: keywords.AngularHttpResponseBase }
+        ? { async: keywords.Observable, fetchResponse: `${keywords.AngularHttpResponse}<${angularResult}>` }
         : { async: "Promise", fetchResponse: "Response" };
 
     const gs = [

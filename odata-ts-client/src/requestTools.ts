@@ -28,9 +28,13 @@ export type ODataUriParts = {
     query: { [key: string]: string }
 }
 
-export type RootResponseInterceptor<TFetchResult, TResult> = (input: TFetchResult, uri: string, reqValues: RequestInit) => TResult
+export type RootResponseInterceptor<TFetchResult, TResult> = (input: TFetchResult, url: string, options: RequestOptions) => TResult
 
-export type ResponseInterceptor<TFetchResult, TResult> = (input: TFetchResult, uri: string, reqValues: RequestInit, defaultInterceptor: RootResponseInterceptor<TFetchResult, TResult>) => TResult
+export type ResponseInterceptor<TFetchResult, TResult> = (input: TFetchResult, url: string, options: RequestOptions, defaultInterceptor: RootResponseInterceptor<TFetchResult, TResult>) => TResult
+
+export type RequestOptions = {
+    headers: [string, string][]
+}
 
 // TODO: document: Add article
 // TODO: test all of these
@@ -42,7 +46,7 @@ export type RequestTools<TFetchResult, TDataResult> = {
      * A basic http client. Set this to a browser fetch, node18 fetch or a client from the the node-fetch npm module
      * You can also use this value to proxy requests
      */
-    fetch(input: RequestInfo | URL, init?: RequestInit): TFetchResult
+    fetch(url: string, options: RequestOptions): TFetchResult
 
     /** 
      * The root URI of all entity sets. Something like: https://my.service.com/my-odata",
@@ -58,7 +62,7 @@ export type RequestTools<TFetchResult, TDataResult> = {
     /** 
      * Interceptor for http requests. Use this to add custom http headers
      */
-    requestInterceptor?: (uri: string, reqValues: RequestInit) => RequestInit
+    requestInterceptor?: (url: string, options: RequestOptions) => RequestOptions
 
     /** 
      * Interceptor for http responses. Use this to add custom error handling or deserialization

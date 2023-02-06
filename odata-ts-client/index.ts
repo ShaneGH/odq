@@ -40,6 +40,7 @@ export {
 
 export {
     RequestTools,
+    RequestOptions,
     ODataUriParts,
     RootResponseInterceptor
 } from "./src/requestTools.js"
@@ -50,7 +51,8 @@ export {
     QueryEnum,
     QueryArray,
     QueryComplexObject,
-    QueryObject
+    QueryObject,
+    buildComplexTypeRef // TODO: do not expose. Expose a query builder instead
 } from "./src/typeRefBuilder.js"
 
 /*

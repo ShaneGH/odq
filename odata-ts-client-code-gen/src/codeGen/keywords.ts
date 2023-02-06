@@ -34,11 +34,10 @@ export type Keywords = {
     responseParser: string,
     RootResponseInterceptor: string
     AngularHttpClient: string
-    blobToText: string
+    parseBlob: string
     parseResponse: string
     Observable: string
     HttpError: string,
-    AngularHttpResponseBase: string,
     AngularHttpResponse: string
 };
 
@@ -60,10 +59,9 @@ export function generateKeywords(allNamespaces: string[], rootLevelTypes: string
     return {
         mergeMap: getKeyword("mergeMap"),
         map: getKeyword("map"),
-        AngularHttpResponseBase: getKeyword("HttpResponseBase"),
         AngularHttpResponse: getKeyword("HttpResponse"),
         parseResponse: getKeyword("parseResponse"),
-        blobToText: getKeyword("blobToText"),
+        parseBlob: getKeyword("parseBlob"),
         HttpError: getKeyword("HttpError"),
         Observable: getKeyword("Observable"),
         AngularHttpClient: getKeyword("AngularHttpClient"),
@@ -112,7 +110,6 @@ export function imports(keywords: Keywords, tab: Tab, config: CodeGenConfig | nu
 
     const ng = config?.angularMode && `import {
     ${tab(importWithAlias("AngularHttpClient", "HttpClient"))},
-    ${tab(importWithAlias("AngularHttpResponseBase", "HttpResponseBase"))},
     ${tab(importWithAlias("AngularHttpResponse", "HttpResponse"))}
 } from '@angular/common/http'`
 

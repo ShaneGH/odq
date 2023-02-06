@@ -1,11 +1,19 @@
 import { ODataServiceConfig } from "odata-ts-client-shared";
-import { CodeGenConfig, SupressWarnings } from "../config.js";
+import { AngularHttpResultType, CodeGenConfig, SupressWarnings } from "../config.js";
 import { httpClient } from "./httpClient.js";
 import { Keywords } from "./keywords.js";
-import { Tab } from "./utils.js";
+import { angularResultType, Tab } from "./utils.js";
 
-function blobToText(keywords: Keywords, tab: Tab) {
-    return `function ${keywords.blobToText}(blob: Blob): ${keywords.Observable}<string> {
+// TODO: other angular response types
+// (
+//     Observable<HttpResponse<ArrayBuffer>>;
+//     Observable<HttpResponse<Blob>>;
+//     Observable<HttpResponse<string>>;
+//     Observable<HttpResponse<Object>>;
+//     Observable<HttpResponse<T>>;))
+function parseBlob(keywords: Keywords, tab: Tab) {
+    return ""
+    return `function ${keywords.parseBlob}(blob: Blob): ${keywords.Observable}<string> {
 ${tab(`return new ${keywords.Observable}<string>(observer => {
 ${tab(`if (!blob) {
 ${tab(`observer.next("");
@@ -30,8 +38,9 @@ reader.readAsText(blob);`)}
 }`
 }
 
-function parseResponse(keywords: Keywords, tab: Tab) {
-    return `function ${keywords.parseResponse}(response: ${keywords.AngularHttpResponseBase}) {
+function parseResponse(keywords: Keywords, tab: Tab, config: CodeGenConfig | null) {
+    return ""
+    return `function ${keywords.parseResponse}(response: ${keywords.AngularHttpResponse}<${angularResultType(config)}>) {
 ${tab(`if (!response.ok) {
 ${tab(`throw new ${keywords.HttpError}("Error executing http request", response);`)}
 }
@@ -40,7 +49,7 @@ if (!(response instanceof ${keywords.AngularHttpResponse})) {
 ${tab(`throw new ${keywords.HttpError}("Unexpected http resonse type. Expected HttpResonse", response);`)}
 }
 
-return ${keywords.blobToText}(response.body)`)}
+return ${keywords.parseBlob}(response.body)`)}
 }`
 }
 /*
@@ -54,10 +63,10 @@ function parseResponse(response: HttpResponseBase) {
     throw new HttpError("Unexpected http resonse type. Expected HttpResonse", response);
   }
 
-  return blobToText(response.body)
+  return parseBlob(response.body)
 }
 
-function blobToText(blob: any): Observable<string> {
+function parseBlob(blob: any): Observable<string> {
   return new Observable<string>((observer: any) => {
     if (!blob) {
       observer.next("");
@@ -77,18 +86,40 @@ function blobToText(blob: any): Observable<string> {
 const responseParser: RootResponseInterceptor<Observable<HttpResponseBase>, Observable<any>> = response => response
   .pipe(mergeMap(parseResponse), map(x => JSON.parse(x))); */
 
+function parseResponseFunctionBody(keywords: Keywords, resultType: AngularHttpResultType) {
+    //return `return response.pipe(${keywords.mergeMap}(parseResponse), ${keywords.map}(x => JSON.parse(x)));`;
+    if (resultType === AngularHttpResultType.String) {
+        return `return response.pipe(${keywords.map}(x => x.body && JSON.parse(x.body)));`;
+    }
+
+    throw new Error("Invalid angular configuration");
+}
+
 export function angularHttpClient(
     serviceConfig: ODataServiceConfig,
     tab: Tab,
     keywords: Keywords,
-    settings: CodeGenConfig | null | undefined,
+    settings: CodeGenConfig | null,
     warnings: SupressWarnings | null | undefined) {
 
-    const parseResponseFunctionBody = `return response.pipe(${keywords.mergeMap}(parseResponse), ${keywords.map}(x => JSON.parse(x)));`
+    const responseType = settings?.angularMode == null || settings.angularMode === false
+        ? null
+        : settings.angularMode === true
+            ? AngularHttpResultType.String
+            : settings.angularMode.httpResultType;
+
+    if (responseType === null) {
+        throw new Error("Invalid angular configuration");
+    }
+
+    const body = parseResponseFunctionBody(keywords, responseType)
 
     return [
-        blobToText(keywords, tab),
-        parseResponse(keywords, tab),
-        httpClient(serviceConfig, tab, keywords, [`${keywords.Observable}<${keywords.AngularHttpResponseBase}>`, `${keywords.Observable}<any>`], parseResponseFunctionBody, settings, warnings)
+        parseBlob(keywords, tab),
+        parseResponse(keywords, tab, settings),
+        httpClient(
+            serviceConfig, tab, keywords,
+            [`${keywords.Observable}<${keywords.AngularHttpResponse}<${angularResultType(settings)}>>`, `${keywords.Observable}<any>`],
+            body, settings, warnings)
     ].join("\n\n")
 }

@@ -20,7 +20,7 @@ export type Config = {
     /**
      * If set to true, will print the value of the odata $metadata used on screen
      */
-    printODataConfig?: boolean,
+    printOData$metadata?: boolean,
 
     /**
      * Required
@@ -102,6 +102,20 @@ export enum AsyncType {
      * HttpClient results will be rxjs Observables
      */
     RxJs = "RxJs"
+}
+
+export enum AngularHttpResultType {
+    /**
+     * Let angular parse response data as a string
+     */
+    String = "String"
+}
+
+export type AngularConfig = {
+    /**
+     * The type of angular http result to use from the angular http client
+     */
+    httpResultType: AngularHttpResultType
 }
 
 // TODO: settings from cmd
@@ -193,7 +207,7 @@ export type CodeGenConfig = Partial<{
      * Specify the value "String" or "Number" to apply this rule to all enums
      * For more fine grained control, use an object with a default, and specify exceptions in the 
      * "stringEnums" or "numberEnums" properties
-     * @default String
+     * @default "String"
      */
     enumType:
     | "String"
@@ -216,10 +230,13 @@ export type CodeGenConfig = Partial<{
 
     /** 
      * If true, will generate http clients with an angular HttpClient as input
+     * If true, will use a default value for the finer config details. See AngularConfig for finer options details 
      * 
      * @default false
      */
-    angularMode: boolean
+    angularMode:
+    | boolean
+    | AngularConfig
 
     /** 
      * Defines the type of outputs for the HttpClient
