@@ -1,4 +1,5 @@
 import { existsSync, readFile, unlink, writeFile } from "fs";
+import * as path from "path";
 import { codeGen } from "./codeGen/codeGen.js";
 import { CodeGenConfig, Config } from "./config.js";
 import { loadConfig, LocationType, XmlLocation } from "./odataConfigLoader.js";
@@ -56,7 +57,7 @@ export function generateTypescriptFile(configLocation: string): Promise<void> {
             throw new Error("outputFileLocation is not defined in config");
         }
 
-        return config.outputFileLocation;
+        return path.join(path.dirname(configLocation), config.outputFileLocation)
     }
 
     function getXmlLocation(config: Config): XmlLocation {

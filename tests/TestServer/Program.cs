@@ -18,6 +18,7 @@ public class Program
         // Add services to the container.
 
         builder.Services
+            .AddCors()
             .AddControllers()
             .AddJsonOptions(o =>
             {
@@ -48,7 +49,7 @@ public class Program
 
         App.UseODataRouteDebug();
         App.UseRouting();
-
+        App.UseCors(builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
         App.UseEndpoints(endpoints => endpoints.MapControllers());
 
         // App.UseSwagger();

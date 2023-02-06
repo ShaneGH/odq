@@ -1,4 +1,8 @@
 
+# Editor
+
+.vscode/
+
 # Node
 
 dist/

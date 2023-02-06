@@ -228,6 +228,7 @@ export type CodeGenConfig = Partial<{
         queryTypes: TypeCaseSettings
     }>
 
+    // TODO: test older versions of angular
     /** 
      * If true, will generate http clients with an angular HttpClient as input
      * If true, will use a default value for the finer config details. See AngularConfig for finer options details 

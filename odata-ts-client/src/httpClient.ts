@@ -558,6 +558,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         });
 
         let init: RequestOptions = tools.requestInterceptor!(uri, {
+            method: "GET",
             headers: [
                 ["Content-Type", "application/json; charset=utf-8"],
                 ["Accept", "application/json"],
@@ -566,7 +567,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
         });
 
         return this
-            .buildResponseInterceptorChain(overrideRequestTools)(tools.fetch(uri, init), uri, init)
+            .buildResponseInterceptorChain(overrideRequestTools)(tools.request(uri, init), uri, init)
     }
 
     private buildResponseInterceptorChain(overrideRequestTools: Partial<RequestTools<TFetchResult, TResult>> | undefined): RootResponseInterceptor<TFetchResult, TResult> {
