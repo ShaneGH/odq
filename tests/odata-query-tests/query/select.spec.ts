@@ -11,7 +11,7 @@ function loggingFetcher(input: RequestInfo | URL, init?: RequestInit) {
 }
 
 const client = new ODataClient({
-    fetch,
+    request: fetch,
     uriRoot: "http://localhost:5432/odata/test-entities",
     responseInterceptor: (result, uri, reqValues, defaultParser) => {
         if (!defaultParser) {

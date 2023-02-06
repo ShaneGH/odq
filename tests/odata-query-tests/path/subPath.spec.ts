@@ -6,9 +6,7 @@ import { WithKeyType } from "odata-ts-client";
 import { RequestOptions, RootResponseInterceptor } from "odata-ts-client";
 
 const client = new ODataClient({
-    fetch: (x, y) => {
-        return fetch(x, y)
-    },
+    request: fetch,
     uriRoot: "http://localhost:5432/odata/test-entities",
     responseInterceptor: (result, uri, reqValues, defaultParser) => {
         return defaultParser(result, uri, reqValues)

@@ -3,9 +3,7 @@ import { ODataClient } from "../generatedCode.js";
 import { addCompositeKeyItem, addFullUserChain } from "../utils/client.js";
 
 const client = new ODataClient({
-    fetch: (x, y) => {
-        return fetch(x, y)
-    },
+    request: fetch,
     uriRoot: "http://localhost:5432/odata/test-entities",
     responseInterceptor: (result, uri, reqValues, defaultParser) => {
         return defaultParser(result, uri, reqValues)

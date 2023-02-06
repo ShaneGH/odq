@@ -13,7 +13,7 @@
     "generate-code": "node node_modules/odata-ts-client-code-gen/dist/index.js --config ./code-gen-config.json",
     "test-only": "node --experimental-vm-modules node_modules/jest/bin/jest.js dist",
     "test": "(npm run start-test-server && npm run generate-code && tsc && npm run test-only)",
-    "build-and-test": "buildFromRoot.cmd"
+    "build-and-test": "buildFromRoot.cmd && npm run test"
   },
   "author": "",
   "license": "ISC",
