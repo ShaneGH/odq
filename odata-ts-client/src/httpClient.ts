@@ -33,7 +33,10 @@ type Dict<T> = { [key: string]: T }
 
 type EntityQueryState = {
     path: string[]
-    query?: Query | Query[]
+    query?: {
+        query: Query | Query[]
+        urlEncode: boolean
+    }
 }
 
 export type KeySelection<TNewEntityQuery> = {
@@ -444,7 +447,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
             this.type,
             this.entitySet,
             this.root,
-            { ...this.state, query });
+            { ...this.state, query: { query, urlEncode } });
     }
 
     private executePrimitiveQueryBuilder(
@@ -515,7 +518,6 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
      */
     get<TOverrideResultType>(overrideRequestTools?: Partial<RequestTools<TFetchResult, TOverrideResultType>>): TOverrideResultType;
 
-
     get(overrideRequestTools?: Partial<RequestTools<TFetchResult, TResult>>): TResult {
         return this.fetch(this.path(), overrideRequestTools)
     }
@@ -554,7 +556,7 @@ export class EntityQuery<TEntity, TResult, TKeyBuilder, TQueryable, TCaster, TSi
             entitySetContainerName: this.entitySet.namespace || null,
             entitySetName: this.entitySet.name,
             relativePath: relativePath,
-            query: buildQuery(this.state.query || [])
+            query: buildQuery(this.state.query?.query || [], this.state.query?.urlEncode)
         });
 
         let init: RequestOptions = tools.requestInterceptor!(uri, {

@@ -44,7 +44,7 @@ export type RequestOptions = {
     headers: [string, string][]
 }
 
-// TODO: document: Add article
+// TODO: document: Add article. Also, link article to angular fetch
 // TODO: test all of these
 /**
  * Input args to an ODataHttpClient
@@ -53,6 +53,8 @@ export type RequestTools<TRequestResult, TDataResult> = {
     /** 
      * A basic http client. Set this to a browser fetch, node18 fetch or a client from the the node-fetch npm module
      * You can also use this value to proxy requests
+     * 
+     * If the code was generated in agular mode, this must be a function which wraps a call to an angular HttpClient
      */
     request(url: string, options: RequestOptions): TRequestResult
 

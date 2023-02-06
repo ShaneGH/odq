@@ -38,6 +38,7 @@ Evaluated: v0
      * GET http://host/service/Products?$select=DemoService.* ????
 
 Evaluated: v1
+ * Whitelisted types should automatically whitelist their Complex object properties (but not navigation properties)
  * What is the default value of Nullable for properties in $metadata
  * Dynamic properties (and open types)
  * http://docs.oasis-open.org/odata/odata-data-aggregation-ext/v4.0/odata-data-aggregation-ext-v4.0.html
