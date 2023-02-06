@@ -107,8 +107,19 @@ export enum AsyncType {
 export enum AngularHttpResultType {
     /**
      * Let angular parse response data as a string
+     * Default
      */
-    String = "String"
+    String = "String",
+
+    /**
+     * Let angular parse response data as a Blob
+     */
+    Blob = "Blob",
+
+    /**
+     * Let angular parse response data as an ArrayBuffer
+     */
+    ArrayBuffer = "ArrayBuffer"
 }
 
 export type AngularConfig = {

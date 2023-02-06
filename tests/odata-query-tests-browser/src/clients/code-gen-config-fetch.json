@@ -1,0 +1,10 @@
+{
+    "inputFileLocation": {
+        "fromUri": "http://localhost:5432/odata/test-entities/$metadata"
+    },
+    "outputFileLocation": "./generatedCode-fetch.ts",
+    "codeGenSettings": {
+        "prettyPrintJsonConfig": false
+    },
+    "warningSettings": {}
+}

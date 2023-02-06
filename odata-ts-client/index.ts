@@ -19,6 +19,7 @@ export {
 } from "./src/query/filtering/queryPrimitiveTypes0.js"
 
 export {
+    Utils as QueryUtils,
     utils as queryUtils
 } from "./src/query/queryUtils.js"
 
