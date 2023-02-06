@@ -35,7 +35,7 @@ describe('Fetch client', () => {
 
     const client = TestBed.createComponent(AppComponent).componentInstance.fetchClient;
     const user = await addUser();
-    const items = await client.My.Odata.Container.Users
+    const items = await client.Users
       .withQuery((u, { filter: { eq } }) => eq(u.Id, user.Id))
       .get();
 
@@ -46,7 +46,7 @@ describe('Fetch client', () => {
   it('Should process failed requests', async () => {
     const client = TestBed.createComponent(AppComponent).componentInstance.fetchClient;
     try {
-      await client.My.Odata.Container.Users
+      await client.Users
         .withQuery((_, { filter: { filterRaw } }) => filterRaw("sadkas"))
         .get();
 

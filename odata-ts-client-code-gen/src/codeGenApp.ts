@@ -4,6 +4,7 @@ import { codeGen } from "./codeGen/codeGen.js";
 import { CodeGenConfig, Config } from "./config.js";
 import { loadConfig, LocationType, XmlLocation } from "./odataConfigLoader.js";
 import { processConfig } from "./odataConfigProcessor.js";
+import { applyRenames } from "./rename.js";
 
 async function persist(code: string, file: string) {
     console.log(`Saving: ${file}`);
@@ -43,6 +44,7 @@ export function generateCode(odataConfig: XmlLocation, settings: Config): Promis
     console.log("Generating code file");
     return loadConfig(settings, odataConfig)
         .then(x => processConfig(settings.warningSettings || {}, x))
+        .then(x => applyRenames(x, settings))
         .then(x => codeGen(x, settings.codeGenSettings, settings.warningSettings));
 }
 

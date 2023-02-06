@@ -4,7 +4,14 @@
     },
     "outputFileLocation": "./generatedCode-fetch.ts",
     "codeGenSettings": {
-        "prettyPrintJsonConfig": false
+        "prettyPrintJsonConfig": false,
+        "rename": {
+            "namespaces": {
+                "entityContainers": {
+                    "My/Odata.Container": ""
+                }
+            }
+        }
     },
     "warningSettings": {}
 }

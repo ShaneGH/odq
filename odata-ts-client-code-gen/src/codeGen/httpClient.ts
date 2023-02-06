@@ -27,7 +27,7 @@ export function httpClient(
         .keys(serviceConfig.entitySets)
         .sort((x, y) => x < y ? -1 : 1)
         .map(namespace => ({
-            escapedNamespaceParts: sanitizeNamespace(namespace).split("."),
+            escapedNamespaceParts: sanitizeNamespace(namespace).split(".").filter(x => !!x),
             entitySets: Object
                 .keys(serviceConfig.entitySets[namespace])
                 .map(k => serviceConfig.entitySets[namespace][k])
@@ -71,7 +71,6 @@ ${tab(parseResponseFunctionBody)}
 }`
     }
 
-    // TODO: need to test code gen for entysets with no namespace. The syntax is slightly different
     function methodsForEntitySetNamespace(
         entitySetNamespaceParts: string[],
         entitySets: ODataEntitySet[],
@@ -80,7 +79,7 @@ ${tab(parseResponseFunctionBody)}
         if (!entitySetNamespaceParts.length) {
             return [...entitySets]
                 .sort((x, y) => x.name < y.name ? -1 : 1)
-                .map(methodForEntitySet)
+                .map(x => methodForEntitySet(x, first))
                 .filter(x => x)
                 .join(first ? "\n\n" : ",\n\n");
         }
@@ -104,7 +103,7 @@ ${methods}
 }`;
     }
 
-    function methodForEntitySet(entitySet: ODataEntitySet): string | undefined {
+    function methodForEntitySet(entitySet: ODataEntitySet, hasThisContext: boolean): string | undefined {
 
         const type = lookupComplexType(entitySet.forType);
         if (!type) {
@@ -122,9 +121,10 @@ ${methods}
             ? singletonGenerics(entitySet, type)
             : entitySetGenerics(entitySet, type);
 
+        const ths = hasThisContext ? "this." : ""
         const instanceType = httpClientType(keywords, generics, tab, settings || null);
         const constructorArgs = [
-            `${keywords._httpClientArgs}`,
+            `${ths}${keywords._httpClientArgs}`,
             `${keywords.responseParser}`,
             `${keywords.toODataTypeRef}(${!entitySet.isSingleton}, "${entitySet.forType.namespace || ""}", "${entitySet.forType.name}")`,
             `${keywords.rootConfig}.entitySets["${entitySet.namespace || ""}"]["${entitySet.name}"]`,

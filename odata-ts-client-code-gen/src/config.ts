@@ -255,5 +255,27 @@ export type CodeGenConfig = Partial<{
      * 
      * @default "Promise"
      */
-    asyncType: AsyncType
+    asyncType: AsyncType,
+
+    /** 
+     * Defines rename strategies for entities and entity containers
+     */
+    rename: Partial<{
+
+        /** 
+         * Defines rename strategies for entity namesapces and entity containers
+         * 
+         */
+        namespaces: Partial<{
+            /** 
+             * Defines rename strategies for entity namespaces
+             */
+            entities: { [key: string]: string }
+
+            /** 
+             * Defines rename strategies for entity containers
+             */
+            entityContainers: { [key: string]: string }
+        }>
+    }>
 }>

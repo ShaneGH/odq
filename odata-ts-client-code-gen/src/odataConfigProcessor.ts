@@ -92,10 +92,6 @@ function mapSingleton(namespace: string, entitySet: Node): ODataEntitySet {
 
 function getName(entitySet: Node, nameAttr: string, namespace: string) {
 
-    /*
-                <EntitySet Name="CompositeKeyItems" EntityType="My.Odata.Entities.CompositeKeyItem" />
-                <Singleton Name="AppDetails" Type="My.Odata.Entities.AppDetails" /> */
-
     const name = nsLookup(entitySet, nameAttr) as Attr[];
     if (name.length > 1) {
         const names = name.map(x => x.value).join(", ");
