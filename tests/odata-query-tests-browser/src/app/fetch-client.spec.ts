@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { addUser } from 'src/clients/client';
-import { ODataClient } from 'src/clients/generatedCode-fetch';
+import { ODataClient, User } from 'src/clients/generatedCode-fetch';
 import { ODataClient as AngularStringClient } from 'src/clients/generatedCode-angular';
 import { ODataClient as BlobClient } from 'src/clients/generatedCode-angular-blob';
 import { ODataClient as ArrayBuferClient } from 'src/clients/generatedCode-angular-arraybuffer';
 import { AppComponent } from './app.component';
+import { ODataAnnotatedResult } from 'odata-ts-client';
 
 describe('Fetch client', () => {
   beforeEach(async () => {
@@ -35,7 +36,8 @@ describe('Fetch client', () => {
 
     const client = TestBed.createComponent(AppComponent).componentInstance.fetchClient;
     const user = await addUser();
-    const items = await client.Users
+    // keep type annotation here. It is part of the test
+    const items: ODataAnnotatedResult<User[]> = await client.Users
       .withQuery((u, { filter: { eq } }) => eq(u.Id, user.Id))
       .get();
 

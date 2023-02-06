@@ -9,6 +9,9 @@
             "namespaces": {
                 "entityContainers": {
                     "My/Odata.Container": ""
+                },
+                "entities": {
+                    "My.Odata.Entities": ""
                 }
             }
         }

@@ -5,15 +5,17 @@ export type ODataTypeName = {
     namespace: string
 }
 
+export type ODataComplexTypeProperty = {
+    nullable: boolean
+    navigationProperty: boolean
+    type: ODataTypeRef
+}
+
 export type ODataComplexType = ODataTypeName & {
     keyProps?: string[] | undefined
     baseType?: ODataTypeName
     properties: {
-        [key: string]: {
-            nullable: boolean
-            navigationProperty: boolean
-            type: ODataTypeRef
-        }
+        [key: string]: ODataComplexTypeProperty
     }
 }
 

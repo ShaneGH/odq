@@ -7,7 +7,17 @@
         "angularMode": {
             "httpResultType": "Blob"
         },
-        "prettyPrintJsonConfig": false
+        "prettyPrintJsonConfig": false,
+        "rename": {
+            "namespaces": {
+                "entityContainers": {
+                    "My/Odata.Container": ""
+                },
+                "entities": {
+                    "My.Odata.Entities": ""
+                }
+            }
+        }
     },
     "warningSettings": {}
 }

@@ -1,12 +1,13 @@
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { addUser } from 'src/clients/client';
-import { ODataClient } from 'src/clients/generatedCode-angular';
+import { ODataClient, User } from 'src/clients/generatedCode-angular';
 import { ODataClient as FetchClient } from 'src/clients/generatedCode-fetch';
 import { ODataClient as BlobClient } from 'src/clients/generatedCode-angular-blob';
 import { ODataClient as ArrayBuferClient } from 'src/clients/generatedCode-angular-arraybuffer';
 import { AppComponent } from './app.component';
+import { ODataAnnotatedResult } from 'odata-ts-client';
 // import { addUser } from "odata-ts-client-tests";
 
 describe('Angular client with string output', () => {
@@ -51,7 +52,8 @@ describe('Angular client with string output', () => {
 
     const client = TestBed.createComponent(AppComponent).componentInstance.angularStringClient;
     const user = await addUser();
-    const items = client.My.Odata.Container.Users
+    // keep type annotation here. It is part of the test
+    const items: Observable<ODataAnnotatedResult<User[]>> = client.Users
       .withQuery((u, { filter: { eq } }) => eq(u.Id, user.Id))
       .get();
 
@@ -71,7 +73,7 @@ describe('Angular client with string output', () => {
 
   it('Should process failed requests', async () => {
     const client = TestBed.createComponent(AppComponent).componentInstance.angularStringClient;
-    const items = client.My.Odata.Container.Users
+    const items = client.Users
       .withQuery((_, { filter: { filterRaw } }) => filterRaw("sadkas"))
       .get();
 

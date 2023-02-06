@@ -1,12 +1,5 @@
-import { My } from './generatedCode-angular'
+import { Blog, BlogPost, CommentMood, CommentTag, CompositeKeyItem, Mood, User, UserProfileType, UserType, Comment } from './generatedCode-angular'
 import { uniqueNumber, uniqueString } from './utils'
-
-type User = My.Odata.Entities.User
-type Blog = My.Odata.Entities.Blog
-type BlogPost = My.Odata.Entities.BlogPost
-type Comment = My.Odata.Entities.Comment
-type CommentTag = My.Odata.Entities.CommentTag
-type CommentMood = My.Odata.Entities.CommentMood
 
 // for debug
 export async function drain() {
@@ -28,10 +21,10 @@ export async function drain() {
 
 export type AddFullUserChainArgs = Partial<{
     userName: string
-    userType: My.Odata.Entities.UserType
+    userType: UserType
     userScore: number
-    userProfileType: My.Odata.Entities.UserProfileType
-    commentMood: My.Odata.Entities.Mood
+    userProfileType: UserProfileType
+    commentMood: Mood
     blogPostContent: string
     blogPostLikes: number
     commentTags: CommentTag[]
@@ -66,7 +59,7 @@ export async function addFullUserChain(settings?: AddFullUserChainArgs): Promise
     const blogPost = await addBlogPost(blog.Id!, settings?.blogPostContent, settings?.blogPostLikes);
 
     const commentUser = await commentUserP;
-    const mood: Partial<My.Odata.Entities.CommentMood> | undefined = settings.commentMood == null
+    const mood: Partial<CommentMood> | undefined = settings.commentMood == null
         ? undefined
         : {
             Key: uniqueString("Comment_Mood_Id_"),
@@ -93,7 +86,7 @@ export async function addUser(user?: Partial<User>) {
     const blogUser: Partial<User> = {
         Name: uniqueString("User Name "),
         UserType: "User" as any,
-        UserProfileType: My.Odata.Entities.UserProfileType.Standard,
+        UserProfileType: UserProfileType.Standard,
         ...user || {}
     };
 
@@ -149,11 +142,11 @@ export async function postTag(val: CommentTag) {
     await post("CommentTags", val);
 }
 
-export async function postCompositeKeyItem(val: Partial<My.Odata.Entities.CompositeKeyItem>) {
+export async function postCompositeKeyItem(val: Partial<CompositeKeyItem>) {
     return await post("CompositeKeyItems", val);
 }
 
-export async function addCompositeKeyItem(compositeKeyItem?: Partial<My.Odata.Entities.CompositeKeyItem>) {
+export async function addCompositeKeyItem(compositeKeyItem?: Partial<CompositeKeyItem>) {
 
     return postCompositeKeyItem({
         Data: compositeKeyItem?.Data ?? uniqueString("Some data ")
