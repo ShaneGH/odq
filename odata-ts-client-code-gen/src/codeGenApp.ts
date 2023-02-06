@@ -2,6 +2,7 @@ import { existsSync, readFile, unlink, writeFile } from "fs";
 import * as path from "path";
 import { codeGen } from "./codeGen/codeGen.js";
 import { CodeGenConfig, Config } from "./config.js";
+import { applyWhitelist } from "./whitelist.js";
 import { loadConfig, LocationType, XmlLocation } from "./odataConfigLoader.js";
 import { processConfig } from "./odataConfigProcessor.js";
 import { applyRenames } from "./rename.js";
@@ -44,6 +45,7 @@ export function generateCode(odataConfig: XmlLocation, settings: Config): Promis
     console.log("Generating code file");
     return loadConfig(settings, odataConfig)
         .then(x => processConfig(settings.warningSettings || {}, x))
+        .then(x => applyWhitelist(x, settings))
         .then(x => applyRenames(x, settings))
         .then(x => codeGen(x, settings.codeGenSettings, settings.warningSettings));
 }

@@ -7,14 +7,18 @@
         "angularMode": true,
         "prettyPrintJsonConfig": false,
         "rename": {
-            "namespaces": {
-                "entityContainers": {
-                    "My/Odata.Container": ""
-                },
-                "entities": {
-                    "My.Odata.Entities": ""
-                }
+            "entityContainers": {
+                "My/Odata.Container": ""
+            },
+            "entityNamespaces": {
+                "My.Odata.Entities": ""
             }
+        },
+        "entityWhitelist": {
+            "entities": [
+                "My.Odata.Entities.HasId",
+                "My.Odata.Entities.User"
+            ]
         }
     },
     "warningSettings": {}

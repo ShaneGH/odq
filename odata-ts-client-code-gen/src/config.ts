@@ -73,6 +73,16 @@ export type SupressWarnings = Partial<{
      * @default false
      */
     suppressEnumIssuesValue: boolean
+
+    /** 
+     * @default false
+     */
+    suppressIgnoredBaseType: boolean
+
+    /** 
+     * @default false
+     */
+    suppressIgnoredKeyType: boolean
 }>
 
 export enum TypeCaseSettings {
@@ -258,24 +268,38 @@ export type CodeGenConfig = Partial<{
     asyncType: AsyncType,
 
     /** 
+     * Remove entities from the generate code which are not specified in the whitelist
+     * ignore is applied before "rename"
+     * Values should be a concatenation of the namesapce and name, separated by a "."
+     * Default: use all entities
+     * 
+     * @example ["My/OData/Ns.MyType", "My/OData/Ns.MyType2"] - Generate a client for types "MyType" and "MyType2" in namespace "My/OData/Ns"
+     */
+    entityWhitelist: Partial<{
+
+        /** 
+         * Defines rename strategies for entity namespaces.
+         */
+        entities: string[]
+    }>,
+
+    /** 
      * Defines rename strategies for entities and entity containers
      */
     rename: Partial<{
 
         /** 
-         * Defines rename strategies for entity namesapces and entity containers
+         * Defines rename strategies for entity namespaces.
          * 
+         * @example { "My/OData/Ns": "" } - remove namespaces from all entites in the "My/OData/Ns" namespace
          */
-        namespaces: Partial<{
-            /** 
-             * Defines rename strategies for entity namespaces
-             */
-            entities: { [key: string]: string }
+        entityNamespaces: { [key: string]: string }
 
-            /** 
-             * Defines rename strategies for entity containers
-             */
-            entityContainers: { [key: string]: string }
-        }>
+        /** 
+         * Defines rename strategies for entity containers
+         * 
+         * @example { "My/OData/Ns": "" } - Places all entity sets in the "My/OData/Ns" container at the root of the generated http client
+         */
+        entityContainers: { [key: string]: string }
     }>
 }>

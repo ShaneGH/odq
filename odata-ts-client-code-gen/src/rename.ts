@@ -3,10 +3,10 @@ import { Config } from "./config.js";
 
 export function applyRenames(serviceConfig: ODataServiceConfig, settings: Config): ODataServiceConfig {
 
-    serviceConfig = renameEntities(serviceConfig, settings.codeGenSettings?.rename?.namespaces?.entities || null)
+    serviceConfig = renameEntities(serviceConfig, settings.codeGenSettings?.rename?.entityNamespaces || null)
     serviceConfig = renameEntityContainers(serviceConfig,
-        settings.codeGenSettings?.rename?.namespaces?.entityContainers || null,
-        settings.codeGenSettings?.rename?.namespaces?.entities || null)
+        settings.codeGenSettings?.rename?.entityContainers || null,
+        settings.codeGenSettings?.rename?.entityNamespaces || null)
 
     return serviceConfig
 }
@@ -31,7 +31,7 @@ function renameEntityContainers(serviceConfig: ODataServiceConfig, containerRena
 
     function reNamespaceEntity(ns: string) {
 
-        return ern[ns] == null ? ns : ern[ns];
+        return ern[ns] == null ? ns : (ern[ns] || "");
     }
 
     function reNamespaceEntitySet(ns: string, printEntitySetName?: string) {
@@ -44,7 +44,7 @@ function renameEntityContainers(serviceConfig: ODataServiceConfig, containerRena
             console.log(`Renaming entity set: ${ns && `${ns}.`}${printEntitySetName} => ${crn[ns] && `${crn[ns]}.`}${printEntitySetName}`);
         }
 
-        return crn[ns];
+        return crn[ns] || "";
     }
 
     function reNamespaceANamespace(ns: ODataEntitySets): ODataEntitySets {
@@ -92,7 +92,7 @@ function renameEntities(serviceConfig: ODataServiceConfig, renames: { [key: stri
             console.log(`Renaming entity: ${ns && `${ns}.`}${printEntitySetName} => ${rn[ns] && `${rn[ns]}.`}${printEntitySetName}`);
         }
 
-        return rn[ns];
+        return rn[ns] || "";
     }
 
     function renamespaceTypeRef(typeRef: ODataTypeRef): ODataTypeRef {
